@@ -41,3 +41,11 @@ A multi-agent pipeline where each agent owns a distinct stage of the job search 
 - **AI / LLM Framework:** LangChain, Gemini API
 - **Frontend:** Next.js (React)
 - **Deployment & Cloud:** AWS (EC2 / S3 / Amplify)
+
+
+## Team Members
+- Gaurav Kumar (22f1001105)
+- Dev Gupta (22f2000888)
+- Abhinav Ohri (24f1002064)
+- Pranav N (22f2000117)
+- Praveena N (22f3001454)
