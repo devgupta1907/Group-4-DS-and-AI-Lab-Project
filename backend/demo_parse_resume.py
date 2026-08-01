@@ -32,6 +32,16 @@ from src.resume_parsing.internal.pipeline import (  # noqa: E402
 from src.resume_parsing.internal.providers.google_ai_studio import (  # noqa: E402
     build_provider,
 )
+# // gemini-3.5-flash
+
+DEFAULT_RESUME = (
+    Path(__file__).resolve().parents[2]
+    / "Milestone_2_Resume_Parsing"
+    / "final_dataset"
+    / "gold"
+    / "sql_developer"
+    / "sql_developer__0b8431fc6fb166a7.pdf"
+)
 
 
 async def parse_resume(path: Path, model: str) -> tuple[dict, object]:
