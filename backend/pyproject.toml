@@ -25,6 +25,7 @@ dependencies = [
     "python-docx>=1.1.2",
     "python-multipart>=0.0.20",
     "sqlalchemy[asyncio]>=2.0.36",
+    "langsmith>=0.10.10",
 ]
 
 [dependency-groups]

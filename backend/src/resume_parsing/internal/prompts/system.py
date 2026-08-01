@@ -49,16 +49,22 @@ EXTRACTION_INSTRUCTION = (
 )
 
 
-def build_gemma_prompt(page_text: str | None = None) -> str:
+def build_gemma_prompt(
+    page_text: str | None = None, system_prompt: str | None = None
+) -> str:
     """Single-turn prompt for models without a system role or schema binding.
 
     Gemma served through the Gemini API accepts neither a system instruction nor
     a structured-output schema, so both are folded into the user turn here. The
     JSON envelope is then recovered defensively on the way back — see
     `providers/google_ai_studio.py`.
+
+    `system_prompt` overrides the default rules. Production never passes it; it
+    exists so the offline evaluation harness can A/B prompt variants against the
+    dev split without editing this file.
     """
     parts = [
-        SYSTEM_PROMPT,
+        system_prompt or SYSTEM_PROMPT,
         "",
         "SCHEMA:",
         json.dumps(load_schema(), separators=(",", ":")),

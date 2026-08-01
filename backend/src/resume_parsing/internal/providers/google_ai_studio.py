@@ -131,9 +131,13 @@ class GoogleAiStudioProvider:
         primary_model: str,
         fallback_model: str,
         timeout_seconds: float,
+        system_prompt: str | None = None,
     ) -> None:
         self._primary_model = primary_model
         self._fallback_model = fallback_model
+        # Production leaves this None and gets SYSTEM_PROMPT. The evaluation
+        # harness passes a variant so prompt A/B needs no edit to prompts/.
+        self._system_prompt = system_prompt or SYSTEM_PROMPT
         self._client = genai.Client(
             api_key=api_key,
             http_options=types.HttpOptions(timeout=int(timeout_seconds * 1000)),
@@ -178,7 +182,7 @@ class GoogleAiStudioProvider:
                     f"{page.text}\n---"
                 )
         else:
-            instruction = build_gemma_prompt(page.text)
+            instruction = build_gemma_prompt(page.text, system_prompt=self._system_prompt)
 
         parts: list[Any] = []
         if page.image_png is not None:
@@ -196,17 +200,18 @@ class GoogleAiStudioProvider:
         return types.GenerateContentConfig(
             temperature=0.0,
             candidate_count=1,
-            system_instruction=SYSTEM_PROMPT,
+            system_instruction=self._system_prompt,
             response_mime_type="application/json",
             response_schema=to_gemini_schema(load_schema()),
         )
 
 
-def build_provider() -> GoogleAiStudioProvider:
+def build_provider(system_prompt: str | None = None) -> GoogleAiStudioProvider:
     settings = get_settings()
     return GoogleAiStudioProvider(
         api_key=settings.google_ai_studio_api_key,
         primary_model=settings.resume_primary_model,
         fallback_model=settings.resume_fallback_model,
         timeout_seconds=settings.resume_request_timeout_seconds,
+        system_prompt=system_prompt,
     )
