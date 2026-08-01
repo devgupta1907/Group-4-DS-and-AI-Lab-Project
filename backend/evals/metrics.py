@@ -68,6 +68,25 @@ def _entities(profile: dict, section: str, keys: tuple[str, ...]) -> set[str]:
     return out
 
 
+def _flat_strings(profile: dict, section: str, key: str) -> set[str]:
+    """One repeated sub-field, flattened across every entry in a section.
+
+    Scored apart from the entity key so a wrong institution does not also sink
+    the degree field, and so list-valued sub-fields (project technologies) and
+    scalar ones (education field, experience location) share one path.
+    """
+    out: set[str] = set()
+    for entry in profile.get(section) or []:
+        if not isinstance(entry, dict):
+            continue
+        value = entry.get(key)
+        if isinstance(value, list):
+            out |= {_norm(v) for v in value if _norm(v)}
+        elif _norm(value):
+            out.add(_norm(value))
+    return out
+
+
 def _phone_hits(blob: str) -> list[str]:
     return [
         span
@@ -87,22 +106,28 @@ def field_metrics(outputs: dict, reference_outputs: dict) -> list[dict]:
     predicted, gold = outputs or {}, reference_outputs or {}
     scores: list[dict] = []
 
+    def pair(extract, *args) -> tuple[set[str], set[str]]:
+        return extract(predicted, *args), extract(gold, *args)
+
+    # Dates and free-text descriptions are deliberately absent. Dates would need
+    # ISO normalisation to compare fairly ("08/2013" and "Aug 2013" are the same
+    # correct reading); descriptions are human summaries the model paraphrases,
+    # so any string comparison would punish correct output.
     sections = {
-        "skills": _strings(predicted, "skills"),
-        "job_titles": _strings(predicted, "job_titles"),
+        "skills": pair(_strings, "skills"),
+        "job_titles": pair(_strings, "job_titles"),
+        "education": pair(_entities, "education", ("degree", "institution")),
+        "education_field": pair(_flat_strings, "education", "field"),
+        "experience": pair(_entities, "experience", ("job_title", "company")),
+        "experience_location": pair(_flat_strings, "experience", "location"),
+        "certifications": pair(_entities, "certifications", ("name", "issuer")),
+        "projects": pair(_entities, "projects", ("name",)),
+        "technologies": pair(_flat_strings, "projects", "technologies"),
     }
-    gold_sections = {
-        "skills": _strings(gold, "skills"),
-        "job_titles": _strings(gold, "job_titles"),
-    }
-    sections["education"] = _entities(predicted, "education", ("degree", "institution"))
-    gold_sections["education"] = _entities(gold, "education", ("degree", "institution"))
-    sections["experience"] = _entities(predicted, "experience", ("job_title", "company"))
-    gold_sections["experience"] = _entities(gold, "experience", ("job_title", "company"))
 
     f1s = []
-    for name, predicted_set in sections.items():
-        precision, recall, f1 = _prf(predicted_set, gold_sections[name])
+    for name, (predicted_set, gold_set) in sections.items():
+        precision, recall, f1 = _prf(predicted_set, gold_set)
         f1s.append(f1)
         scores += [
             {"key": f"{name}_precision", "score": round(precision, 4)},
