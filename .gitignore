@@ -9,3 +9,5 @@ __pycache__/
 # de-identified aggregate under experiments/results/ is tracked in Git.
 backend/experiments/runs/
 backend/experiments/*.log
+backend/experiments/reports/*TEMP*.md
+backend/experiments/reports/*.docx
