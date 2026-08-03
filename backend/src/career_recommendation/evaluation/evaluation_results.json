@@ -1,0 +1,1446 @@
+{
+  "config": {
+    "embedding_provider": "huggingface",
+    "embedding_model": "BAAI/bge-base-en-v1.5",
+    "chroma_dir": "G:\\AIlabproject\\Group-4-DS-and-AI-Lab-Project\\backend\\src\\data\\chroma_db_bge_v2",
+    "collection": "esco_occupations",
+    "retrieval_top_k": 20,
+    "final_top_k": 5,
+    "essential_skill_weight": 1.0,
+    "optional_skill_weight": 0.5
+  },
+  "n_profiles": 100,
+  "n_failures": 0,
+  "failures": [],
+  "elapsed_seconds": 10.8,
+  "retrieval_stage": {
+    "MRR": 0.9683,
+    "HitRate@1": 0.94,
+    "Recall@1": 0.94,
+    "Precision@1": 0.94,
+    "HitRate@3": 1.0,
+    "Recall@3": 1.0,
+    "Precision@3": 0.3333,
+    "HitRate@5": 1.0,
+    "Recall@5": 1.0,
+    "Precision@5": 0.2,
+    "HitRate@10": 1.0,
+    "Recall@10": 1.0,
+    "Precision@10": 0.1,
+    "HitRate@20": 1.0,
+    "Recall@20": 1.0,
+    "Precision@20": 0.05
+  },
+  "reranked_stage": {
+    "MRR": 0.985,
+    "HitRate@1": 0.97,
+    "Recall@1": 0.97,
+    "Precision@1": 0.97,
+    "HitRate@3": 1.0,
+    "Recall@3": 1.0,
+    "Precision@3": 0.3333,
+    "HitRate@5": 1.0,
+    "Recall@5": 1.0,
+    "Precision@5": 0.2
+  },
+  "per_profile": [
+    {
+      "profile_id": "synthetic_001",
+      "expected": [
+        "aerospace engineer"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "aerospace engineer",
+        "flight test engineer",
+        "aerospace engineering technician"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_002",
+      "expected": [
+        "rotating equipment mechanic"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "rotating equipment mechanic",
+        "moulding machine technician",
+        "briquetting machine operator"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_003",
+      "expected": [
+        "plumbing supervisor"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "plumbing supervisor",
+        "electrical supervisor",
+        "bricklaying supervisor"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_004",
+      "expected": [
+        "motor vehicle assembler"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "motor vehicle assembler",
+        "motor vehicle body assembler",
+        "motor vehicle parts assembler"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_005",
+      "expected": [
+        "shunter"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "shunter",
+        "rail operations manager",
+        "train driver"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_006",
+      "expected": [
+        "residential home older adult care worker"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "residential home older adult care worker",
+        "residential home adult care worker",
+        "social care worker"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_007",
+      "expected": [
+        "surface grinding machine operator"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "surface grinding machine operator",
+        "metal rolling mill operator",
+        "cylindrical grinder operator"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_008",
+      "expected": [
+        "machine operator supervisor"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "machine operator supervisor",
+        "machinery assembly supervisor",
+        "wood assembly supervisor"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_009",
+      "expected": [
+        "bomb disposal technician"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "bomb disposal technician",
+        "decontamination worker"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_010",
+      "expected": [
+        "sport administrator"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "sport administrator",
+        "sport facility manager",
+        "sports programme coordinator"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_011",
+      "expected": [
+        "leather sorter"
+      ],
+      "retrieved_rank": 2,
+      "reranked_rank": 2,
+      "top_reranked": [
+        "hide grader",
+        "leather sorter",
+        "leather laboratory technician"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_012",
+      "expected": [
+        "demographer"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "demographer",
+        "statistician",
+        "communication scientist"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_013",
+      "expected": [
+        "early years special educational needs teacher"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "early years special educational needs teacher",
+        "special educational needs teacher",
+        "special educational needs teacher primary school"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_014",
+      "expected": [
+        "geological engineer"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "geological engineer",
+        "civil engineer",
+        "geologist"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_015",
+      "expected": [
+        "foundry moulder"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "foundry moulder",
+        "mouldmaker",
+        "foundry operative"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_016",
+      "expected": [
+        "pipeline compliance coordinator"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "pipeline compliance coordinator",
+        "pipeline route manager",
+        "pipeline environmental project manager"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_017",
+      "expected": [
+        "membership administrator"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "membership administrator",
+        "sales support assistant",
+        "insurance clerk"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_018",
+      "expected": [
+        "green coffee buyer"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "green coffee buyer",
+        "master coffee roaster",
+        "coffee taster"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_019",
+      "expected": [
+        "water jet cutter operator"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "water jet cutter operator",
+        "computer numerical control machine operator",
+        "metal sawing machine operator"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_020",
+      "expected": [
+        "animator"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "animator",
+        "animation layout artist",
+        "special effects artist"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_021",
+      "expected": [
+        "intelligence officer"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "intelligence officer",
+        "private detective",
+        "ICT research consultant"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_022",
+      "expected": [
+        "compliance engineer"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "compliance engineer",
+        "equipment engineer",
+        "process engineer"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_023",
+      "expected": [
+        "pill maker operator"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "pill maker operator",
+        "plastic rolling machine operator",
+        "tumbling machine operator"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_024",
+      "expected": [
+        "flexographic press operator"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "flexographic press operator",
+        "digital printer",
+        "offset printer"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_025",
+      "expected": [
+        "laser cutting machine operator"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "laser cutting machine operator",
+        "laser beam welder",
+        "computer numerical control machine operator"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_026",
+      "expected": [
+        "body artist"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "body artist",
+        "manicurist",
+        "tanning consultant"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_027",
+      "expected": [
+        "second-hand shop manager"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "second-hand shop manager",
+        "shop manager",
+        "ammunition shop manager"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_028",
+      "expected": [
+        "foundry operative"
+      ],
+      "retrieved_rank": 3,
+      "reranked_rank": 2,
+      "top_reranked": [
+        "mouldmaker",
+        "foundry operative",
+        "moulding machine operator"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_029",
+      "expected": [
+        "substation engineer"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "substation engineer",
+        "electric power generation engineer",
+        "thermal engineer"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_030",
+      "expected": [
+        "brick and tile caster"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "brick and tile caster",
+        "foundry operative",
+        "casting machine operator"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_031",
+      "expected": [
+        "food and beverage packaging technologist"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "food and beverage packaging technologist",
+        "packaging production manager",
+        "food technician"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_032",
+      "expected": [
+        "make-up artist"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "make-up artist",
+        "make-up and hair designer",
+        "costume designer"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_033",
+      "expected": [
+        "footwear assembly supervisor"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "footwear assembly supervisor",
+        "footwear production technician",
+        "footwear production supervisor"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_034",
+      "expected": [
+        "banking products manager"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "banking products manager",
+        "insurance product manager",
+        "financial risk manager"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_035",
+      "expected": [
+        "university research assistant"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "university research assistant",
+        "educational researcher",
+        "agricultural scientist"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_036",
+      "expected": [
+        "clothing development manager"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "clothing development manager",
+        "clothing technologist",
+        "clothing fashion designer"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_037",
+      "expected": [
+        "digital games tester"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "digital games tester",
+        "software tester",
+        "ICT system tester"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_038",
+      "expected": [
+        "veterinary receptionist"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "veterinary receptionist",
+        "veterinary nurse",
+        "veterinary technician"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_039",
+      "expected": [
+        "blow moulding machine operator"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "blow moulding machine operator",
+        "injection moulding operator",
+        "plastic rolling machine operator"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_040",
+      "expected": [
+        "sports journalist"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "sports journalist",
+        "journalist",
+        "columnist"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_041",
+      "expected": [
+        "secretary"
+      ],
+      "retrieved_rank": 2,
+      "reranked_rank": 2,
+      "top_reranked": [
+        "administrative assistant",
+        "secretary",
+        "office clerk"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_042",
+      "expected": [
+        "aquaculture cage technician"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "aquaculture cage technician",
+        "aquaculture husbandry technician",
+        "aquaculture husbandry manager"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_043",
+      "expected": [
+        "gas processing plant control room operator"
+      ],
+      "retrieved_rank": 2,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "gas processing plant control room operator",
+        "power plant control room operator",
+        "oil refinery control room operator"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_044",
+      "expected": [
+        "taxi driver"
+      ],
+      "retrieved_rank": 2,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "taxi driver",
+        "private chauffeur",
+        "bus driver"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_045",
+      "expected": [
+        "concrete finisher supervisor"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "concrete finisher supervisor",
+        "bricklaying supervisor",
+        "bridge construction supervisor"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_046",
+      "expected": [
+        "special forces officer"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "special forces officer",
+        "armed forces officer",
+        "air force officer"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_047",
+      "expected": [
+        "food safety inspector"
+      ],
+      "retrieved_rank": 2,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "food safety inspector",
+        "metal product quality control inspector",
+        "quality services manager"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_048",
+      "expected": [
+        "foster care support worker"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "foster care support worker",
+        "residential childcare worker",
+        "child day care worker"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_049",
+      "expected": [
+        "ICT auditor manager"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "ICT auditor manager",
+        "chief ICT security officer",
+        "ICT project manager"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_050",
+      "expected": [
+        "city councillor"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "city councillor",
+        "mayor",
+        "public administration manager"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_051",
+      "expected": [
+        "motor vehicle upholsterer"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "motor vehicle upholsterer",
+        "railway car upholsterer",
+        "marine upholsterer"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_052",
+      "expected": [
+        "hardware and paint shop manager"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "hardware and paint shop manager",
+        "kitchen and bathroom shop manager",
+        "eyewear and optical equipment shop manager"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_053",
+      "expected": [
+        "laundry worker"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "laundry worker",
+        "laundromat attendant",
+        "drapery and carpet cleaner"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_054",
+      "expected": [
+        "furniture finisher"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "furniture finisher",
+        "cabinet maker",
+        "wood sander"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_055",
+      "expected": [
+        "import export specialist in pharmaceutical goods"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "import export specialist in pharmaceutical goods",
+        "import export specialist in chemical products",
+        "import export specialist in machinery, industrial equipment, ships and aircraft"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_056",
+      "expected": [
+        "credit risk analyst"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "credit risk analyst",
+        "financial risk manager",
+        "credit manager"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_057",
+      "expected": [
+        "puppeteer"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "puppeteer",
+        "actor/actress",
+        "singer"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_058",
+      "expected": [
+        "animal shelter worker"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "animal shelter worker",
+        "animal care attendant",
+        "animal handler"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_059",
+      "expected": [
+        "harpsichord maker"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "harpsichord maker",
+        "harp maker",
+        "keyboard musical instrument maker"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_060",
+      "expected": [
+        "material stress analyst"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "material stress analyst",
+        "mechanical engineer",
+        "aerodynamics engineer"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_061",
+      "expected": [
+        "art handler"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "art handler",
+        "exhibition registrar",
+        "collection manager"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_062",
+      "expected": [
+        "healthcare assistant"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "healthcare assistant",
+        "midwife",
+        "doctors' surgery assistant"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_063",
+      "expected": [
+        "airspace manager"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "airspace manager",
+        "air traffic controller",
+        "aircraft pilot"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_064",
+      "expected": [
+        "fibreglass machine operator"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "fibreglass machine operator",
+        "fiberglass laminator",
+        "glass beveller"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_065",
+      "expected": [
+        "security alarm technician"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "security alarm technician",
+        "building electrician",
+        "industrial electrician"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_066",
+      "expected": [
+        "electrical equipment assembler"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "electrical equipment assembler",
+        "electrical cable assembler",
+        "control panel assembler"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_067",
+      "expected": [
+        "beverages shop manager"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "beverages shop manager",
+        "shop manager",
+        "sporting and outdoor accessories shop manager"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_068",
+      "expected": [
+        "textile chemical quality technician"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "textile chemical quality technician",
+        "textile quality inspector",
+        "textile product developer"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_069",
+      "expected": [
+        "renewable energy engineer"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "renewable energy engineer",
+        "energy engineer",
+        "energy systems engineer"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_070",
+      "expected": [
+        "ICT network architect"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "ICT network architect",
+        "ICT network engineer",
+        "ICT network technician"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_071",
+      "expected": [
+        "paper machine operator"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "paper machine operator",
+        "digester operator",
+        "envelope maker"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_072",
+      "expected": [
+        "ICT usability tester"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "ICT usability tester",
+        "ICT accessibility tester",
+        "software tester"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_073",
+      "expected": [
+        "translator"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "translator",
+        "interpreter",
+        "translation agency manager"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_074",
+      "expected": [
+        "street warden"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "street warden",
+        "police officer",
+        "civil enforcement officer"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_075",
+      "expected": [
+        "data engineer"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "data engineer",
+        "data scientist",
+        "cloud engineer"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_076",
+      "expected": [
+        "data centre operator"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "data centre operator",
+        "database administrator",
+        "data entry supervisor"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_077",
+      "expected": [
+        "governor"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "governor",
+        "senator",
+        "member of parliament"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_078",
+      "expected": [
+        "reprographics technician"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "reprographics technician",
+        "prepress operator",
+        "digital printer"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_079",
+      "expected": [
+        "slaughterer"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "slaughterer",
+        "kosher slaughterer",
+        "butcher"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_080",
+      "expected": [
+        "secondary school teaching assistant"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "secondary school teaching assistant",
+        "primary school teaching assistant",
+        "special educational needs assistant"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_081",
+      "expected": [
+        "graphologist"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "graphologist",
+        "criminologist",
+        "behavioural scientist"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_082",
+      "expected": [
+        "ICT capacity planner"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "ICT capacity planner",
+        "ICT project manager",
+        "ICT business analysis manager"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_083",
+      "expected": [
+        "carpet fitter"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "carpet fitter",
+        "concrete finisher",
+        "resilient floor layer"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_084",
+      "expected": [
+        "embedded systems software developer"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "embedded systems software developer",
+        "ICT system developer",
+        "mobile application developer"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_085",
+      "expected": [
+        "auctioneer"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "auctioneer",
+        "auction house manager"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_086",
+      "expected": [
+        "animal feed nutritionist"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "animal feed nutritionist",
+        "animal feed supervisor",
+        "food technologist"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_087",
+      "expected": [
+        "porcelain painter"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "porcelain painter",
+        "decorative painter",
+        "wood painter"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_088",
+      "expected": [
+        "import export manager in hardware, plumbing and heating equipment and supplies"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "import export manager in hardware, plumbing and heating equipment and supplies",
+        "import export manager in machine tools",
+        "import export manager in chemical products"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_089",
+      "expected": [
+        "gas processing plant supervisor"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "gas processing plant supervisor",
+        "gas station operator",
+        "gas production engineer"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_090",
+      "expected": [
+        "personal stylist"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "personal stylist",
+        "personal shopper",
+        "clothing specialised seller"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_091",
+      "expected": [
+        "information manager"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "information manager",
+        "librarian",
+        "big data archive librarian"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_092",
+      "expected": [
+        "rustproofer"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "rustproofer",
+        "tumbling machine operator",
+        "anodising machine operator"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_093",
+      "expected": [
+        "geology technician"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "geology technician",
+        "geologist",
+        "mineralogist"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_094",
+      "expected": [
+        "freight inspector"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "freight inspector",
+        "marine cargo inspector",
+        "weights and measures inspector"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_095",
+      "expected": [
+        "movie distributor"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "movie distributor",
+        "script writer",
+        "casting director"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_096",
+      "expected": [
+        "asbestos abatement worker"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "asbestos abatement worker",
+        "decontamination worker",
+        "building exterior cleaner"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_097",
+      "expected": [
+        "aircraft gas turbine engine overhaul technician"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "aircraft gas turbine engine overhaul technician",
+        "rotating equipment mechanic",
+        "aircraft engine assembler"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_098",
+      "expected": [
+        "steward/stewardess"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "steward/stewardess",
+        "flight attendant",
+        "ship steward/ship stewardess"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_099",
+      "expected": [
+        "baggage flow supervisor"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "baggage flow supervisor",
+        "airport chief executive",
+        "airport operations officer"
+      ],
+      "used_relaxed_matching": false
+    },
+    {
+      "profile_id": "synthetic_100",
+      "expected": [
+        "general veterinarian"
+      ],
+      "retrieved_rank": 1,
+      "reranked_rank": 1,
+      "top_reranked": [
+        "general veterinarian",
+        "specialised veterinarian",
+        "veterinary scientist"
+      ],
+      "used_relaxed_matching": false
+    }
+  ]
+}
