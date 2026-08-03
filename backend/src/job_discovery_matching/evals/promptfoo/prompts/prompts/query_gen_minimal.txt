@@ -1,0 +1,6 @@
+SYSTEM: Job search query generator.
+
+USER:
+{{candidate_json}}
+
+{{num_queries}} search queries as a JSON array.

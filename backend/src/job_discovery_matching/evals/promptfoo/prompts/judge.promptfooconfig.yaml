@@ -1,0 +1,38 @@
+# promptfoo eval #1b — "different kinds of prompts" for the JUDGE_BATCH call.
+#
+# Compares 2 rubric phrasings (baseline vs strict/conservative) across 2
+# batched job-scoring test cases. Deterministic grading only — total calls
+# = 2 prompts x 2 tests = 4.
+
+description: "career-agent :: judge_batch prompt variants"
+
+prompts:
+  - file://prompts/judge_baseline.txt
+  - file://prompts/judge_strict_rubric.txt
+  - file://prompts/judge_chain_of_thought.txt
+  - file://prompts/judge_comparative.txt
+  - file://prompts/judge_narrative.txt
+  - file://prompts/judge_weighted_criteria.txt
+
+providers:
+  - id: python:providers/llm_provider.py
+    label: openrouter-nemotron
+    config:
+      temperature: 0.0
+      max_tokens: 1400
+
+tests: file://tests/judge_cases.yaml
+
+defaultTest:
+  assert:
+    - type: python
+      value: file://validators.py:check_judge_array
+      metric: judge_schema_score
+    - type: python
+      value: file://validators.py:check_judge_calibration
+      metric: judge_calibration_score
+    - type: latency
+      threshold: 20000
+      metric: latency_ok
+
+cache: true

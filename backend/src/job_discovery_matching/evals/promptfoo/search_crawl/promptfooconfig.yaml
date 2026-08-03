@@ -1,0 +1,74 @@
+# promptfoo eval #2 — search (SearXNG) + crawl (Crawl4AI) parameter sweep,
+# scored on coverage, crawl success rate, and latency. Zero LLM calls.
+#
+# Each "provider" below is one parameter combination (same script, different
+# config) so promptfoo's results table becomes a parameter-comparison grid:
+# rows = queries, columns = parameter sets, cells = coverage/success/latency.
+#
+# Defaults to MOCK mode automatically if SearXNG/Crawl4AI aren't reachable
+# (see providers/search_crawl_provider.py). For a real run: launch
+# `docker compose up searxng redis` and run this from an env with
+# backend/requirements.txt installed, or `export EVAL_MOCK=0` inside the
+# backend container.
+
+description: "career-agent :: search + crawl parameter sweep"
+
+prompts:
+  - file://prompts/passthrough.txt
+
+providers:
+  - id: python:providers/search_crawl_provider.py
+    label: current_default            # mirrors config.py defaults today
+    config:
+      max_results: 8
+      crawl_urls_limit: 5
+      crawl_concurrency: 3
+      crawl_timeout_ms: 15000
+
+  - id: python:providers/search_crawl_provider.py
+    label: wide_net_slow
+    config:
+      max_results: 15
+      crawl_urls_limit: 10
+      crawl_concurrency: 3
+      crawl_timeout_ms: 15000
+
+  - id: python:providers/search_crawl_provider.py
+    label: narrow_fast
+    config:
+      max_results: 5
+      crawl_urls_limit: 3
+      crawl_concurrency: 3
+      crawl_timeout_ms: 8000
+
+  - id: python:providers/search_crawl_provider.py
+    label: high_concurrency
+    config:
+      max_results: 8
+      crawl_urls_limit: 8
+      crawl_concurrency: 6
+      crawl_timeout_ms: 15000
+
+  - id: python:providers/search_crawl_provider.py
+    label: low_concurrency_safe
+    config:
+      max_results: 8
+      crawl_urls_limit: 5
+      crawl_concurrency: 1
+      crawl_timeout_ms: 20000
+
+tests: file://tests/queries.yaml
+
+defaultTest:
+  assert:
+    - type: python
+      value: file://validators.py:check_coverage
+      metric: coverage_score
+    - type: python
+      value: file://validators.py:check_crawl_success_rate
+      metric: crawl_success_score
+    - type: latency
+      threshold: 30000
+      metric: latency_ok
+
+cache: true
