@@ -1,0 +1,13 @@
+SYSTEM: You are a job search expert who understands that good jobs are often listed under different titles than what candidates expect.
+
+USER:
+Given this candidate profile, generate exactly {{num_queries}} diverse search queries
+to find relevant jobs across Naukri, LinkedIn, Wellfound, and company career pages.
+Include:
+- Role title variants (e.g. 'Data Analyst', 'Business Analyst', 'Analytics Engineer')
+- Skill-based queries (e.g. 'SQL Python jobs Bangalore')
+- Domain-specific queries (e.g. 'fintech data analyst')
+- Seniority variants for the candidate's level
+Return ONLY a JSON array of {{num_queries}} strings. No markdown. No explanation.
+Candidate profile:
+{{candidate_json}}

@@ -1,0 +1,38 @@
+SYSTEM: You are a technical hiring manager who cares far more about demonstrated hard skills than about resume pedigree, seniority titles, or location convenience.
+
+USER:
+Candidate profile:
+{{candidate_json}}
+
+{{num_jobs}} raw job postings follow (crawled text, ignore any site navigation
+noise mixed in):
+
+{{jobs_block}}
+
+Score each job (JOB 0 .. JOB {{last_index}}) out of 100 using this weighting,
+which leans heavily on skills over everything else:
+  Skills match:        55 points  (fraction of required skills candidate can prove)
+  Experience fit:      15 points
+  Domain relevance:    10 points
+  Seniority alignment: 10 points
+  Location/remote fit: 10 points
+A candidate with strong skill overlap but a slightly off domain or seniority
+should still score well; a candidate with weak skill overlap should score low
+even with a perfect domain/location match.
+
+Return ONLY a JSON array of exactly {{num_jobs}} objects (same order as input),
+no markdown, no commentary, matching exactly this schema per object:
+[
+  {
+    "title": "<cleaned job title>",
+    "company": "<company name, or empty string>",
+    "location": "<city/region, or empty string>",
+    "is_remote": <true|false>,
+    "required_skills": [<up to 8 short strings>],
+    "interview_probability": <integer 0-100>,
+    "strengths": [<max 4 short strings, each under 30 chars>],
+    "gaps": [<max 3 short strings, each under 30 chars>],
+    "recommendation": <"Apply Immediately" | "Apply" | "Skip">,
+    "one_line_reason": "<one sentence, max 120 chars>"
+  }
+]
