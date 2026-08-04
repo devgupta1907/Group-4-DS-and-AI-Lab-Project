@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: dsai_postgres
+    environment:
+      POSTGRES_USER: dsai
+      POSTGRES_PASSWORD: dsai
+      POSTGRES_DB: dsai
+    ports:
+      - "5432:5432"
+    volumes:
+      - dsai_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dsai -d dsai"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  dsai_pgdata:

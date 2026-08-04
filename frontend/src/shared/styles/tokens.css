@@ -1,0 +1,99 @@
+/*
+ * Design tokens. Every colour, space, radius and type size in the app comes
+ * from here — components never hardcode a hex value (AGENTS.md rule 7).
+ */
+
+:root {
+  /* --- neutral ramp --- */
+  --c-bg: #f7f8fa;
+  --c-surface: #ffffff;
+  --c-surface-sunken: #f1f3f6;
+  --c-border: #e2e5ea;
+  --c-border-strong: #cbd1d9;
+
+  --c-text: #16191d;
+  --c-text-muted: #5c6570;
+  --c-text-subtle: #8a929c;
+
+  /* --- accent --- */
+  --c-accent: #2f5bd8;
+  --c-accent-hover: #2549b3;
+  --c-accent-soft: #e8eeff;
+  --c-accent-ring: rgb(47 91 216 / 35%);
+
+  /* --- status --- */
+  --c-success: #17794a;
+  --c-success-soft: #e2f4ea;
+  --c-warning: #8a5a00;
+  --c-warning-soft: #fdf0d5;
+  --c-danger: #b3261e;
+  --c-danger-soft: #fdecea;
+
+  /* --- spacing (4px base) --- */
+  --s-1: 0.25rem;
+  --s-2: 0.5rem;
+  --s-3: 0.75rem;
+  --s-4: 1rem;
+  --s-5: 1.5rem;
+  --s-6: 2rem;
+  --s-7: 3rem;
+
+  /* --- radii --- */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-pill: 999px;
+
+  /* --- type scale --- */
+  --f-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', sans-serif;
+  --f-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+
+  --t-xs: 0.75rem;
+  --t-sm: 0.8125rem;
+  --t-base: 0.9375rem;
+  --t-md: 1.0625rem;
+  --t-lg: 1.375rem;
+  --t-xl: 1.75rem;
+
+  /* --- elevation --- */
+  --e-1: 0 1px 2px rgb(16 24 40 / 6%);
+  --e-2: 0 2px 8px rgb(16 24 40 / 8%);
+  --e-3: 0 8px 24px rgb(16 24 40 / 10%);
+
+  /* --- motion --- */
+  --m-fast: 120ms ease;
+  --m-base: 200ms ease;
+
+  --layout-max: 1240px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --c-bg: #101216;
+    --c-surface: #181b21;
+    --c-surface-sunken: #12151a;
+    --c-border: #272c34;
+    --c-border-strong: #39404a;
+
+    --c-text: #eef1f5;
+    --c-text-muted: #a2abb6;
+    --c-text-subtle: #79828d;
+
+    --c-accent: #7f9dff;
+    --c-accent-hover: #9ab1ff;
+    --c-accent-soft: #1c2540;
+    --c-accent-ring: rgb(127 157 255 / 40%);
+
+    --c-success: #5cc98d;
+    --c-success-soft: #14291f;
+    --c-warning: #e0b25e;
+    --c-warning-soft: #2b2213;
+    --c-danger: #f08a80;
+    --c-danger-soft: #2e1917;
+
+    --e-1: 0 1px 2px rgb(0 0 0 / 40%);
+    --e-2: 0 2px 8px rgb(0 0 0 / 45%);
+    --e-3: 0 8px 24px rgb(0 0 0 / 50%);
+  }
+}

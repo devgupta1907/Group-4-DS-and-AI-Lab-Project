@@ -1,0 +1,98 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+
+.step {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-1) 0;
+  font-size: var(--t-sm);
+  color: var(--c-text-subtle);
+  transition: color var(--m-base);
+}
+
+/* The connecting rail, drawn from each marker down to the next. */
+.step:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  left: 9px;
+  top: calc(50% + 10px);
+  height: calc(100% - 12px);
+  width: 2px;
+  background: var(--c-border);
+}
+
+.marker {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--r-pill);
+  border: 2px solid var(--c-border-strong);
+  background: var(--c-surface);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  transition:
+    border-color var(--m-base),
+    background var(--m-base);
+}
+
+.done {
+  color: var(--c-text-muted);
+}
+
+.done .marker {
+  background: var(--c-success);
+  border-color: var(--c-success);
+  color: #fff;
+}
+
+.done:not(:last-child)::before {
+  background: var(--c-success);
+}
+
+.active {
+  color: var(--c-text);
+  font-weight: 550;
+}
+
+.active .marker {
+  border-color: var(--c-accent);
+  box-shadow: 0 0 0 4px var(--c-accent-ring);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.failed {
+  color: var(--c-danger);
+}
+
+.failed .marker {
+  background: var(--c-danger);
+  border-color: var(--c-danger);
+  color: #fff;
+}
+
+.detail {
+  margin-top: var(--s-3);
+  padding-left: 32px;
+  font-size: var(--t-xs);
+  color: var(--c-text-subtle);
+  font-family: var(--f-mono);
+  overflow-wrap: anywhere;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 3px var(--c-accent-ring);
+  }
+  50% {
+    box-shadow: 0 0 0 6px transparent;
+  }
+}

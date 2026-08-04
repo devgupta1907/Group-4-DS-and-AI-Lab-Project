@@ -1,0 +1,109 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "parsed_resume_schema.json",
+  "title": "Candidate Profile",
+  "description": "The Resume Parsing module's output contract. Email, phone, date of birth, gender, marital status, nationality, parent/spouse name, photographs and government identifiers are deliberately absent: `additionalProperties: false` makes validation reject them before persistence even if a model transcribes them.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contact",
+    "skills",
+    "education",
+    "experience",
+    "projects",
+    "certifications",
+    "job_titles"
+  ],
+  "properties": {
+    "contact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "location", "links"],
+      "properties": {
+        "name": { "type": ["string", "null"] },
+        "location": { "type": ["string", "null"] },
+        "links": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Public professional links only (e.g. LinkedIn, GitHub, portfolio)."
+        }
+      }
+    },
+    "skills": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Skills, software tools, technologies and competencies. Deduplicated case-insensitively."
+    },
+    "education": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["degree", "field", "institution", "start_year", "end_year"],
+        "properties": {
+          "degree": { "type": ["string", "null"] },
+          "field": { "type": ["string", "null"] },
+          "institution": { "type": ["string", "null"] },
+          "start_year": { "type": ["string", "null"] },
+          "end_year": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "experience": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "job_title",
+          "company",
+          "location",
+          "start_date",
+          "end_date",
+          "current_role",
+          "description"
+        ],
+        "properties": {
+          "job_title": { "type": ["string", "null"] },
+          "company": { "type": ["string", "null"] },
+          "location": { "type": ["string", "null"] },
+          "start_date": { "type": ["string", "null"] },
+          "end_date": { "type": ["string", "null"] },
+          "current_role": { "type": ["boolean", "null"] },
+          "description": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "projects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "description", "technologies"],
+        "properties": {
+          "name": { "type": ["string", "null"] },
+          "description": { "type": ["string", "null"] },
+          "technologies": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "certifications": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "issuer", "year"],
+        "properties": {
+          "name": { "type": ["string", "null"] },
+          "issuer": { "type": ["string", "null"] },
+          "year": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "job_titles": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Normalised current and previous role titles."
+    }
+  }
+}
