@@ -1,0 +1,60 @@
+# promptfoo eval #3 — hybrid (BM25 + embedding) ranking parameter sweep,
+# scored against the Job_Matching_Golden_Dataset (86 candidates x 10 jobs,
+# real ground truth — see evals/scripts/build_ranking_dataset_from_xlsx.py)
+# with the metrics the dataset's own README recommends: Precision@5,
+# NDCG@10, and Spearman rank correlation, plus latency. Zero LLM calls —
+# matching_module.py never calls an LLM in production either.
+#
+# NOTE: top_k_ranked is capped at 10 everywhere below because each
+# candidate only has 10 jobs in this dataset — a top_k_ranked > 10 would
+# be a no-op, and matters for latency only when this eval runs against a
+# real (larger) job pool.
+
+description: "career-agent :: hybrid ranking weight sweep"
+
+prompts:
+  - file://prompts/passthrough.txt
+
+providers:
+  - id: python:providers/ranking_provider.py
+    label: current_default          # matches config.py defaults today
+    config: { bm25_weight: 0.4, embedding_weight: 0.3, top_k_ranked: 10 }
+
+  - id: python:providers/ranking_provider.py
+    label: bm25_heavy
+    config: { bm25_weight: 0.7, embedding_weight: 0.3, top_k_ranked: 10 }
+
+  - id: python:providers/ranking_provider.py
+    label: embedding_heavy
+    config: { bm25_weight: 0.3, embedding_weight: 0.7, top_k_ranked: 10 }
+
+  - id: python:providers/ranking_provider.py
+    label: balanced_50_50
+    config: { bm25_weight: 0.5, embedding_weight: 0.5, top_k_ranked: 10 }
+
+  - id: python:providers/ranking_provider.py
+    label: bm25_only
+    config: { bm25_weight: 1.0, embedding_weight: 0.0, top_k_ranked: 10 }
+
+  - id: python:providers/ranking_provider.py
+    label: embedding_only
+    config: { bm25_weight: 0.0, embedding_weight: 1.0, top_k_ranked: 10 }
+
+tests: file://tests/candidates.yaml
+
+defaultTest:
+  assert:
+    - type: python
+      value: file://validators.py:precision_at_5
+      metric: precision_at_5
+    - type: python
+      value: file://validators.py:ndcg_at_10
+      metric: ndcg_at_10
+    - type: python
+      value: file://validators.py:spearman_correlation
+      metric: spearman_correlation
+    - type: latency
+      threshold: 5000
+      metric: latency_ok
+
+cache: true
