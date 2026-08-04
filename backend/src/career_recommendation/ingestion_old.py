@@ -4,8 +4,8 @@ import time
 import pandas as pd
 from tqdm import tqdm
 from langchain_core.documents import Document
-# from langchain_chroma import Chroma
-from db.supabase_manager import get_vector_store
+from langchain_chroma import Chroma
+
 from core.config import GlobalConfig
 from services.llm_client import document_embeddings
 from career_recommendation.config import CareerRecommendationModuleConfig
@@ -112,19 +112,22 @@ def build_vector_store():
         else GlobalConfig.HF_EMBEDDING_MODEL
     )
     logger.info("Provider: %s | Model: %s | Dims: %s", GlobalConfig.EMBEDDING_PROVIDER, model_name, GlobalConfig.EMBEDDING_DIM)
-    
-    # Initialize Supabase vector store
-    vectorstore = get_vector_store()
+    logger.info("Target: %s | Collection: %s", GlobalConfig.CHROMA_DB_DIR, GlobalConfig.CHROMA_COLLECTION)
+
+    vectorstore = Chroma(
+        collection_name=GlobalConfig.CHROMA_COLLECTION,
+        embedding_function=document_embeddings,
+        persist_directory=GlobalConfig.CHROMA_DB_DIR,
+        collection_metadata={"hnsw:space": "cosine"},
+    )
 
     # --- Resume support: skip anything already embedded ---
     existing = set()
     try:
-        # Fetch existing URIs directly from Supabase
-        response = vectorstore.client.table("documents").select("metadata->>occupation_uri").execute()
-        existing = {row["occupation_uri"] for row in response.data if "occupation_uri" in row}
-    except Exception as exc:
-        logger.warning("Could not fetch existing documents, proceeding with full insert. %s", exc)
-        
+        got = vectorstore._collection.get(include=["metadatas"])
+        existing = {m.get("occupation_uri") for m in got["metadatas"]}
+    except Exception:
+        pass
     if existing:
         logger.info("Resuming: %d already embedded, skipping those.", len(existing))
         docs = [d for d in docs if d.metadata["occupation_uri"] not in existing]
@@ -165,7 +168,7 @@ def build_vector_store():
         if PAUSE and done < total:
             time.sleep(PAUSE)
 
-    logger.info("Success! Vectors uploaded to Supabase pgvector.")
+    logger.info("Success! %d vectors at %s", vectorstore._collection.count(), GlobalConfig.CHROMA_DB_DIR)
 
 
 if __name__ == "__main__":
