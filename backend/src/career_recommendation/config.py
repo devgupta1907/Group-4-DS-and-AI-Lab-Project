@@ -11,10 +11,6 @@ class CareerRecommendationModuleConfig:
     # RAG Parameters
     RETRIEVAL_TOP_K = 20
     FINAL_TOP_K = 5
-
-    # Re-ranking weights. An essential-skill match is stronger evidence of
-    # fit than an optional one. Manually set, not yet tuned against a
-    # labelled validation set (deferred to Milestone 5).
     ESSENTIAL_SKILL_WEIGHT = 1.0
     OPTIONAL_SKILL_WEIGHT = 0.5
     SKILL_BONUS_WEIGHT = 0.02

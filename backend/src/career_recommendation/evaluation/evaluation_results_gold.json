@@ -14,36 +14,36 @@
   "n_failures": 0,
   "skipped": [],
   "failures": [],
-  "elapsed_seconds": 14.9,
+  "elapsed_seconds": 14.8,
   "retrieval_stage": {
-    "MRR": 0.6018,
+    "MRR": 0.611,
     "HitRate@1": 0.4651,
     "Recall@1": 0.157,
     "Precision@1": 0.4651,
-    "HitRate@3": 0.686,
-    "Recall@3": 0.3285,
-    "Precision@3": 0.345,
-    "HitRate@5": 0.7791,
-    "Recall@5": 0.4205,
-    "Precision@5": 0.2651,
-    "HitRate@10": 0.8953,
-    "Recall@10": 0.5785,
-    "Precision@10": 0.1779,
-    "HitRate@20": 0.907,
-    "Recall@20": 0.7006,
-    "Precision@20": 0.1076
+    "HitRate@3": 0.6977,
+    "Recall@3": 0.3304,
+    "Precision@3": 0.3488,
+    "HitRate@5": 0.8256,
+    "Recall@5": 0.4291,
+    "Precision@5": 0.2744,
+    "HitRate@10": 0.907,
+    "Recall@10": 0.5835,
+    "Precision@10": 0.1826,
+    "HitRate@20": 0.9186,
+    "Recall@20": 0.7017,
+    "Precision@20": 0.1099
   },
   "reranked_stage": {
-    "MRR": 0.5965,
+    "MRR": 0.6105,
     "HitRate@1": 0.4884,
     "Recall@1": 0.1647,
     "Precision@1": 0.4884,
-    "HitRate@3": 0.6744,
-    "Recall@3": 0.3295,
-    "Precision@3": 0.3372,
-    "HitRate@5": 0.7907,
-    "Recall@5": 0.4225,
-    "Precision@5": 0.2605
+    "HitRate@3": 0.686,
+    "Recall@3": 0.3324,
+    "Precision@3": 0.3411,
+    "HitRate@5": 0.8372,
+    "Recall@5": 0.431,
+    "Precision@5": 0.2698
   },
   "per_category_hitrate_at_5": {
     "Accountant": 1.0,
@@ -54,7 +54,7 @@
     "Arts": 0.0,
     "Automobile": 1.0,
     "Aviation": 0.5,
-    "BPO": 0.0,
+    "BPO": 1.0,
     "Banking": 1.0,
     "Blockchain": 0.5,
     "Building & Construction": 1.0,
@@ -63,12 +63,12 @@
     "Consultant": 0.5,
     "Data Science": 1.0,
     "Database": 1.0,
-    "Designer": 0.5,
+    "Designer": 1.0,
     "DevOps Engineer": 1.0,
     "Digital Media": 1.0,
     "DotNet Developer": 1.0,
     "ETL Developer": 1.0,
-    "Education": 0.5,
+    "Education": 1.0,
     "Electrical Engineer": 1.0,
     "Finance": 0.5,
     "Food & Beverages": 1.0,
@@ -676,7 +676,8 @@
       "acceptable": [
         "graphic designer",
         "user interface designer",
-        "industrial designer"
+        "industrial designer",
+        "interior designer"
       ],
       "retrieved_rank": 3,
       "reranked_rank": 4,
@@ -695,7 +696,8 @@
       "category": "Education",
       "acceptable": [
         "education administrator",
-        "learning support teacher"
+        "learning support teacher",
+        "child care worker"
       ],
       "retrieved_rank": 5,
       "reranked_rank": 5,
@@ -714,10 +716,11 @@
       "category": "Education",
       "acceptable": [
         "education administrator",
-        "learning support teacher"
+        "learning support teacher",
+        "child care worker"
       ],
-      "retrieved_rank": 10,
-      "reranked_rank": null,
+      "retrieved_rank": 4,
+      "reranked_rank": 4,
       "top_reranked": [
         "early years teacher",
         "early years special educational needs teacher",
@@ -735,10 +738,11 @@
         "call centre agent",
         "customer service representative",
         "contact centre supervisor",
-        "client relations manager"
+        "client relations manager",
+        "operations manager"
       ],
-      "retrieved_rank": 6,
-      "reranked_rank": null,
+      "retrieved_rank": 4,
+      "reranked_rank": 4,
       "top_reranked": [
         "service manager",
         "business manager",
@@ -775,10 +779,11 @@
       "acceptable": [
         "graphic designer",
         "user interface designer",
-        "industrial designer"
+        "industrial designer",
+        "interior designer"
       ],
-      "retrieved_rank": 7,
-      "reranked_rank": null,
+      "retrieved_rank": 2,
+      "reranked_rank": 2,
       "top_reranked": [
         "interior architect",
         "interior designer",
@@ -997,10 +1002,11 @@
         "call centre agent",
         "customer service representative",
         "contact centre supervisor",
-        "client relations manager"
+        "client relations manager",
+        "operations manager"
       ],
-      "retrieved_rank": null,
-      "reranked_rank": null,
+      "retrieved_rank": 5,
+      "reranked_rank": 5,
       "top_reranked": [
         "intermodal logistics manager",
         "forwarding manager",
