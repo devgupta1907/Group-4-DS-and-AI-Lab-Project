@@ -31,11 +31,6 @@ dependencies = [
     "sqlalchemy[asyncio]>=2.0.36",
     "langsmith>=0.10.10",
 ]
-[dependency-groups]
-dev = [
-    "pytest>=8.3.0",
-]
-
 
 [dependency-groups]
 dev = [
@@ -49,7 +44,7 @@ dev = [
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
-pythonpath = ["."]
+pythonpath = ["src"]
 
 [tool.ruff]
 line-length = 100
@@ -60,6 +55,7 @@ select = ["E", "F", "I", "UP", "B", "TID"]
 
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "parents"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -70,8 +66,6 @@ packages = [
     "src/db",
     "src/services",
     "src/career_recommendation",
+    "src/resume_parsing",
+    "src/job_discovery_matching",
 ]
-
-[tool.pytest.ini_options]
-pythonpath = ["src"]
-testpaths = ["tests"]
