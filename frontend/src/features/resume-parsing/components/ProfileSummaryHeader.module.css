@@ -1,0 +1,58 @@
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  padding: var(--s-5);
+  background: linear-gradient(180deg, var(--c-accent-soft), transparent);
+  border-bottom: 1px solid var(--c-border);
+}
+
+.identity {
+  min-width: 0;
+}
+
+.name {
+  font-size: var(--t-xl);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.subtitle {
+  margin-top: var(--s-1);
+  color: var(--c-text-muted);
+  font-size: var(--t-base);
+}
+
+.stats {
+  display: flex;
+  gap: var(--s-6);
+  margin: 0;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.statValue {
+  margin: 0;
+  font-size: var(--t-lg);
+  font-weight: 650;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.statLabel {
+  font-size: var(--t-xs);
+  color: var(--c-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.provenance {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}

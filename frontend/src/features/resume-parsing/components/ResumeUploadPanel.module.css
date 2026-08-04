@@ -1,0 +1,32 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+.progress {
+  padding-top: var(--s-1);
+}
+
+.actions:empty {
+  display: none;
+}
+
+.actions {
+  display: flex;
+  gap: var(--s-2);
+}
+
+.code {
+  font-family: var(--f-mono);
+  font-size: var(--t-xs);
+  opacity: 0.8;
+}
+
+.disclosure {
+  padding-top: var(--s-3);
+  border-top: 1px dashed var(--c-border);
+  color: var(--c-text-subtle);
+  font-size: var(--t-xs);
+  line-height: 1.5;
+}

@@ -1,0 +1,62 @@
+.page {
+  max-width: var(--layout-max);
+  margin: 0 auto;
+  padding: var(--s-7) var(--s-5) var(--s-7);
+}
+
+.masthead {
+  max-width: 62ch;
+  margin-bottom: var(--s-6);
+}
+
+.eyebrow {
+  color: var(--c-accent);
+  font-size: var(--t-xs);
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin-top: var(--s-2);
+  font-size: var(--t-xl);
+  font-weight: 680;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+
+.lede {
+  margin-top: var(--s-3);
+  color: var(--c-text-muted);
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: minmax(320px, 400px) minmax(0, 1fr);
+  gap: var(--s-5);
+  align-items: start;
+}
+
+/* The upload card follows the results as they scroll past it. */
+.left {
+  position: sticky;
+  top: var(--s-5);
+}
+
+.right {
+  min-width: 0;
+}
+
+@media (width <= 940px) {
+  .page {
+    padding: var(--s-5) var(--s-4);
+  }
+
+  .columns {
+    grid-template-columns: 1fr;
+  }
+
+  .left {
+    position: static;
+  }
+}
