@@ -31,6 +31,11 @@ dependencies = [
     "sqlalchemy[asyncio]>=2.0.36",
     "langsmith>=0.10.10",
 ]
+[dependency-groups]
+dev = [
+    "pytest>=8.3.0",
+]
+
 
 [dependency-groups]
 dev = [
@@ -66,3 +71,7 @@ packages = [
     "src/services",
     "src/career_recommendation",
 ]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
