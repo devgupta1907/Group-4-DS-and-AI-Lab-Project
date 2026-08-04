@@ -1,0 +1,18 @@
+# Representative queries pulled from real query_generator output shapes.
+# expected_min_urls is a soft floor used by the coverage assertion — tune
+# it once you've looked at real SearXNG output for your instance/engines.
+- vars:
+    query: "Data Analyst jobs Bangalore"
+    expected_min_urls: 4
+- vars:
+    query: "SQL Python analyst fintech"
+    expected_min_urls: 3
+- vars:
+    query: "Senior Backend Engineer Java Kafka Pune"
+    expected_min_urls: 3
+- vars:
+    query: "Machine Learning Engineer remote India"
+    expected_min_urls: 3
+- vars:
+    query: "Product Manager SaaS remote"
+    expected_min_urls: 3

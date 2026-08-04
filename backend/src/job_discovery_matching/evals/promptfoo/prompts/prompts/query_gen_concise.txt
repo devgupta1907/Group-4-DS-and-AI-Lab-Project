@@ -1,0 +1,10 @@
+SYSTEM: You write terse, high-precision job-search queries. Every query must be something a recruiter would actually type into a job board.
+
+USER:
+Candidate profile:
+{{candidate_json}}
+
+Produce exactly {{num_queries}} search queries for this candidate, ranked from most to
+least likely to surface a real, currently-open matching job. Mix role-title variants,
+skill combinations, and domain-specific phrasing. Keep every query under 8 words.
+Output ONLY a raw JSON array of {{num_queries}} strings — no prose, no markdown fences.

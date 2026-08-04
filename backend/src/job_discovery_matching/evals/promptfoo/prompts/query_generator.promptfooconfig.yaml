@@ -1,0 +1,45 @@
+# promptfoo eval #1a — "different kinds of prompts" for the QUERY_GENERATOR call.
+#
+# Compares 3 rewordings of the same instruction (baseline / concise / roleplay)
+# across 4 candidate profiles. Grading is 100% deterministic (see validators.py)
+# — no llm-rubric assertions — so total LLM calls for this file are exactly
+# (3 prompts x 4 tests) = 12, not 24+ (would double with a model grader).
+#
+# Run offline/mocked (no API key, no spend) with EVAL_MOCK=1, or for real by
+# exporting OPENROUTER_API_KEY and unsetting EVAL_MOCK.
+
+description: "career-agent :: query_generator prompt variants"
+
+prompts:
+  - file://prompts/query_gen_baseline.txt
+  - file://prompts/query_gen_concise.txt
+  - file://prompts/query_gen_roleplay.txt
+  - file://prompts/query_gen_minimal.txt
+  - file://prompts/query_gen_few_shot.txt
+  - file://prompts/query_gen_chain_of_thought.txt
+  - file://prompts/query_gen_boolean_operators.txt
+
+providers:
+  - id: python:providers/llm_provider.py
+    label: openrouter-nemotron
+    config:
+      temperature: 0.3
+      max_tokens: 600
+
+tests: file://tests/candidates.yaml
+
+defaultTest:
+  assert:
+    - type: python
+      value: file://validators.py:check_query_array
+      metric: query_schema_score
+    - type: python
+      value: file://validators.py:check_query_diversity
+      metric: query_diversity_score
+    - type: latency
+      threshold: 12000
+      metric: latency_ok
+
+# Cache identical (prompt, provider, vars) triples across repeated `promptfoo
+# eval` runs so re-running while tuning validators.py doesn't re-spend calls.
+cache: true
