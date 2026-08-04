@@ -13,8 +13,7 @@ Works against the enriched v2 index, whose documents contain:
 from langchain_core.documents import Document
 
 from core.config import GlobalConfig
-# from db.chroma_manager import get_vector_store
-from db.supabase_manager import get_vector_store
+from db.chroma_manager import get_vector_store
 from career_recommendation.config import CareerRecommendationModuleConfig
 
 # BGE models are asymmetric: short queries must carry this instruction

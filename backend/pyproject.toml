@@ -30,6 +30,8 @@ dependencies = [
     "python-multipart>=0.0.20",
     "sqlalchemy[asyncio]>=2.0.36",
     "langsmith>=0.10.10",
+    "psycopg2-binary>=2.9.12",
+    "supabase>=2.31.0",
 ]
 
 [dependency-groups]

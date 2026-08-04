@@ -15,15 +15,17 @@ preference. Exercise with, e.g.:
 """
 
 from __future__ import annotations
+
 import logging
+
 from fastapi import APIRouter, BackgroundTasks, HTTPException
+
 from career_recommendation.models import CandidateProfile
 from career_recommendation.re_ranker import CareerRecommendationResult
 from career_recommendation.service import get_recommendations_for_candidate, recommend_for_profile
 from career_recommendation import ingestion
 from core.config import GlobalConfig
-# from db.chroma_manager import get_vector_store
-from db.supabase_manager import get_vector_store
+from db.chroma_manager import get_vector_store
 
 logger = logging.getLogger(__name__)
 
@@ -41,16 +43,14 @@ _rebuild_in_progress = {"value": False}
 def health():
     """
     Reports whether the ESCO vector index is reachable and populated.
+    Does not call any LLM — this is meant to be cheap enough to poll.
     """
     try:
         vectorstore = get_vector_store()
-        # Query Supabase directly to get the row count
-        response = vectorstore._client.table("documents").select("*", count="exact", head=True).execute()
-        count = response.count
-        
+        count = vectorstore._collection.count()
         return {
             "status": "ok" if count > 0 else "empty_index",
-            "collection": "supabase_documents",
+            "collection": GlobalConfig.CHROMA_COLLECTION,
             "indexed_occupations": count,
             "embedding_provider": GlobalConfig.EMBEDDING_PROVIDER,
         }
