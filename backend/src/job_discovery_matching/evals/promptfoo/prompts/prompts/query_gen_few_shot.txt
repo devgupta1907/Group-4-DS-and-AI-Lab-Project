@@ -1,0 +1,19 @@
+SYSTEM: You generate job search queries by pattern-matching against examples of queries that performed well.
+
+USER:
+Here is an example of a well-built query set for a DIFFERENT candidate
+(a mid-level Frontend Engineer with React/TypeScript skills, e-commerce
+domain, Mumbai, 3 years experience):
+["Frontend Engineer React TypeScript Mumbai", "React Developer e-commerce 3 years",
+ "UI Engineer TypeScript Mumbai", "Senior Frontend Developer e-commerce India",
+ "React TypeScript jobs Mumbai hybrid", "Frontend Engineer Mumbai 2-4 years"]
+
+Notice the pattern: each query mixes at most 2-3 signals (role + skill + location,
+or role + domain + experience), stays short, and together they cover different
+angles rather than repeating the same 2 keywords.
+
+Now apply the same pattern to this candidate:
+{{candidate_json}}
+
+Produce exactly {{num_queries}} queries following that pattern.
+Return ONLY a JSON array of {{num_queries}} strings — no markdown, no explanation.

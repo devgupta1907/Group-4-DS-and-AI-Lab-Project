@@ -1,0 +1,41 @@
+# Test candidates for the query_generator prompt eval.
+# Each row becomes one promptfoo test case (crossed with every prompt variant).
+- vars:
+    candidate_name: "junior_data_analyst"
+    num_queries: 6
+    candidate_json: |
+      {"name": "Asha Rao", "experience_years": 1.5, "current_role": "Data Analyst",
+       "target_roles": ["Data Analyst", "Business Analyst"],
+       "skills": ["SQL", "Python", "Excel", "Power BI", "Tableau"],
+       "domain": "fintech", "location": "Bangalore", "remote_ok": true,
+       "min_salary_lpa": 8, "education": "B.Tech CSE"}
+
+- vars:
+    candidate_name: "senior_backend_engineer"
+    num_queries: 6
+    candidate_json: |
+      {"name": "Karan Mehta", "experience_years": 7, "current_role": "Senior Backend Engineer",
+       "target_roles": ["Staff Engineer", "Engineering Manager"],
+       "skills": ["Java", "Spring Boot", "Kafka", "AWS", "Kubernetes", "PostgreSQL"],
+       "domain": "e-commerce", "location": "Pune", "remote_ok": false,
+       "min_salary_lpa": 45, "education": "M.Tech"}
+
+- vars:
+    candidate_name: "career_switcher_ml"
+    num_queries: 6
+    candidate_json: |
+      {"name": "Priya Nair", "experience_years": 0.5, "current_role": "QA Engineer",
+       "target_roles": ["Machine Learning Engineer", "MLOps Engineer"],
+       "skills": ["Python", "PyTorch", "scikit-learn", "Docker"],
+       "domain": "healthtech", "location": "Hyderabad", "remote_ok": true,
+       "min_salary_lpa": 12, "education": "M.Sc Statistics"}
+
+- vars:
+    candidate_name: "product_manager"
+    num_queries: 6
+    candidate_json: |
+      {"name": "Vivek Shah", "experience_years": 4, "current_role": "Associate Product Manager",
+       "target_roles": ["Product Manager", "Senior PM"],
+       "skills": ["Roadmapping", "SQL", "A/B Testing", "Jira", "Figma"],
+       "domain": "saas", "location": "Remote", "remote_ok": true,
+       "min_salary_lpa": 28, "education": "MBA"}

@@ -1,0 +1,14 @@
+SYSTEM: You are a sourcer who specializes in advanced search operators (site:, quotes, OR) to find job postings other recruiters miss.
+
+USER:
+Candidate profile:
+{{candidate_json}}
+
+Generate exactly {{num_queries}} search-engine-style queries using operators
+where they'd help, for example:
+  site:linkedin.com/jobs "Data Analyst" Bangalore
+  ("SQL" OR "Python") "Business Analyst" fintech
+  site:wellfound.com Analytics Engineer remote
+Mix plain queries (for job boards with weak operator support like Naukri)
+with operator-based queries (for Google/LinkedIn/company career pages).
+Return ONLY a JSON array of {{num_queries}} strings. No markdown, no explanation.
