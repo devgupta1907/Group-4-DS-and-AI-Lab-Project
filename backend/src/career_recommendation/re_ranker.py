@@ -25,12 +25,16 @@ Robustness behaviour:
     planned improvement, deferred pending a team decision.)
 """
 
+import logging
+
 from langchain_core.documents import Document
 from pydantic import BaseModel, Field
 
 from services.llm_client import llm
 from career_recommendation.config import CareerRecommendationModuleConfig as Cfg
 from career_recommendation.retrieval import retrieve_candidate_occupations
+
+logger = logging.getLogger(__name__)
 
 
 def _normalize_skill(skill: str) -> str:
@@ -277,7 +281,7 @@ def explain_recommendations(
         return CareerRecommendationResult(status="ok", message=message, recommendations=validated)
 
     except Exception as exc:
-        print(f"[explain_recommendations] LLM call failed, using deterministic fallback: {exc}")
+        logger.warning("LLM explanation call failed, using deterministic fallback", exc_info=exc)
         degraded = (message + " " if message else "") + (
             "AI-generated explanations were unavailable this run (LLM call failed); "
             "showing deterministic matches only."

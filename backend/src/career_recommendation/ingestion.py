@@ -1,3 +1,4 @@
+import logging
 import time
 
 import pandas as pd
@@ -8,8 +9,18 @@ from core.config import GlobalConfig
 from services.llm_client import document_embeddings
 from career_recommendation.config import CareerRecommendationModuleConfig
 
+logger = logging.getLogger(__name__)
+
 EMBED_BATCH_SIZE = 100
 MAX_RETRIES = 3
+
+# BGE truncates at 512 tokens; the longest indexed occupation documents
+# reach ~1,300 tokens, so tails (usually the optional-skills segment)
+# are silently dropped by the encoder. Chunking long documents would fix
+# this but requires re-embedding the full index and changing retrieval
+# to dedupe/aggregate multiple chunks per occupation — out of scope for
+# this milestone. Accepted as a known limitation (see M4 report, current
+# limitations) rather than worked around here.
 
 
 def _clean(value) -> str:
@@ -26,9 +37,9 @@ def _split_skills(value) -> list[str]:
 
 
 def prepare_documents(csv_path: str) -> list[Document]:
-    print(f"Reading data from {csv_path}...")
+    logger.info("Reading data from %s...", csv_path)
     df = pd.read_csv(csv_path)
-    print(f"  {len(df)} rows, {df['occupation_title'].nunique()} unique occupations")
+    logger.info("  %d rows, %d unique occupations", len(df), df["occupation_title"].nunique())
 
     docs = []
     for _, row in df.iterrows():
@@ -71,15 +82,15 @@ def prepare_documents(csv_path: str) -> list[Document]:
 
 def build_vector_store():
     docs = prepare_documents(CareerRecommendationModuleConfig.ESCO_DATA_PATH)
-    print(f"\nPrepared {len(docs)} occupation documents.")
+    logger.info("Prepared %d occupation documents.", len(docs))
 
     model_name = (
         GlobalConfig.GEMINI_EMBEDDING_MODEL
         if GlobalConfig.EMBEDDING_PROVIDER == "gemini"
         else GlobalConfig.HF_EMBEDDING_MODEL
     )
-    print(f"Provider: {GlobalConfig.EMBEDDING_PROVIDER} | Model: {model_name} | Dims: {GlobalConfig.EMBEDDING_DIM}")
-    print(f"Target: {GlobalConfig.CHROMA_DB_DIR} | Collection: {GlobalConfig.CHROMA_COLLECTION}\n")
+    logger.info("Provider: %s | Model: %s | Dims: %s", GlobalConfig.EMBEDDING_PROVIDER, model_name, GlobalConfig.EMBEDDING_DIM)
+    logger.info("Target: %s | Collection: %s", GlobalConfig.CHROMA_DB_DIR, GlobalConfig.CHROMA_COLLECTION)
 
     vectorstore = Chroma(
         collection_name=GlobalConfig.CHROMA_COLLECTION,
@@ -96,12 +107,12 @@ def build_vector_store():
     except Exception:
         pass
     if existing:
-        print(f"Resuming: {len(existing)} already embedded, skipping those.\n")
+        logger.info("Resuming: %d already embedded, skipping those.", len(existing))
         docs = [d for d in docs if d.metadata["occupation_uri"] not in existing]
-        print(f"Remaining: {len(docs)}\n")
+        logger.info("Remaining: %d", len(docs))
 
     if not docs:
-        print("Nothing to do — index already complete.")
+        logger.info("Nothing to do - index already complete.")
         return
 
     # Free tier allows 100 embed requests/minute. Stay under it.
@@ -119,24 +130,25 @@ def build_vector_store():
                 break
             except Exception as exc:
                 if attempt == 5:
-                    print(f"\nFAILED on batch {start}: {exc}")
+                    logger.error("FAILED on batch %d: %s", start, exc)
                     raise
                 if "RESOURCE_EXHAUSTED" in str(exc) or "429" in str(exc):
                     wait = 65
-                    print(f"  rate limited; waiting {wait}s...")
+                    logger.warning("  rate limited; waiting %ds...", wait)
                 else:
                     wait = 5 * attempt
-                    print(f"  batch {start} attempt {attempt} failed; retrying in {wait}s...")
+                    logger.warning("  batch %d attempt %d failed; retrying in %ds...", start, attempt, wait)
                 time.sleep(wait)
 
         done = min(start + BATCH, total)
-        print(f"  embedded {done}/{total}")
+        logger.info("  embedded %d/%d", done, total)
 
         if PAUSE and done < total:
             time.sleep(PAUSE)
 
-    print(f"\nSuccess! {vectorstore._collection.count()} vectors at {GlobalConfig.CHROMA_DB_DIR}")
+    logger.info("Success! %d vectors at %s", vectorstore._collection.count(), GlobalConfig.CHROMA_DB_DIR)
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     build_vector_store()
