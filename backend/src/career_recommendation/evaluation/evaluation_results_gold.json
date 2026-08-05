@@ -2,56 +2,53 @@
   "config": {
     "embedding_provider": "huggingface",
     "embedding_model": "BAAI/bge-base-en-v1.5",
-    "chroma_dir": "G:\\AIlabproject\\Group-4-DS-and-AI-Lab-Project\\backend\\src\\data\\chroma_db_bge_v2",
-    "collection": "esco_occupations",
+    "vector_store": "supabase:documents",
     "retrieval_top_k": 20,
     "final_top_k": 5,
     "essential_skill_weight": 1.0,
     "optional_skill_weight": 0.5
   },
-  "n_evaluated": 86,
+  "n_evaluated": 52,
   "n_skipped": 0,
   "n_failures": 0,
   "skipped": [],
   "failures": [],
-  "elapsed_seconds": 14.8,
+  "elapsed_seconds": 76.4,
   "retrieval_stage": {
-    "MRR": 0.611,
-    "HitRate@1": 0.4651,
-    "Recall@1": 0.157,
-    "Precision@1": 0.4651,
-    "HitRate@3": 0.6977,
-    "Recall@3": 0.3304,
-    "Precision@3": 0.3488,
-    "HitRate@5": 0.8256,
-    "Recall@5": 0.4291,
-    "Precision@5": 0.2744,
-    "HitRate@10": 0.907,
-    "Recall@10": 0.5835,
-    "Precision@10": 0.1826,
-    "HitRate@20": 0.9186,
-    "Recall@20": 0.7017,
-    "Precision@20": 0.1099
+    "MRR": 0.6544,
+    "HitRate@1": 0.5192,
+    "Recall@1": 0.1635,
+    "Precision@1": 0.5192,
+    "HitRate@3": 0.7692,
+    "Recall@3": 0.359,
+    "Precision@3": 0.391,
+    "HitRate@5": 0.8462,
+    "Recall@5": 0.4397,
+    "Precision@5": 0.2885,
+    "HitRate@10": 0.8846,
+    "Recall@10": 0.576,
+    "Precision@10": 0.1827,
+    "HitRate@20": 0.9038,
+    "Recall@20": 0.6897,
+    "Precision@20": 0.1106
   },
   "reranked_stage": {
-    "MRR": 0.6105,
-    "HitRate@1": 0.4884,
-    "Recall@1": 0.1647,
-    "Precision@1": 0.4884,
-    "HitRate@3": 0.686,
-    "Recall@3": 0.3324,
-    "Precision@3": 0.3411,
-    "HitRate@5": 0.8372,
-    "Recall@5": 0.431,
-    "Precision@5": 0.2698
+    "MRR": 0.6494,
+    "HitRate@1": 0.5192,
+    "Recall@1": 0.1635,
+    "Precision@1": 0.5192,
+    "HitRate@3": 0.7692,
+    "Recall@3": 0.367,
+    "Precision@3": 0.3846,
+    "HitRate@5": 0.8654,
+    "Recall@5": 0.4526,
+    "Precision@5": 0.2885
   },
   "per_category_hitrate_at_5": {
     "Accountant": 1.0,
     "Advocate": 1.0,
-    "Agricultural": 1.0,
     "Apparel": 1.0,
     "Architect": 1.0,
-    "Arts": 0.0,
     "Automobile": 1.0,
     "Aviation": 0.5,
     "BPO": 1.0,
@@ -59,16 +56,14 @@
     "Blockchain": 0.5,
     "Building & Construction": 1.0,
     "Business Analyst": 1.0,
-    "Civil Engineer": 0.5,
-    "Consultant": 0.5,
-    "Data Science": 1.0,
+    "Civil Engineer": 1.0,
+    "Consultant": 0.0,
     "Database": 1.0,
     "Designer": 1.0,
     "DevOps Engineer": 1.0,
     "Digital Media": 1.0,
     "DotNet Developer": 1.0,
     "ETL Developer": 1.0,
-    "Education": 1.0,
     "Electrical Engineer": 1.0,
     "Finance": 0.5,
     "Food & Beverages": 1.0,
@@ -78,701 +73,17 @@
     "Java Developer": 1.0,
     "Management": 0.0,
     "Mechanical Engineer": 1.0,
-    "Network Security Engineer": 0.0,
-    "Operations Manager": 1.0,
     "PMO": 1.0,
     "Public Relations": 1.0,
     "Python Developer": 1.0,
     "React Developer": 1.0,
-    "SAP Developer": 0.5,
+    "SAP Developer": 1.0,
     "SQL Developer": 1.0,
     "Sales": 1.0,
     "Testing": 1.0,
-    "Web Designing": 0.5
+    "Web Designing": 1.0
   },
   "per_profile": [
-    {
-      "id": "sap_developer__Image_100",
-      "category": "SAP Developer",
-      "acceptable": [
-        "ICT application developer",
-        "software developer",
-        "ICT system integration consultant"
-      ],
-      "retrieved_rank": 8,
-      "reranked_rank": null,
-      "top_reranked": [
-        "database developer",
-        "database integrator",
-        "database designer",
-        "data warehouse designer",
-        "database administrator"
-      ],
-      "used_relaxed_matching": false,
-      "n_skills": 19
-    },
-    {
-      "id": "accountant__fac6c23d5aafc14e",
-      "category": "Accountant",
-      "acceptable": [
-        "accountant",
-        "public finance accountant",
-        "bookkeeper"
-      ],
-      "retrieved_rank": 2,
-      "reranked_rank": 2,
-      "top_reranked": [
-        "accounting manager",
-        "accountant",
-        "bookkeeper",
-        "accounting assistant",
-        "auditing clerk"
-      ],
-      "used_relaxed_matching": true,
-      "n_skills": 6
-    },
-    {
-      "id": "civil_engineer__3e1ceee0957c9c33",
-      "category": "Civil Engineer",
-      "acceptable": [
-        "civil engineer",
-        "civil engineering technician"
-      ],
-      "retrieved_rank": 8,
-      "reranked_rank": null,
-      "top_reranked": [
-        "bridge construction supervisor",
-        "civil engineering worker",
-        "construction general supervisor",
-        "building construction worker",
-        "construction scaffolding supervisor"
-      ],
-      "used_relaxed_matching": true,
-      "n_skills": 7
-    },
-    {
-      "id": "building_construction__Image_16",
-      "category": "Building & Construction",
-      "acceptable": [
-        "construction manager",
-        "civil engineer",
-        "construction general supervisor"
-      ],
-      "retrieved_rank": 4,
-      "reranked_rank": 4,
-      "top_reranked": [
-        "construction general contractor",
-        "construction engineer",
-        "construction safety inspector",
-        "construction general supervisor",
-        "construction manager"
-      ],
-      "used_relaxed_matching": true,
-      "n_skills": 11
-    },
-    {
-      "id": "automobile__e6281a9c220f5215",
-      "category": "Automobile",
-      "acceptable": [
-        "automotive engineer",
-        "vehicle technician",
-        "automotive designer"
-      ],
-      "retrieved_rank": 4,
-      "reranked_rank": 4,
-      "top_reranked": [
-        "aerospace engineer",
-        "automotive engineering technician",
-        "aerospace engineering technician",
-        "vehicle technician",
-        "sales engineer"
-      ],
-      "used_relaxed_matching": false,
-      "n_skills": 8
-    },
-    {
-      "id": "operations_manager__a9abc2e5f3eb4af2",
-      "category": "Operations Manager",
-      "acceptable": [
-        "operations manager",
-        "supply chain manager"
-      ],
-      "retrieved_rank": 1,
-      "reranked_rank": 1,
-      "top_reranked": [
-        "operations manager",
-        "programme manager",
-        "project manager",
-        "business manager",
-        "clothing operations manager"
-      ],
-      "used_relaxed_matching": false,
-      "n_skills": 7
-    },
-    {
-      "id": "arts__Image_79",
-      "category": "Arts",
-      "acceptable": [
-        "art director",
-        "illustrator"
-      ],
-      "retrieved_rank": null,
-      "reranked_rank": null,
-      "top_reranked": [
-        "performing arts school dance instructor",
-        "flight instructor",
-        "performing arts theatre instructor",
-        "fitness instructor",
-        "first aid instructor"
-      ],
-      "used_relaxed_matching": true,
-      "n_skills": 5
-    },
-    {
-      "id": "banking__81",
-      "category": "Banking",
-      "acceptable": [
-        "bank manager",
-        "bank teller",
-        "credit analyst",
-        "financial broker"
-      ],
-      "retrieved_rank": 1,
-      "reranked_rank": 1,
-      "top_reranked": [
-        "bank manager",
-        "bank account manager",
-        "banking products manager",
-        "relationship banking manager",
-        "service manager"
-      ],
-      "used_relaxed_matching": true,
-      "n_skills": 24
-    },
-    {
-      "id": "agricultural__Image_70",
-      "category": "Agricultural",
-      "acceptable": [
-        "agronomist",
-        "agricultural technician",
-        "crop production manager"
-      ],
-      "retrieved_rank": 3,
-      "reranked_rank": 3,
-      "top_reranked": [
-        "farm manager",
-        "horticulture production manager",
-        "crop production manager",
-        "horticulture production team leader",
-        "agricultural machinery and equipment distribution manager"
-      ],
-      "used_relaxed_matching": true,
-      "n_skills": 9
-    },
-    {
-      "id": "pmo__Image_37",
-      "category": "PMO",
-      "acceptable": [
-        "project manager",
-        "programme manager",
-        "project support officer",
-        "ICT project manager"
-      ],
-      "retrieved_rank": 1,
-      "reranked_rank": 1,
-      "top_reranked": [
-        "project manager",
-        "programme manager",
-        "lean manager",
-        "operations manager",
-        "project support officer"
-      ],
-      "used_relaxed_matching": false,
-      "n_skills": 1
-    },
-    {
-      "id": "web_designing__Image_19",
-      "category": "Web Designing",
-      "acceptable": [
-        "web developer",
-        "web designer",
-        "user interface designer",
-        "graphic designer"
-      ],
-      "retrieved_rank": null,
-      "reranked_rank": null,
-      "top_reranked": [
-        "clothing fashion designer",
-        "fashion designer",
-        "chief product officer",
-        "footwear designer",
-        "footwear product developer"
-      ],
-      "used_relaxed_matching": true,
-      "n_skills": 5
-    },
-    {
-      "id": "network_security_engineer__3271dd46520c65b9",
-      "category": "Network Security Engineer",
-      "acceptable": [
-        "ICT security administrator",
-        "ICT network engineer",
-        "chief ICT security officer"
-      ],
-      "retrieved_rank": 7,
-      "reranked_rank": null,
-      "top_reranked": [
-        "embedded systems security engineer",
-        "cyber incident responder",
-        "ICT security technician",
-        "security manager",
-        "cybersecurity risk manager"
-      ],
-      "used_relaxed_matching": true,
-      "n_skills": 7
-    },
-    {
-      "id": "health_fitness__c58a187d46302d15",
-      "category": "Health & Fitness",
-      "acceptable": [
-        "fitness instructor",
-        "personal trainer",
-        "physiotherapist"
-      ],
-      "retrieved_rank": 1,
-      "reranked_rank": 1,
-      "top_reranked": [
-        "personal trainer",
-        "fitness instructor",
-        "first aid instructor",
-        "pilates teacher",
-        "corporate trainer"
-      ],
-      "used_relaxed_matching": false,
-      "n_skills": 8
-    },
-    {
-      "id": "sales__1f68d99db5374c11",
-      "category": "Sales",
-      "acceptable": [
-        "sales account manager",
-        "commercial sales representative",
-        "sales manager",
-        "technical sales representative"
-      ],
-      "retrieved_rank": 1,
-      "reranked_rank": 1,
-      "top_reranked": [
-        "commercial sales representative",
-        "technical sales representative",
-        "renewable energy sales representative",
-        "electricity sales representative",
-        "advertising sales agent"
-      ],
-      "used_relaxed_matching": false,
-      "n_skills": 6
-    },
-    {
-      "id": "testing__Image_4",
-      "category": "Testing",
-      "acceptable": [
-        "software tester",
-        "ICT system tester",
-        "ICT test analyst"
-      ],
-      "retrieved_rank": 1,
-      "reranked_rank": 1,
-      "top_reranked": [
-        "software tester",
-        "quality engineer",
-        "test engineer",
-        "ICT system tester",
-        "ICT test analyst"
-      ],
-      "used_relaxed_matching": true,
-      "n_skills": 12
-    },
-    {
-      "id": "network_security_engineer__Image_19",
-      "category": "Network Security Engineer",
-      "acceptable": [
-        "ICT security administrator",
-        "ICT network engineer",
-        "chief ICT security officer"
-      ],
-      "retrieved_rank": 7,
-      "reranked_rank": null,
-      "top_reranked": [
-        "ICT presales engineer",
-        "ICT network technician",
-        "network marketer",
-        "telecommunications engineering technician",
-        "telecommunications engineer"
-      ],
-      "used_relaxed_matching": false,
-      "n_skills": 21
-    },
-    {
-      "id": "database__129",
-      "category": "Database",
-      "acceptable": [
-        "database administrator",
-        "database designer",
-        "database developer",
-        "database integrator"
-      ],
-      "retrieved_rank": 1,
-      "reranked_rank": 1,
-      "top_reranked": [
-        "database administrator",
-        "database developer",
-        "ICT system administrator",
-        "data centre operator",
-        "ICT security administrator"
-      ],
-      "used_relaxed_matching": true,
-      "n_skills": 16
-    },
-    {
-      "id": "sql_developer__0b8431fc6fb166a7",
-      "category": "SQL Developer",
-      "acceptable": [
-        "database developer",
-        "database administrator",
-        "database designer",
-        "data warehouse designer"
-      ],
-      "retrieved_rank": 1,
-      "reranked_rank": 1,
-      "top_reranked": [
-        "database developer",
-        "database designer",
-        "software developer",
-        "data quality specialist",
-        "ICT application developer"
-      ],
-      "used_relaxed_matching": false,
-      "n_skills": 10
-    },
-    {
-      "id": "human_resources__7d2f477bbcd978f4",
-      "category": "Human Resources",
-      "acceptable": [
-        "human resources manager",
-        "human resources officer",
-        "human resources assistant",
-        "recruitment consultant"
-      ],
-      "retrieved_rank": 1,
-      "reranked_rank": 1,
-      "top_reranked": [
-        "human resources manager",
-        "human resources assistant",
-        "human resources officer",
-        "payroll clerk",
-        "secretary general"
-      ],
-      "used_relaxed_matching": false,
-      "n_skills": 10
-    },
-    {
-      "id": "python_developer__67",
-      "category": "Python Developer",
-      "acceptable": [
-        "software developer",
-        "data scientist",
-        "software architect"
-      ],
-      "retrieved_rank": 2,
-      "reranked_rank": 2,
-      "top_reranked": [
-        "data engineer",
-        "data scientist",
-        "cloud engineer",
-        "data warehouse designer",
-        "database developer"
-      ],
-      "used_relaxed_matching": false,
-      "n_skills": 58
-    },
-    {
-      "id": "arts__Image_12",
-      "category": "Arts",
-      "acceptable": [
-        "art director",
-        "illustrator"
-      ],
-      "retrieved_rank": 6,
-      "reranked_rank": null,
-      "top_reranked": [
-        "education programme coordinator",
-        "visual arts teacher",
-        "art administrator",
-        "arts education officer",
-        "art teacher secondary school"
-      ],
-      "used_relaxed_matching": false,
-      "n_skills": 9
-    },
-    {
-      "id": "data_science__Image_50",
-      "category": "Data Science",
-      "acceptable": [
-        "data scientist",
-        "data analyst",
-        "business intelligence manager"
-      ],
-      "retrieved_rank": 1,
-      "reranked_rank": 1,
-      "top_reranked": [
-        "data scientist",
-        "computer vision engineer",
-        "artificial intelligence engineer",
-        "data engineer",
-        "predictive maintenance expert"
-      ],
-      "used_relaxed_matching": false,
-      "n_skills": 6
-    },
-    {
-      "id": "dotnet_developer__0f84f1a4aea4be87",
-      "category": "DotNet Developer",
-      "acceptable": [
-        "software developer",
-        "software architect",
-        "ICT application developer"
-      ],
-      "retrieved_rank": 4,
-      "reranked_rank": 4,
-      "top_reranked": [
-        "chief technology officer",
-        "ICT system developer",
-        "web developer",
-        "software developer",
-        "data centre operator"
-      ],
-      "used_relaxed_matching": false,
-      "n_skills": 21
-    },
-    {
-      "id": "consultant__eb58939c1a28881c",
-      "category": "Consultant",
-      "acceptable": [
-        "business consultant",
-        "ICT consultant"
-      ],
-      "retrieved_rank": 1,
-      "reranked_rank": 1,
-      "top_reranked": [
-        "business consultant",
-        "healthcare consultant",
-        "intercultural communication consultant",
-        "building information modelling consultant",
-        "business manager"
-      ],
-      "used_relaxed_matching": false,
-      "n_skills": 10
-    },
-    {
-      "id": "architect__38d167423f55cd85",
-      "category": "Architect",
-      "acceptable": [
-        "architect",
-        "landscape architect",
-        "architectural drafter"
-      ],
-      "retrieved_rank": 2,
-      "reranked_rank": 1,
-      "top_reranked": [
-        "architect",
-        "interior architect",
-        "enterprise architect",
-        "ICT system architect",
-        "data warehouse designer"
-      ],
-      "used_relaxed_matching": false,
-      "n_skills": 8
-    },
-    {
-      "id": "operations_manager__4cfe28452173108e",
-      "category": "Operations Manager",
-      "acceptable": [
-        "operations manager",
-        "supply chain manager"
-      ],
-      "retrieved_rank": 1,
-      "reranked_rank": 1,
-      "top_reranked": [
-        "operations manager",
-        "business manager",
-        "supply chain assistant",
-        "forklift operator",
-        "warehouse manager"
-      ],
-      "used_relaxed_matching": true,
-      "n_skills": 5
-    },
-    {
-      "id": "agricultural__dceaa326c82da46e",
-      "category": "Agricultural",
-      "acceptable": [
-        "agronomist",
-        "agricultural technician",
-        "crop production manager"
-      ],
-      "retrieved_rank": 5,
-      "reranked_rank": 5,
-      "top_reranked": [
-        "agricultural engineer",
-        "agricultural equipment design engineer",
-        "test engineer",
-        "agricultural machinery technician",
-        "agronomist"
-      ],
-      "used_relaxed_matching": true,
-      "n_skills": 13
-    },
-    {
-      "id": "digital_media__70",
-      "category": "Digital Media",
-      "acceptable": [
-        "digital media designer"
-      ],
-      "retrieved_rank": 1,
-      "reranked_rank": 1,
-      "top_reranked": [
-        "digital media designer",
-        "post-production supervisor",
-        "video and motion picture producer",
-        "producer",
-        "video and motion picture director"
-      ],
-      "used_relaxed_matching": true,
-      "n_skills": 10
-    },
-    {
-      "id": "data_science__33",
-      "category": "Data Science",
-      "acceptable": [
-        "data scientist",
-        "data analyst",
-        "business intelligence manager"
-      ],
-      "retrieved_rank": 2,
-      "reranked_rank": 2,
-      "top_reranked": [
-        "research and development manager",
-        "data scientist",
-        "market research analyst",
-        "business intelligence manager",
-        "data quality specialist"
-      ],
-      "used_relaxed_matching": true,
-      "n_skills": 6
-    },
-    {
-      "id": "designer__91",
-      "category": "Designer",
-      "acceptable": [
-        "graphic designer",
-        "user interface designer",
-        "industrial designer",
-        "interior designer"
-      ],
-      "retrieved_rank": 3,
-      "reranked_rank": 4,
-      "top_reranked": [
-        "product development engineering drafter",
-        "product development engineering technician",
-        "computer-aided design operator",
-        "industrial designer",
-        "drafter"
-      ],
-      "used_relaxed_matching": false,
-      "n_skills": 19
-    },
-    {
-      "id": "education__135",
-      "category": "Education",
-      "acceptable": [
-        "education administrator",
-        "learning support teacher",
-        "child care worker"
-      ],
-      "retrieved_rank": 5,
-      "reranked_rank": 5,
-      "top_reranked": [
-        "special educational needs teacher",
-        "special educational needs itinerant teacher",
-        "special educational needs teacher secondary school",
-        "early years special educational needs teacher",
-        "learning support teacher"
-      ],
-      "used_relaxed_matching": true,
-      "n_skills": 10
-    },
-    {
-      "id": "education__f89bfd216550e1e5",
-      "category": "Education",
-      "acceptable": [
-        "education administrator",
-        "learning support teacher",
-        "child care worker"
-      ],
-      "retrieved_rank": 4,
-      "reranked_rank": 4,
-      "top_reranked": [
-        "early years teacher",
-        "early years special educational needs teacher",
-        "Montessori school teacher",
-        "child care worker",
-        "nursery school head teacher"
-      ],
-      "used_relaxed_matching": true,
-      "n_skills": 7
-    },
-    {
-      "id": "bpo__Image_97",
-      "category": "BPO",
-      "acceptable": [
-        "call centre agent",
-        "customer service representative",
-        "contact centre supervisor",
-        "client relations manager",
-        "operations manager"
-      ],
-      "retrieved_rank": 4,
-      "reranked_rank": 4,
-      "top_reranked": [
-        "service manager",
-        "business manager",
-        "business service manager",
-        "operations manager",
-        "ICT vendor relationship manager"
-      ],
-      "used_relaxed_matching": true,
-      "n_skills": 8
-    },
-    {
-      "id": "etl_developer__92",
-      "category": "ETL Developer",
-      "acceptable": [
-        "data warehouse designer",
-        "database developer",
-        "data engineer"
-      ],
-      "retrieved_rank": 2,
-      "reranked_rank": 1,
-      "top_reranked": [
-        "database developer",
-        "ICT auditor manager",
-        "data warehouse designer",
-        "chief data officer",
-        "data centre operator"
-      ],
-      "used_relaxed_matching": false,
-      "n_skills": 24
-    },
     {
       "id": "designer__103",
       "category": "Designer",
