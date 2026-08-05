@@ -18,12 +18,12 @@ from src.core.db import Base
 
 # Importing a module's models registers its tables on Base.metadata.
 import src.resume_parsing.internal.models  # noqa: F401
-
+import src.career_recommendation.internal.models  # noqa: F401
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-config.set_main_option("sqlalchemy.url", get_settings().database_url)
+config.set_main_option("sqlalchemy.url", get_settings().database_url.replace("%", "%%"))
 
 target_metadata = Base.metadata
 
