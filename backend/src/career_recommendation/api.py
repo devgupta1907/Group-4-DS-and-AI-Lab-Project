@@ -1,56 +1,82 @@
 """
 Career Recommendation — API layer.
 
-Implements the four endpoints listed in the handoff notes:
-    POST /career/recommend
-    GET  /career/recommendations/{candidate_id}
-    POST /career/index/rebuild
-    GET  /career/health
+    POST /career/recommend                       run against a stored profile
+    GET  /career/recommendations/{profile_id}    read the latest saved run
+    POST /career/index/rebuild                   re-embed the ESCO taxonomy
+    GET  /career/health                          vector index reachable?
 
-UNTESTED: written against the existing service.py / store.py / db
-modules but not yet run against a live server — flagging per working
-preference. Exercise with, e.g.:
-    uv run uvicorn main:app --reload
-    curl -X POST localhost:8000/career/recommend -H "Content-Type: application/json" -d '{"skills": ["Python", "SQL"]}'
+MERGE NOTE
+    `POST /career/recommend` now takes a `profile_id` produced by
+    Resume Parsing rather than a raw profile body. The profile is read
+    back through resume_parsing's public service (which decrypts it),
+    never by querying its tables — `.importlinter` forbids reaching into
+    `resume_parsing.internal`, and that rule is what keeps the two
+    modules independently testable.
+
+    A raw profile can still be posted for testing by sending `profile`
+    instead of `profile_id`; that path does not persist, because there
+    is no profile row to attach the run to.
 """
 
 from __future__ import annotations
+
 import logging
-from fastapi import APIRouter, BackgroundTasks, HTTPException
-from career_recommendation.models import CandidateProfile
-from career_recommendation.re_ranker import CareerRecommendationResult
-from career_recommendation.service import get_recommendations_for_candidate, recommend_for_profile
-from career_recommendation import ingestion
-from core.config import GlobalConfig
-# from db.chroma_manager import get_vector_store
-from db.supabase_manager import get_vector_store
+from uuid import UUID
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from pydantic import BaseModel, model_validator
+
+from src.career_recommendation import ingestion, store
+from src.career_recommendation.config import CareerRecommendationModuleConfig as Cfg
+from src.career_recommendation.models import CandidateProfile
+from src.career_recommendation.profile_mapper import from_parsed_resume
+from src.career_recommendation.re_ranker import CareerRecommendationResult
+from src.career_recommendation.service import recommend_for_profile
+from src.core.config import GlobalConfig
+from src.core.security import CurrentUser, get_current_user
+from src.db.supabase_manager import get_vector_store
+from src.resume_parsing.dependencies import get_resume_parsing_service
+from src.resume_parsing.errors import ProfileNotFound
+from src.resume_parsing.service import ResumeParsingService
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/career", tags=["career-recommendation"])
 
-# Guards against overlapping /career/index/rebuild calls, since
-# ingestion.build_vector_store() is a single long-running batch job
-# (minutes to well over an hour on the Gemini free tier — see M4
-# report section 4.1) rather than something safe to run concurrently
-# against the same persisted Chroma directory.
+# Guards against overlapping rebuilds: build_vector_store() truncates the
+# documents table before rewriting it, so two concurrent runs would leave
+# the index partially populated.
 _rebuild_in_progress = {"value": False}
 
 
+class RecommendRequest(BaseModel):
+    """Either a stored profile_id (normal path) or an inline profile (testing)."""
+
+    profile_id: UUID | None = None
+    profile: CandidateProfile | None = None
+
+    @model_validator(mode="after")
+    def _exactly_one(self) -> RecommendRequest:
+        if (self.profile_id is None) == (self.profile is None):
+            raise ValueError("Provide exactly one of profile_id or profile.")
+        return self
+
+
 @router.get("/health")
-def health():
-    """
-    Reports whether the ESCO vector index is reachable and populated.
-    """
+def health() -> dict:
+    """Reports whether the ESCO vector index is reachable and populated."""
     try:
         vectorstore = get_vector_store()
-        # Query Supabase directly to get the row count
-        response = vectorstore._client.table("documents").select("*", count="exact", head=True).execute()
+        response = (
+            vectorstore._client.table(GlobalConfig.SUPABASE_TABLE)
+            .select("*", count="exact", head=True)
+            .execute()
+        )
         count = response.count
-        
         return {
-            "status": "ok" if count > 0 else "empty_index",
-            "collection": "supabase_documents",
+            "status": "ok" if count else "empty_index",
+            "vector_store": f"supabase:{GlobalConfig.SUPABASE_TABLE}",
             "indexed_occupations": count,
             "embedding_provider": GlobalConfig.EMBEDDING_PROVIDER,
         }
@@ -60,50 +86,88 @@ def health():
 
 
 @router.post("/recommend", response_model=CareerRecommendationResult)
-def recommend(profile: CandidateProfile):
+async def recommend(
+    request: RecommendRequest,
+    user: CurrentUser = Depends(get_current_user),
+    resume_service: ResumeParsingService = Depends(get_resume_parsing_service),
+) -> CareerRecommendationResult:
     """
-    Runs the full pipeline (retrieve -> re-rank -> explain) for one
-    candidate profile. If the profile carries a candidate_id, the run
-    is persisted and can later be fetched via GET /recommendations/{id}.
+    Runs retrieve -> re-rank -> explain for one candidate.
+
+    With `profile_id`, the run is persisted against that profile and can
+    be read back by this module or any other. With an inline `profile`,
+    it is computed and returned without being stored.
     """
+    if request.profile is not None:
+        return _run(request.profile)
+
     try:
-        return recommend_for_profile(profile)
+        record = await resume_service.get_profile(request.profile_id, user)
+    except ProfileNotFound as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No profile {request.profile_id} for this user.",
+        ) from exc
+
+    profile = from_parsed_resume(record.profile)
+    result = _run(profile)
+
+    try:
+        store.save_run(
+            profile_id=request.profile_id,
+            user_id=user.id,
+            result=result.model_dump(mode="json"),
+            status=result.status,
+            message=result.message,
+            embedding_provider=GlobalConfig.EMBEDDING_PROVIDER,
+            llm_model=GlobalConfig.LLM_MODEL,
+            skill_bonus_weight=Cfg.SKILL_BONUS_WEIGHT,
+        )
+    except Exception:
+        # The recommendation itself succeeded; failing to store it should
+        # not fail the request. Same fail-soft rule the pipeline uses.
+        logger.exception("Could not persist run for profile %s", request.profile_id)
+
+    return result
+
+
+def _run(profile: CandidateProfile) -> CareerRecommendationResult:
+    try:
+        return recommend_for_profile(profile, persist=False)
     except Exception as exc:
-        logger.exception("Recommendation pipeline failed for candidate %s", profile.candidate_id)
+        logger.exception("Recommendation pipeline failed")
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
-@router.get("/recommendations/{candidate_id}")
-def get_recommendations(candidate_id: str):
-    """Returns the most recently saved recommendation run for a candidate."""
-    run = get_recommendations_for_candidate(candidate_id)
+@router.get("/recommendations/{profile_id}")
+def get_recommendations(
+    profile_id: UUID,
+    user: CurrentUser = Depends(get_current_user),
+) -> dict:
+    """Returns the most recently saved run for a profile."""
+    run = store.get_latest_run(profile_id, user_id=user.id)
     if run is None:
         raise HTTPException(
             status_code=404,
-            detail=f"No saved recommendations for candidate_id={candidate_id!r}. "
-            "Recommendations are only saved when POST /career/recommend is called "
-            "with a candidate_id set.",
+            detail=f"No saved recommendations for profile {profile_id}. "
+            "Runs are only saved when POST /career/recommend is called with a profile_id.",
         )
     return run
 
 
 @router.post("/index/rebuild")
-def rebuild_index(background_tasks: BackgroundTasks):
+def rebuild_index(background_tasks: BackgroundTasks) -> dict:
     """
-    Kicks off a full ESCO re-embed in the background and returns
-    immediately. ingestion.build_vector_store() already resumes from
-    where it left off (skips occupation URIs already in the index), so
-    a rebuild after a partial failure is safe to re-run.
+    Kicks off a full ESCO re-embed in the background and returns at once.
 
-    This does NOT block the request for the full duration, since a
-    Gemini-backed rebuild can take well over an hour (see M4 report,
-    section 4.1, free-tier rate limits). Poll GET /career/health for
-    indexed_occupations to see progress.
+    This truncates and rewrites the whole index (a few minutes on CPU),
+    so /career/health will report a falling then rising occupation count
+    while it runs. Poll it for progress.
     """
     if _rebuild_in_progress["value"]:
         raise HTTPException(status_code=409, detail="An index rebuild is already in progress.")
 
-    def _run():
+    def _rebuild() -> None:
         _rebuild_in_progress["value"] = True
         try:
             ingestion.build_vector_store()
@@ -112,5 +176,5 @@ def rebuild_index(background_tasks: BackgroundTasks):
         finally:
             _rebuild_in_progress["value"] = False
 
-    background_tasks.add_task(_run)
+    background_tasks.add_task(_rebuild)
     return {"status": "started", "message": "Index rebuild started in the background."}

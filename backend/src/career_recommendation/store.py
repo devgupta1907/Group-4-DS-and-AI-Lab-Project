@@ -1,97 +1,139 @@
 """
 Career Recommendation — recommendation persistence.
 
-UNTESTED / STAND-IN: the M4 architecture diagram shows a shared
-PostgreSQL "Candidate Profiles / Recommendations / Analysis Runs"
-store used across all three modules, but no Postgres wiring exists
-anywhere in this repo yet (checked: no psycopg/sqlalchemy usage
-outside dependency locks). Rather than block the API endpoints on
-that shared schema being designed by the team, this uses a local
-SQLite file with the same shape (candidate_id, profile, result,
-timestamp) so `GET /career/recommendations/{candidate_id}` has
-something real to read from now.
+Replaces the earlier SQLite stand-in. Runs are now written to the same
+Postgres database resume_parsing uses, keyed by `profile_id`, so any
+other module can read a candidate's recommendations without calling this
+module's API.
 
-Swap-out point: replace `_connect()` with a Postgres connection and
-this module's public functions (`save_run`, `get_latest_run`,
-`get_runs`) can stay the same — nothing outside this file needs to
-change.
+SYNC ON PURPOSE
+    The recommendation pipeline (BGE embedding, Supabase retrieval,
+    Gemini explanation) is synchronous and blocking. FastAPI runs plain
+    `def` endpoints in a threadpool, so a sync session here is correct
+    and avoids sprinkling `await` through a pipeline that has no async
+    work to do. resume_parsing keeps its own async engine; both point at
+    the same database, which is fine — SQLAlchemy models are engine
+    agnostic.
+
+READING FROM OTHER MODULES
+    Job Discovery should call `get_latest_run(profile_id)` rather than
+    querying `career_recommendation_runs` directly, so the table shape
+    stays private to this module.
 """
 
 from __future__ import annotations
 
-import json
-import sqlite3
-import time
-from pathlib import Path
+import logging
+from functools import lru_cache
+from uuid import UUID
 
-from core.config import GlobalConfig
+from sqlalchemy import create_engine, select
+from sqlalchemy.orm import Session, sessionmaker
 
-DB_PATH = Path(GlobalConfig.DB_DIR) / "career_recommendation_runs.sqlite3"
+from src.career_recommendation.internal.models import CareerRecommendationRun
+from src.core.config import get_settings
 
-_SCHEMA = """
-CREATE TABLE IF NOT EXISTS recommendation_runs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    candidate_id TEXT NOT NULL,
-    created_at REAL NOT NULL,
-    profile_json TEXT NOT NULL,
-    result_json TEXT NOT NULL,
-    status TEXT NOT NULL
-);
-CREATE INDEX IF NOT EXISTS idx_runs_candidate ON recommendation_runs(candidate_id);
-"""
+logger = logging.getLogger(__name__)
 
 
-def _connect() -> sqlite3.Connection:
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
-    conn.executescript(_SCHEMA)
-    return conn
+@lru_cache
+def _get_session_factory() -> sessionmaker[Session]:
+    """
+    Sync engine over the same database as resume_parsing.
+
+    `database_url` is stored in async form (postgresql+asyncpg://) for
+    resume_parsing, so the driver prefix is swapped here rather than
+    keeping two URLs in .env that could drift apart.
+    """
+    url = get_settings().database_url.replace("+asyncpg", "+psycopg2")
+    engine = create_engine(url, pool_pre_ping=True)
+    return sessionmaker(engine, expire_on_commit=False)
 
 
-def save_run(candidate_id: str, profile: dict, result: dict, status: str) -> int:
-    """Persists one recommendation run. Returns the run's row id."""
-    with _connect() as conn:
-        cur = conn.execute(
-            "INSERT INTO recommendation_runs (candidate_id, created_at, profile_json, result_json, status) "
-            "VALUES (?, ?, ?, ?, ?)",
-            (candidate_id, time.time(), json.dumps(profile), json.dumps(result), status),
+def save_run(
+    *,
+    profile_id: UUID,
+    user_id: str,
+    result: dict,
+    status: str,
+    message: str = "",
+    embedding_provider: str = "",
+    llm_model: str = "",
+    skill_bonus_weight: float = 0.0,
+) -> UUID:
+    """
+    Persists one recommendation run. Returns its row id.
+
+    A write failure is logged and re-raised: unlike the resume pipeline,
+    there is no partial-result path here worth preserving — if the run
+    cannot be stored, downstream modules would silently read stale data.
+    """
+    with _get_session_factory()() as session:
+        run = CareerRecommendationRun(
+            profile_id=profile_id,
+            user_id=user_id,
+            status=status,
+            message=message[:1024],
+            result=result,
+            embedding_provider=embedding_provider,
+            llm_model=llm_model,
+            skill_bonus_weight=skill_bonus_weight,
         )
-        return cur.lastrowid
+        session.add(run)
+        session.commit()
+        logger.info("Saved recommendation run %s for profile %s", run.id, profile_id)
+        return run.id
 
 
-def get_latest_run(candidate_id: str) -> dict | None:
-    """Returns the most recent recommendation run for a candidate, or None."""
-    with _connect() as conn:
-        row = conn.execute(
-            "SELECT candidate_id, created_at, result_json, status FROM recommendation_runs "
-            "WHERE candidate_id = ? ORDER BY created_at DESC LIMIT 1",
-            (candidate_id,),
-        ).fetchone()
-    if row is None:
-        return None
-    candidate_id, created_at, result_json, status = row
+def get_latest_run(profile_id: UUID, user_id: str | None = None) -> dict | None:
+    """
+    Most recent run for a profile, or None.
+
+    `user_id` is optional so internal module-to-module calls can read
+    without an authenticated user, but any request originating from a
+    user MUST pass it — omitting it returns another user's data.
+    """
+    stmt = (
+        select(CareerRecommendationRun)
+        .where(CareerRecommendationRun.profile_id == profile_id)
+        .order_by(CareerRecommendationRun.created_at.desc())
+        .limit(1)
+    )
+    if user_id is not None:
+        stmt = stmt.where(CareerRecommendationRun.user_id == user_id)
+
+    with _get_session_factory()() as session:
+        run = session.execute(stmt).scalar_one_or_none()
+
+    return None if run is None else _to_dict(run)
+
+
+def get_runs(profile_id: UUID, user_id: str | None = None, limit: int = 10) -> list[dict]:
+    """Up to `limit` past runs for a profile, most recent first."""
+    stmt = (
+        select(CareerRecommendationRun)
+        .where(CareerRecommendationRun.profile_id == profile_id)
+        .order_by(CareerRecommendationRun.created_at.desc())
+        .limit(limit)
+    )
+    if user_id is not None:
+        stmt = stmt.where(CareerRecommendationRun.user_id == user_id)
+
+    with _get_session_factory()() as session:
+        runs = session.execute(stmt).scalars().all()
+
+    return [_to_dict(r) for r in runs]
+
+
+def _to_dict(run: CareerRecommendationRun) -> dict:
     return {
-        "candidate_id": candidate_id,
-        "created_at": created_at,
-        "status": status,
-        "result": json.loads(result_json),
+        "id": str(run.id),
+        "profile_id": str(run.profile_id),
+        "status": run.status,
+        "message": run.message,
+        "result": run.result,
+        "embedding_provider": run.embedding_provider,
+        "llm_model": run.llm_model,
+        "skill_bonus_weight": run.skill_bonus_weight,
+        "created_at": run.created_at.isoformat() if run.created_at else None,
     }
-
-
-def get_runs(candidate_id: str, limit: int = 10) -> list[dict]:
-    """Returns up to `limit` past runs for a candidate, most recent first."""
-    with _connect() as conn:
-        rows = conn.execute(
-            "SELECT candidate_id, created_at, result_json, status FROM recommendation_runs "
-            "WHERE candidate_id = ? ORDER BY created_at DESC LIMIT ?",
-            (candidate_id, limit),
-        ).fetchall()
-    return [
-        {
-            "candidate_id": candidate_id,
-            "created_at": created_at,
-            "status": status,
-            "result": json.loads(result_json),
-        }
-        for candidate_id, created_at, result_json, status in rows
-    ]
