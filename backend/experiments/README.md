@@ -145,6 +145,38 @@ after 5, 15 and 30 seconds, and does not record a run if all rate-limit retries
 are exhausted. Repeated executions append new observations; analysis selects
 the latest completed observation for each resume/model pair.
 
+## Direct-vision versus Docling-text branch
+
+The evaluation harness can send scanned resumes directly to the configured
+model as page images, or run local Docling OCR/layout extraction first and send
+the resulting Markdown to the same model:
+
+```bash
+cd backend
+
+uv run python -m evals.run_eval \
+  --variant baseline --input-strategy direct_vision --limit 5
+
+uv run python -m evals.run_eval \
+  --variant baseline --input-strategy docling_text --limit 5
+```
+
+Both runs use the ordinary LangSmith field/schema evaluators. They also append
+de-identified local measurements to
+`experiments/results/pipeline_timings.jsonl`: preprocessing, model and total
+latency; input kind and size; schema validity; coverage; success/error type;
+and content hashes. Raw OCR text and candidate profiles are never written to
+that metrics file.
+
+Production selects the same branch through:
+
+```dotenv
+RESUME_SCANNED_PDF_STRATEGY=direct_vision  # or docling_text
+```
+
+Born-digital PDFs and DOCX resumes still use native text extraction. The flag
+only changes the handling of scanned/image-only PDFs.
+
 ## Report directory
 
 ```text

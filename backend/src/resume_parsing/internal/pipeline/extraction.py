@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from time import perf_counter
 
 from src.resume_parsing.internal.domain import PageArtifact
 from src.resume_parsing.internal.pipeline.postprocess import normalise
@@ -36,10 +37,25 @@ async def extract_pages(
 
     async def one(page: PageArtifact) -> dict | None:
         async with semaphore:
+            started = perf_counter()
             try:
-                return normalise(await provider.extract(page, model=model))
+                result = normalise(await provider.extract(page, model=model))
+                logger.info(
+                    "Model extraction completed model=%s page=%d input_kind=%s "
+                    "duration_seconds=%.3f",
+                    model,
+                    page.index,
+                    "vision" if page.is_visual else "text",
+                    perf_counter() - started,
+                )
+                return result
             except ProviderError:
-                logger.warning("Page %d failed extraction on %s", page.index, model)
+                logger.warning(
+                    "Page %d failed extraction on %s after %.3f seconds",
+                    page.index,
+                    model,
+                    perf_counter() - started,
+                )
                 return None
 
     results = await asyncio.gather(*(one(page) for page in pages))
