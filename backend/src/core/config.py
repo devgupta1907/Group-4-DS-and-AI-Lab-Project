@@ -2,9 +2,15 @@
 
 from __future__ import annotations
 
+import os
 from functools import lru_cache
+from pathlib import Path
 
+from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+load_dotenv(BASE_DIR / ".env")
 
 
 class Settings(BaseSettings):
@@ -48,34 +54,34 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
-import os
-from pathlib import Path
-from dotenv import load_dotenv
-
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-load_dotenv(BASE_DIR / ".env")
 
 
 class GlobalConfig:
-    """Application-wide configuration."""
+    """Application-wide configuration for the Career Recommendation stack."""
+
     GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
+    # Raw datasets live at the PROJECT root, not under backend/.
     DATA_DIR = BASE_DIR.parent / "data"
-    DB_DIR = BASE_DIR / "src/data"
 
-    EMBEDDING_PROVIDER = os.getenv("EMBEDDING_PROVIDER", "gemini")
+    # --- embeddings ---
+    # "huggingface" -> BAAI/bge-base-en-v1.5, local CPU, no quota
+    # "gemini"      -> hosted, quota-limited (free tier: ~100 req/min,
+    #                  ~1,000/day against 3,039 occupations)
+    EMBEDDING_PROVIDER = os.getenv("EMBEDDING_PROVIDER", "huggingface")
     HF_EMBEDDING_MODEL = "BAAI/bge-base-en-v1.5"
     GEMINI_EMBEDDING_MODEL = os.getenv("GEMINI_EMBEDDING_MODEL", "gemini-embedding-001")
     EMBEDDING_DIM = int(os.getenv("EMBEDDING_DIM", "768"))
 
-    CHROMA_DB_DIR_BGE = str(DB_DIR / "chroma_db")
-    CHROMA_DB_DIR_GEMINI = str(DB_DIR / "chroma_db_gemini")
+    # --- vector store (Supabase pgvector) ---
+    # Connection details are read from the environment by
+    # db/supabase_manager.py and career_recommendation/ingestion.py:
+    #   SUPABASE_URL, SUPABASE_SERVICE_KEY   (PostgREST / langchain reads)
+    #   SUPABASE_DB_URL                      (direct psycopg2 writes)
+    SUPABASE_TABLE = os.getenv("SUPABASE_TABLE", "documents")
+    SUPABASE_QUERY_FN = os.getenv("SUPABASE_QUERY_FN", "match_documents")
 
-    _default_dir = CHROMA_DB_DIR_GEMINI if EMBEDDING_PROVIDER == "gemini" else CHROMA_DB_DIR_BGE
-    CHROMA_DB_DIR = str(DB_DIR / os.getenv("CHROMA_SUBDIR")) if os.getenv("CHROMA_SUBDIR") else _default_dir
-
-    CHROMA_COLLECTION = os.getenv("CHROMA_COLLECTION", "esco_occupations")
-
+    # --- LLM ---
     LLM_MODEL = os.getenv("GEMINI_LLM_MODEL", "gemini-3.5-flash-lite")
 
 

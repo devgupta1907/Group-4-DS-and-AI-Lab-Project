@@ -31,6 +31,11 @@ WHY A CATEGORY MAPPING IS NEEDED
     harder and more honest benchmark: these are real resumes, with real
     vocabulary, that were never used to build the index.
 
+NOTE ON RUNTIME
+    Retrieval now goes over the network to Supabase pgvector rather than
+    to a local index, so a full 86-profile run takes ~2 minutes rather
+    than ~12 seconds. That is network latency, not computation.
+
 METRICS
     Hit Rate@K   1 if any acceptable occupation is in the top-K.
     Recall@K     |acceptable ∩ top-K| / |acceptable|.
@@ -206,8 +211,7 @@ def evaluate(gold: list[dict], cat_map: dict) -> dict:
                 if GlobalConfig.EMBEDDING_PROVIDER == "gemini"
                 else GlobalConfig.HF_EMBEDDING_MODEL
             ),
-            "chroma_dir": GlobalConfig.CHROMA_DB_DIR,
-            "collection": GlobalConfig.CHROMA_COLLECTION,
+            "vector_store": f"supabase:{GlobalConfig.SUPABASE_TABLE}",
             "retrieval_top_k": Cfg.RETRIEVAL_TOP_K,
             "final_top_k": Cfg.FINAL_TOP_K,
             "essential_skill_weight": Cfg.ESSENTIAL_SKILL_WEIGHT,
@@ -233,7 +237,7 @@ def print_report(results: dict, split: str | None) -> None:
     print("=" * 66)
     print(f"Split     : {split or 'all'}")
     print(f"Embedding : {cfg['embedding_provider']} / {cfg['embedding_model']}")
-    print(f"Index     : {cfg['collection']}")
+    print(f"Index     : {cfg['vector_store']}")
     print(f"Weights   : essential={cfg['essential_skill_weight']}, optional={cfg['optional_skill_weight']}")
     print(f"Profiles  : {results['n_evaluated']} evaluated, {results['n_skipped']} skipped, {results['n_failures']} failed")
     print(f"Runtime   : {results['elapsed_seconds']}s")
