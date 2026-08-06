@@ -42,7 +42,7 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # for metrics.py
-from metrics import precision_at_k, ndcg_at_k, spearman_rank_correlation  # noqa: E402
+from backend.tests.job_discovery_matching.evals.promptfoo.ranking.metrics import precision_at_k, ndcg_at_k, spearman_rank_correlation  # noqa: E402
 
 EVAL_MOCK_FORCED = os.environ.get("EVAL_MOCK", "").lower() in ("1", "true", "yes")
 
