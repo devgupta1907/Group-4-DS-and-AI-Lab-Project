@@ -70,8 +70,8 @@ def grouped_bars(
 
 def latency_plot(summary: pd.DataFrame, output: Path) -> None:
     image, draw = canvas(
-        "End-to-end latency by pipeline",
-        "Mean time across paired resumes; lower is better",
+        "Gemma 4: end-to-end latency by input strategy",
+        "Mean time across evaluated resumes; lower is better",
         610,
     )
     maximum = summary["total_seconds"].max() * 1.12
@@ -113,8 +113,8 @@ def latency_plot(summary: pd.DataFrame, output: Path) -> None:
 def paired_plot(detail: pd.DataFrame, output: Path) -> None:
     pivot = detail.pivot(index="resume_id", columns="strategy", values="profile_f1_macro")
     image, draw = canvas(
-        "Paired macro F1 by resume",
-        "Every line compares the same resume under the two input strategies",
+        "Gemma 4: direct vision vs Docling macro F1",
+        "Each line compares the same resume under both input strategies",
         760,
     )
     left, right = 430, 1260

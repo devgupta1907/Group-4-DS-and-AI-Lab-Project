@@ -15,6 +15,8 @@ the AGENTS.md model contract states absence is a valid state, not a failure.
 from __future__ import annotations
 
 import re
+import unicodedata
+from difflib import SequenceMatcher
 
 from src.resume_parsing.internal.pipeline.validation import validate
 
@@ -56,12 +58,140 @@ _MONTHS = {
     "december": 12,
 }
 _CURRENT = {"present", "current", "ongoing", "till date", "to date", "now"}
+_DEGREE_ALIASES = {
+    "ba": "bachelor of arts",
+    "bachelorarts": "bachelor of arts",
+    "be": "bachelor of engineering",
+    "beng": "bachelor of engineering",
+    "bachelorengineering": "bachelor of engineering",
+    "bs": "bachelor of science",
+    "bsc": "bachelor of science",
+    "bachelorscience": "bachelor of science",
+    "btech": "bachelor of technology",
+    "bachelortechnology": "bachelor of technology",
+    "ma": "master of arts",
+    "masterarts": "master of arts",
+    "me": "master of engineering",
+    "meng": "master of engineering",
+    "masterengineering": "master of engineering",
+    "ms": "master of science",
+    "msc": "master of science",
+    "masterscience": "master of science",
+    "mtech": "master of technology",
+    "mastertechnology": "master of technology",
+    "phd": "doctor of philosophy",
+    "doctorphilosophy": "doctor of philosophy",
+}
+_EDUCATION_MATCH_THRESHOLD = 0.85
 
 
 def _norm(value: object) -> str:
     if not isinstance(value, str):
         return ""
     return " ".join(value.lower().split())
+
+
+def _lookup_key(value: object) -> str:
+    """Unicode/case/punctuation-insensitive key for controlled aliases."""
+    text = unicodedata.normalize("NFKC", _norm(value))
+    return "".join(character for character in text if character.isalnum())
+
+
+def _norm_degree(value: object) -> str:
+    text = _norm(value)
+    return _DEGREE_ALIASES.get(_lookup_key(value), text)
+
+
+def _similarity(left: str, right: str) -> float:
+    if not left or not right:
+        return float(left == right)
+    if left == right:
+        return 1.0
+    return SequenceMatcher(None, left, right).ratio()
+
+
+def _education_entries(profile: dict) -> list[dict]:
+    entries = []
+    for entry in profile.get("education") or []:
+        if not isinstance(entry, dict):
+            continue
+        degree = _norm_degree(entry.get("degree"))
+        institution = _norm(entry.get("institution"))
+        if degree or institution:
+            entries.append(
+                {
+                    "degree": degree,
+                    "institution": institution,
+                    "source": entry,
+                }
+            )
+    return entries
+
+
+def _matched_education(
+    predicted: dict, gold: dict
+) -> tuple[list[tuple[dict, dict]], int, int]:
+    """Best one-to-one education pairs plus predicted/gold counts."""
+    predicted_entries = _education_entries(predicted)
+    gold_entries = _education_entries(gold)
+
+    candidates = []
+    for predicted_index, predicted_entry in enumerate(predicted_entries):
+        for gold_index, gold_entry in enumerate(gold_entries):
+            degree_score = _similarity(
+                predicted_entry["degree"], gold_entry["degree"]
+            )
+            institution_score = _similarity(
+                predicted_entry["institution"], gold_entry["institution"]
+            )
+            score = 0.45 * degree_score + 0.55 * institution_score
+            if score >= _EDUCATION_MATCH_THRESHOLD:
+                candidates.append((score, predicted_index, gold_index))
+
+    matched_predicted: set[int] = set()
+    matched_gold: set[int] = set()
+    pairs = []
+    for _, predicted_index, gold_index in sorted(candidates, reverse=True):
+        if predicted_index in matched_predicted or gold_index in matched_gold:
+            continue
+        matched_predicted.add(predicted_index)
+        matched_gold.add(gold_index)
+        pairs.append(
+            (
+                predicted_entries[predicted_index]["source"],
+                gold_entries[gold_index]["source"],
+            )
+        )
+    return pairs, len(predicted_entries), len(gold_entries)
+
+
+def _education_prf(predicted: dict, gold: dict) -> tuple[float, float, float]:
+    """One-to-one education matching tolerant of degree aliases/location suffixes."""
+    pairs, predicted_count, gold_count = _matched_education(predicted, gold)
+    if not predicted_count and not gold_count:
+        return 1.0, 1.0, 1.0
+    if not predicted_count or not gold_count:
+        return 0.0, 0.0, 0.0
+
+    hits = len(pairs)
+    precision = hits / predicted_count
+    recall = hits / gold_count
+    f1 = 2 * precision * recall / (precision + recall) if precision + recall else 0.0
+    return precision, recall, f1
+
+
+def _education_date_accuracy(predicted: dict, gold: dict) -> tuple[float, int]:
+    pairs, _, _ = _matched_education(predicted, gold)
+    correct = 0
+    supported = 0
+    for predicted_entry, gold_entry in pairs:
+        for key in ("start_year", "end_year"):
+            expected = _normalise_date(gold_entry.get(key))
+            if not expected:
+                continue
+            supported += 1
+            correct += int(_date_matches(predicted_entry.get(key), expected))
+    return (correct / supported if supported else 1.0), supported
 
 
 def _prf(predicted: set[str], gold: set[str]) -> tuple[float, float, float]:
@@ -166,6 +296,21 @@ def _normalise_date(value: object) -> str:
     return text
 
 
+def _date_matches(predicted: object, expected: object) -> bool:
+    """Compare dates at the precision supplied by the gold annotation.
+
+    A year-only gold value deliberately accepts a more precise predicted month
+    in that year. A month-specific gold value still requires the same month.
+    """
+    predicted_date = _normalise_date(predicted)
+    expected_date = _normalise_date(expected)
+    if predicted_date == expected_date:
+        return True
+    if re.fullmatch(r"(?:19|20)\d{2}", expected_date):
+        return predicted_date.startswith(f"{expected_date}-")
+    return False
+
+
 def _date_accuracy(
     predicted: dict,
     gold: dict,
@@ -195,9 +340,7 @@ def _date_accuracy(
             if not expected:
                 continue
             supported += 1
-            correct += int(
-                _normalise_date(predicted_entries[identity].get(key)) == expected
-            )
+            correct += int(_date_matches(predicted_entries[identity].get(key), expected))
     return (correct / supported if supported else 1.0), supported
 
 
@@ -216,7 +359,6 @@ def field_metrics(outputs: dict, reference_outputs: dict) -> list[dict]:
     sections = {
         "skills": pair(_strings, "skills"),
         "job_titles": pair(_strings, "job_titles"),
-        "education": pair(_entities, "education", ("degree", "institution")),
         "education_field": pair(_flat_strings, "education", "field"),
         "experience": pair(_entities, "experience", ("job_title", "company")),
         "experience_location": pair(_flat_strings, "experience", "location"),
@@ -226,6 +368,15 @@ def field_metrics(outputs: dict, reference_outputs: dict) -> list[dict]:
     }
 
     f1s = []
+    education_precision, education_recall, education_f1 = _education_prf(
+        predicted, gold
+    )
+    f1s.append(education_f1)
+    scores += [
+        {"key": "education_precision", "score": round(education_precision, 4)},
+        {"key": "education_recall", "score": round(education_recall, 4)},
+        {"key": "education_f1", "score": round(education_f1, 4)},
+    ]
     for name, (predicted_set, gold_set) in sections.items():
         precision, recall, f1 = _prf(predicted_set, gold_set)
         f1s.append(f1)
@@ -252,12 +403,8 @@ def field_metrics(outputs: dict, reference_outputs: dict) -> list[dict]:
         ("job_title", "company"),
         ("start_date", "end_date"),
     )
-    education_date_accuracy, education_date_support = _date_accuracy(
-        predicted,
-        gold,
-        "education",
-        ("degree", "institution"),
-        ("start_year", "end_year"),
+    education_date_accuracy, education_date_support = _education_date_accuracy(
+        predicted, gold
     )
     scores += [
         {
