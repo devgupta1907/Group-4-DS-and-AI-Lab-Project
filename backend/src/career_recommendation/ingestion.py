@@ -41,8 +41,8 @@ from dotenv import find_dotenv, load_dotenv
 from langchain_core.documents import Document
 from psycopg2.extras import execute_batch
 
-from career_recommendation.config import CareerRecommendationModuleConfig
-from core.config import GlobalConfig
+from src.career_recommendation.config import CareerRecommendationModuleConfig
+from src.core.config import GlobalConfig
 from services.llm_client import document_embeddings
 
 logger = logging.getLogger(__name__)

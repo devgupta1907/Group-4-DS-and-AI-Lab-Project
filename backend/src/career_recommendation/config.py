@@ -1,4 +1,4 @@
-from core.config import GlobalConfig
+from src.core.config import GlobalConfig
 
 
 class CareerRecommendationModuleConfig:
