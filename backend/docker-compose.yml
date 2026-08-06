@@ -16,5 +16,19 @@ services:
       timeout: 5s
       retries: 10
 
+  searxng-v1:
+    image: searxng/searxng:latest
+    container_name: searxng-v1
+    restart: unless-stopped
+    ports:
+      - "8099:8080"
+    volumes:
+      - ./searxng:/etc/searxng:rw
+    environment:
+      - SEARXNG_BASE_URL=http://localhost:8099/
+      - INSTANCE_NAME=job-discovery-search
+  
+  
+
 volumes:
   dsai_pgdata:

@@ -1,0 +1,16 @@
+# Minimal SearXNG settings for the Autonomous AI Career Agent.
+# SearXNG disables the JSON API by default; we enable it here so the
+# backend's searxng_client can request format=json.
+
+use_default_settings: true
+
+general:
+  instance_name: "career-agent-search"
+
+search:
+  formats:
+    - html
+    - json
+
+server:
+  secret_key: "change-this-secret-key-in-production"

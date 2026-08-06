@@ -19,7 +19,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.career_recommendation.api import router as career_recommendation_router
 from src.core.config import get_settings
 from src.resume_parsing import register_resume_parsing
+from src.job_discovery_matching import register_job_discovery
+import sys
+import asyncio
 
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(
+        asyncio.WindowsProactorEventLoopPolicy()
+    )
 
 def create_app() -> FastAPI:
     settings = get_settings()
@@ -49,5 +56,8 @@ def create_app() -> FastAPI:
 
     register_resume_parsing(app)
     app.include_router(career_recommendation_router)
+    register_job_discovery(app)
+
+
 
     return app
