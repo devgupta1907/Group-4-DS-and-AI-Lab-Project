@@ -40,6 +40,18 @@ def _provider_factory() -> ExtractionProvider:
         ) from exc
 
 
+def _text_converter_factory():
+    """Import Docling only when the optional branch is selected.
+
+    Its ML stack is intentionally absent from normal direct-vision startup.
+    """
+    from src.resume_parsing.internal.document_conversion.docling import (
+        build_docling_converter,
+    )
+
+    return build_docling_converter()
+
+
 def get_resume_parsing_service(
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> ResumeParsingService:
@@ -51,6 +63,7 @@ def get_resume_parsing_service(
     return ResumeParsingServiceImpl(
         repository=ResumeParsingRepository(session, cipher),
         provider_factory=_provider_factory,
+        text_converter_factory=_text_converter_factory,
     )
 
 

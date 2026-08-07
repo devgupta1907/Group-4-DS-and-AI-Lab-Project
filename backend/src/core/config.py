@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -42,6 +43,12 @@ class Settings(BaseSettings):
     resume_primary_model: str = "gemma-3-27b-it"
     resume_fallback_model: str = "gemini-2.5-flash"
     resume_request_timeout_seconds: float = 120.0
+    # How scanned/image-only PDFs reach the LLM. `direct_vision` is the
+    # production baseline; `docling_text` enables the experimental OCR/layout
+    # branch while keeping the downstream prompt and schema unchanged.
+    resume_scanned_pdf_strategy: Literal["direct_vision", "docling_text"] = (
+        "direct_vision"
+    )
 
     # --- resume parsing limits ---
     resume_max_upload_bytes: int = 10 * 1024 * 1024

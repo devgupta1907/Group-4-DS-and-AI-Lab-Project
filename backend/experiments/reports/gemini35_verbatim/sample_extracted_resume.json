@@ -1,0 +1,85 @@
+{
+  "_experiment": {
+    "model": "gemini-3.5-flash",
+    "prompt_version": "v002",
+    "resume_id": "sql_developer__0b8431fc6fb166a7",
+    "privacy": "Direct identifiers and identifying dates were redacted for the report."
+  },
+  "parsed_resume": {
+    "contact": {
+      "name": "[REDACTED]",
+      "location": "[REDACTED]",
+      "links": []
+    },
+    "skills": [
+      "SQL",
+      "T-SQL",
+      "Information Technology",
+      "Designing",
+      "Developing",
+      "Data Migration",
+      "Audit",
+      "Coding",
+      "Stakeholder Presentations",
+      "SOL",
+      "Complex SQL Development",
+      "T-SQL Procedures Coding"
+    ],
+    "education": [
+      {
+        "degree": "Bachelor's Degree",
+        "field": "Information Technology",
+        "institution": "[REDACTED]",
+        "start_year": "[REDACTED]",
+        "end_year": "[REDACTED]"
+      }
+    ],
+    "experience": [
+      {
+        "job_title": "Senior SQL Developer",
+        "company": "[REDACTED]",
+        "location": "[REDACTED]",
+        "start_date": "[REDACTED]",
+        "end_date": "[REDACTED]",
+        "current_role": true,
+        "description": "Directed teams in designing and implementing complex SQL solutions\n\n¢ Directed the development and execution of complex SQL solutions, leading to a\n15% increase in operational efficiency\n\n« Led the conversion of over 2 million lines of legacy codes to T-SQL, enhancing\nsystem performance by 25%\n\n« Managed the migration of over 500GB of data across multiple databases,\nimproving data accuracy by 98%"
+      },
+      {
+        "job_title": "SQL Developer",
+        "company": "[REDACTED]",
+        "location": "[REDACTED]",
+        "start_date": "[REDACTED]",
+        "end_date": "[REDACTED]",
+        "current_role": false,
+        "description": "Encouraged innovative database solutions ensuring optimized performance\n\n* Spearheaded a team to develop and maintain complex SQL databases, reducing\nsystem downtime by 20%\n\n* Collaborated in data migration audit, leading to a decrease in data discrepancies\nby 30%\n\n* Implemented several database optimization techniques, improving system\nperformance by 18%"
+      },
+      {
+        "job_title": "Data Migration Specialist",
+        "company": "[REDACTED]",
+        "location": "[REDACTED]",
+        "start_date": "[REDACTED]",
+        "end_date": "[REDACTED]",
+        "current_role": false,
+        "description": "Ensured structured data handling in migration processes\n\n¢ Effectively participated in the design and development of data migration\nprograms\n\n¢ Coordinated and performed audit, reconciliation and exception reports for data\nmigration, resulting in 99% data accuracy\n\n« Developed robust coding systems for T-SQL procedures, boosting system\nefficiency by 20%"
+      }
+    ],
+    "projects": [],
+    "certifications": [
+      {
+        "name": "Microsoft Certified: SOL Server 2016 Development",
+        "issuer": "[REDACTED]",
+        "year": null
+      },
+      {
+        "name": "Advanced T-SQL Querying, Programming and Tuning for SOL Server",
+        "issuer": "[REDACTED]",
+        "year": null
+      }
+    ],
+    "job_titles": [
+      "Senior SQL Developer",
+      "SQL Developer",
+      "Data Migration Specialist"
+    ]
+  }
+}

@@ -32,6 +32,14 @@ def to_pages(document: SourceDocument) -> list[PageArtifact]:
     return _image_pages(document)
 
 
+def text_artifact(text: str) -> list[PageArtifact]:
+    """Wrap externally extracted document text for the ordinary LLM stage."""
+    cleaned = _clean(text)
+    if not cleaned:
+        raise UnreadableDocument("Document preprocessing returned no readable text.")
+    return [PageArtifact(index=0, text=cleaned)]
+
+
 # ------------------------------------------------------------------- text path --
 
 
