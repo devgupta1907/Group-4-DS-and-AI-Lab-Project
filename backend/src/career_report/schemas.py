@@ -61,12 +61,23 @@ class WeeklyPlan(BaseModel):
     tasks: list[ActionItem] = Field(default_factory=list)
 
 
+class ProfileAssessment(BaseModel):
+    seniority_signal: str = "Evidence-limited profile"
+    market_position: str = "The available evidence is not sufficient for a precise positioning."
+    evidence_depth: str = "Limited"
+    strongest_lane: str = "Career exploration"
+    differentiators: list[str] = Field(default_factory=list)
+    evidence_summary: list[str] = Field(default_factory=list)
+    watchouts: list[str] = Field(default_factory=list)
+
+
 class ReportNarrative(BaseModel):
     headline: str
     executive_summary: list[str]
     strongest_direction: str
     adjacent_direction: str
     development_priority: str
+    profile_assessment: ProfileAssessment = Field(default_factory=ProfileAssessment)
     roles: list[RoleGuidance]
     pathways: list[CareerPathway]
     actions: list[ActionItem]

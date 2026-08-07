@@ -86,6 +86,15 @@ export type CareerReport = {
       strongest_direction: string;
       adjacent_direction: string;
       development_priority: string;
+      profile_assessment?: {
+        seniority_signal: string;
+        market_position: string;
+        evidence_depth: string;
+        strongest_lane: string;
+        differentiators: string[];
+        evidence_summary: string[];
+        watchouts: string[];
+      };
       roles: RoleGuidance[];
       pathways: Array<{
         kind: 'immediate' | 'growth' | 'pivot';

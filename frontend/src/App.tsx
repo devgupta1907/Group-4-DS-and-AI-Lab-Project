@@ -2,22 +2,19 @@ import { useCallback, useMemo, useState } from 'react';
 
 import {
   CareerReportView,
-  PreferencesPanel,
-  type SearchPreferences,
   useCareerGuidance,
 } from '@features/career-guidance';
 import {
   ProfileView,
   ResultsPanel,
   ResumeUploadPanel,
-  type ProfileRecord,
   useFileValidation,
   useResumeUpload,
 } from '@features/resume-parsing';
 
 import styles from './App.module.css';
 
-const INITIAL_PREFERENCES: SearchPreferences = {
+const DEFAULT_PREFERENCES = {
   target_location: null,
   remote_only: false,
   min_salary_lpa: null,
@@ -28,7 +25,6 @@ export function App() {
   const validate = useFileValidation();
   const guidance = useCareerGuidance();
   const [rejection, setRejection] = useState<string | null>(null);
-  const [preferences, setPreferences] = useState(INITIAL_PREFERENCES);
   const step = useMemo(
     () => guidance.report ? 4 : guidance.status !== 'idle' ? 3 : upload.record ? 2 : 1,
     [guidance.report, guidance.status, upload.record],
@@ -46,25 +42,25 @@ export function App() {
   );
 
   const runAnalysis = useCallback(
-    () => { if (upload.record) void guidance.analyse(upload.record.id, preferences); },
-    [guidance, preferences, upload.record],
+    () => { if (upload.record) void guidance.analyse(upload.record.id, DEFAULT_PREFERENCES); },
+    [guidance, upload.record],
   );
 
   if (guidance.report) {
-    return <ReportPage report={guidance.report} parsedResume={upload.record} />;
+    return <ReportPage report={guidance.report} />;
   }
 
   return (
     <main className={styles.app}>
       <TopBar step={step} />
-      <section className={styles.hero}>
+      {step === 1 && <section className={styles.hero}>
         <div>
           <p className="eyebrow">Career navigation, grounded in your evidence</p>
           <h1>Your resume knows where you’ve been. Let’s map what’s next.</h1>
         </div>
         <p className={styles.heroCopy}>One guided analysis turns your experience into career
           directions, skill unlocks, live opportunities, and a practical 90-day plan.</p>
-      </section>
+      </section>}
 
       {step === 1 && (
         <section className={styles.resumeStage}>
@@ -78,25 +74,24 @@ export function App() {
       )}
 
       {step === 2 && upload.record && (
-        <section className={styles.reviewStage}>
-          <div className={styles.profileRail}>
-            <p className="eyebrow">Step 01 · Profile ready</p>
-            <h2>{upload.record.profile.contact.name ?? 'Your profile'}</h2>
-            <p>{upload.record.profile.job_titles.join(' · ') || 'Career direction open'}</p>
-            <div className="chips">
-              {upload.record.profile.skills.slice(0, 10).map((skill) => (
-                <span key={skill}>{skill}</span>
-              ))}
-            </div>
+        <section className={styles.reviewProfile}>
+          <header>
+            <div><p className="eyebrow">Step 02 · Review parsed resume</p>
+              <h1>Check what we extracted before analysis.</h1>
+              <p>Career guidance will use exactly this profile.</p></div>
+            <button className="primary-action" type="button" onClick={runAnalysis}>
+              Next: generate report <span aria-hidden="true">→</span>
+            </button>
+          </header>
+          <ProfileView record={upload.record} />
+          <footer>
             <button className={styles.textButton} type="button" onClick={upload.reset}>
               Use another resume
             </button>
-          </div>
-          <PreferencesPanel
-            value={preferences}
-            onChange={setPreferences}
-            onRun={runAnalysis}
-          />
+            <button className="primary-action" type="button" onClick={runAnalysis}>
+              Next: generate report <span aria-hidden="true">→</span>
+            </button>
+          </footer>
         </section>
       )}
 
@@ -106,22 +101,12 @@ export function App() {
   );
 }
 
-function ReportPage({
-  report,
-  parsedResume,
-}: {
+function ReportPage({ report }: {
   report: NonNullable<ReturnType<typeof useCareerGuidance>['report']>;
-  parsedResume: ProfileRecord | null;
 }) {
   return (
     <main className={styles.reportPage}>
       <TopBar step={4} />
-      {parsedResume && (
-        <details className={styles.parsedResume}>
-          <summary><span>Testing only</span><strong>View parsed resume data</strong></summary>
-          <div><ProfileView record={parsedResume} /></div>
-        </details>
-      )}
       <CareerReportView report={report} />
     </main>
   );
@@ -132,7 +117,7 @@ function TopBar({ step }: { step: number }) {
     <header className={styles.topbar}>
       <a href="/" className={styles.brand}>VECTOR<span>/</span>CAREER</a>
       <nav aria-label="Analysis progress">
-        {['Resume', 'Preferences', 'Analysis', 'Report'].map((label, index) => (
+        {['Resume', 'Review', 'Analysis', 'Report'].map((label, index) => (
           <span className={index + 1 <= step ? styles.activeStep : ''} key={label}>
             {index + 1} {label}
           </span>

@@ -21,14 +21,15 @@ export function WeeklyPlanSection({ report }: { report: CareerReport }) {
           <details open={index === 0} key={week.week}>
             <summary>
               <span>Week {week.week}</span>
-              <div><strong>{week.theme}</strong><small>{week.outcome}</small></div>
+              <div><strong>{week.theme}</strong><small>{week.tasks.length} actions · Outcome: {week.outcome}</small></div>
               <i aria-hidden="true">+</i>
             </summary>
             <div className={styles.tasks}>
-              {week.tasks.map((task) => (
+              {week.tasks.map((task, taskIndex) => (
                 <label key={`${week.week}-${task.action}`}>
                   <input type="checkbox" />
-                  <span><strong>{task.action}</strong><small>Because: {task.based_on}</small></span>
+                  <i>{String(taskIndex + 1).padStart(2, '0')}</i>
+                  <span><strong>{task.action}</strong><small>Evidence basis: {task.based_on}</small></span>
                 </label>
               ))}
             </div>
@@ -45,6 +46,6 @@ function legacyWeeks(actions: ActionItem[]) {
     week: index + 1,
     theme,
     outcome: index === 3 ? 'A repeatable, evidence-led application process' : 'One concrete improvement completed',
-    tasks: actions.filter((_, actionIndex) => actionIndex % 4 === index),
+    tasks: actions.filter((_, actionIndex) => actionIndex % 4 === index).slice(0, 3),
   })).filter((week) => week.tasks.length);
 }

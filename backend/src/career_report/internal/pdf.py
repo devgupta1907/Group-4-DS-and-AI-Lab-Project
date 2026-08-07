@@ -16,11 +16,13 @@ def _list(items: list[str]) -> str:
 def render_html(report: CareerReport) -> str:
     content = report.content
     narrative = content.narrative
+    assessment = narrative.profile_assessment
     roles = "".join(
         f"""<article class="card"><span>{escape(role.readiness.replace("_", " "))}</span>
         <h3>{escape(role.title)}</h3><p>{escape(role.rationale)}</p>
         <strong>{escape(role.confidence)} confidence · {escape(role.effort)} effort</strong>
-        <ul>{_list(role.evidence)}</ul></article>"""
+        <h4>Why this is credible</h4><ul>{_list(role.evidence)}</ul>
+        <h4>Recommended test</h4><p>{escape(role.next_step)}</p></article>"""
         for role in narrative.roles
     )
     jobs = "".join(
@@ -29,12 +31,6 @@ def render_html(report: CareerReport) -> str:
         <b>{job.interview_probability}%</b><p>{escape(job.reason)}</p>
         <a href="{escape(job.source_url)}">{escape(job.source_url)}</a></article>"""
         for job in content.opportunities
-    )
-    experience = "".join(
-        f"""<article class="experience"><div><h3>{escape(item.role)}</h3><span>{escape(item.period)}</span></div>
-        <p>{escape(" · ".join(part for part in [item.company, item.location] if part))}</p>
-        <small>{escape(item.evidence)}</small></article>"""
-        for item in content.profile_snapshot.experience
     )
     weeks = "".join(
         f"""<article class="week"><b>Week {week.week} · {escape(week.theme)}</b>
@@ -48,13 +44,13 @@ def render_html(report: CareerReport) -> str:
     .hero{{background:#111428;color:#f7f3e9;padding:28px;border-radius:18px;border-bottom:8px solid #c8ff61}}
     .kicker,span{{color:#7259ff;text-transform:uppercase;font-weight:bold;letter-spacing:.08em;font-size:8pt}}
     .summary,.grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}}
-    .summary p,.card,.job,.week,.experience{{border:1px solid #d9d6e2;border-radius:12px;padding:12px;break-inside:avoid}}
+    .summary p,.card,.job,.week,.assessment{{border:1px solid #d9d6e2;border-radius:12px;padding:12px;break-inside:avoid}}
     .card strong{{color:#7259ff}} .job{{display:grid;grid-template-columns:1fr auto;gap:5px;margin-bottom:8px}}
     .job p,.job a{{grid-column:1/-1;margin:0}} .job b{{font-size:17pt;color:#7259ff}}
     a{{color:#4933c8;word-break:break-all}} ul{{padding-left:16px}} small{{color:#62657a}}
     .funnel{{display:flex;gap:8px}} .funnel div{{flex:1;padding:12px;background:#f3f0ff;border-radius:10px;text-align:center}}
     .funnel b{{display:block;font-size:20pt}} .weeks{{display:grid;grid-template-columns:1fr 1fr;gap:10px}}
-    .experience{{margin-bottom:8px}} .experience div{{display:flex;justify-content:space-between}} .experience p{{margin:3px 0}}
+    .assessment{{border-left:5px solid #7259ff}} h4{{margin:10px 0 3px}}
     </style></head><body>
     <section class="hero"><p class="kicker">Career Intelligence Report</p>
     <h1>{escape(narrative.headline)}</h1><p>{escape(content.candidate_name or "Candidate")} ·
@@ -62,9 +58,12 @@ def render_html(report: CareerReport) -> str:
     <h2>Executive guidance</h2><section class="summary">
     {"".join(f"<p>{escape(item)}</p>" for item in narrative.executive_summary)}</section>
     <h2>Your professional profile today</h2>
-    <p><strong>Current positioning:</strong> {escape(content.profile_snapshot.current_positioning)}</p>
-    <p><strong>Demonstrated capabilities:</strong> {escape(", ".join(content.profile_snapshot.demonstrated_strengths))}</p>
-    <section>{experience or "<p>No experience entries were identified.</p>"}</section>
+    <section class="assessment"><h3>{escape(assessment.seniority_signal)}</h3>
+    <p>{escape(assessment.market_position)}</p><p><strong>Evidence depth:</strong> {escape(assessment.evidence_depth)}</p>
+    <p><strong>Strongest lane:</strong> {escape(assessment.strongest_lane)}</p>
+    <h4>What supports this assessment</h4><ul>{_list(assessment.evidence_summary)}</ul>
+    <h4>Differentiators</h4><ul>{_list(assessment.differentiators)}</ul>
+    <h4>Signals to strengthen</h4><ul>{_list(assessment.watchouts)}</ul></section>
     <h2>Career directions</h2><section class="grid">{roles}</section>
     <h2>Job-market funnel</h2><section class="funnel">
     <div><b>{content.funnel.discovered}</b>discovered</div>

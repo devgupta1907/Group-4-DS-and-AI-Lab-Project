@@ -36,4 +36,7 @@ def test_fallback_guidance_uses_supplied_roles_and_gaps() -> None:
     )
     assert narrative.strongest_direction == "Data Analyst"
     assert narrative.roles[0].skills_to_learn == ["SQL"]
+    assert len(narrative.roles[0].evidence) >= 2
     assert all(action.based_on for action in narrative.actions)
+    assert len(narrative.weekly_plan) == 4
+    assert all(len(week.tasks) >= 3 for week in narrative.weekly_plan)

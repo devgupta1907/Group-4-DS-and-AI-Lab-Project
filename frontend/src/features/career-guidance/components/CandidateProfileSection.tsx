@@ -7,95 +7,75 @@ type Props = { report: CareerReport };
 
 export function CandidateProfileSection({ report }: Props) {
   const { content } = report;
+  const assessment = profileView(content);
 
   return (
     <section id="section-1">
       <SectionHeader
         number="01"
-        title="Your professional profile today"
-        description="A grounded reading of the experience, capabilities, and credentials already present in your resume."
+        title="How your profile is positioned today"
+        description="An interpretation of your current market signal—not a repetition of your resume."
       />
-      <ProfileSummary content={content} />
-      <ProfileDetails snapshot={content.profile_snapshot} />
-      <Limitations items={content.profile_snapshot?.data_limitations || []} />
+      <article className={styles.positioning}>
+        <span>Current market position</span>
+        <h3>{assessment.seniority}</h3>
+        <p>{assessment.position}</p>
+      </article>
+      <div className={styles.signals}>
+        <Signal label="Evidence depth" value={assessment.depth} />
+        <Signal label="Strongest market lane" value={assessment.lane} />
+        <Signal label="Development focus" value={content.narrative.development_priority} />
+      </div>
+      <div className={styles.analysisGrid}>
+        <EvidenceList title="What supports this assessment" items={assessment.evidence} />
+        <EvidenceList title="What differentiates the profile" items={assessment.differentiators} />
+      </div>
+      <EvidenceList
+        title="Signals to strengthen or verify"
+        items={[...assessment.watchouts, ...assessment.limitations]}
+        muted
+      />
     </section>
   );
 }
 
-function ProfileSummary({ content }: { content: CareerReport['content'] }) {
-  const positioning = content.profile_snapshot?.current_positioning
-    || content.job_titles[0]
-    || 'Open profile';
-  const strengths = content.profile_snapshot?.demonstrated_strengths || content.profile_skills;
-  return (
-    <div className={styles.summary}>
-      <article className={styles.position}>
-        <span>Current positioning</span><h3>{positioning}</h3>
-        <p>{content.narrative.executive_summary[0]}</p>
-      </article>
-      <article className={styles.strengths}>
-        <span>Demonstrated capabilities</span>
-        <div>{strengths.map((skill) => <strong key={skill}>{skill}</strong>)}</div>
-      </article>
-    </div>
-  );
+function profileView(content: CareerReport['content']) {
+  const assessment = content.narrative.profile_assessment ?? defaultAssessment(content);
+  const snapshot = content.profile_snapshot;
+  return {
+    seniority: assessment.seniority_signal,
+    position: assessment.market_position,
+    depth: assessment.evidence_depth,
+    lane: assessment.strongest_lane,
+    evidence: assessment.evidence_summary,
+    differentiators: assessment.differentiators,
+    watchouts: assessment.watchouts,
+    limitations: snapshot?.data_limitations ?? [],
+  };
 }
 
-function ProfileDetails({ snapshot }: { snapshot: CareerReport['content']['profile_snapshot'] }) {
-  const education = snapshot?.education.map(formatEducation) || [];
-  const projects = snapshot?.projects.map(formatProject) || [];
-  return (
-    <div className={styles.profileGrid}>
-      <article><h3>Experience</h3><ExperienceList items={snapshot?.experience || []} /></article>
-      <aside>
-        <ProfileList title="Education" items={education} />
-        <ProfileList title="Projects" items={projects} />
-        <ProfileList title="Certifications" items={snapshot?.certifications || []} />
-      </aside>
-    </div>
-  );
+function defaultAssessment(content: CareerReport['content']) {
+  return {
+    seniority_signal: content.profile_snapshot?.current_positioning ?? content.job_titles[0] ?? 'Open profile',
+    market_position: content.narrative.executive_summary[0] ?? '',
+    evidence_depth: 'Limited',
+    strongest_lane: content.narrative.strongest_direction,
+    evidence_summary: [] as string[],
+    differentiators: [] as string[],
+    watchouts: [] as string[],
+  };
 }
 
-function formatEducation(item: { qualification: string; institution: string; period: string }) {
-  return `${item.qualification} · ${item.institution} ${item.period}`;
+function Signal({ label, value }: { label: string; value: string }) {
+  return <article><span>{label}</span><strong>{value}</strong></article>;
 }
 
-function formatProject(item: { name: string; description: string }) {
-  return item.description ? `${item.name} — ${item.description}` : item.name;
-}
-
-function ExperienceList({
-  items,
-}: {
-  items: NonNullable<CareerReport['content']['profile_snapshot']>['experience'];
-}) {
-  if (!items.length) return <p className={styles.empty}>No experience entries were identified.</p>;
-  return items.map((item) => (
-    <div className={styles.entry} key={`${item.role}-${item.company}-${item.period}`}>
-      <div><strong>{item.role}</strong><span>{item.period}</span></div>
-      <p>{[item.company, item.location].filter(Boolean).join(' · ')}</p>
-      {item.evidence && <small>{item.evidence}</small>}
-    </div>
-  ));
-}
-
-function ProfileList({ title, items }: { title: string; items: string[] }) {
-  return (
-    <section className={styles.list}>
-      <h3>{title}</h3>
-      {items.length
-        ? items.map((item) => <p key={item}>{item}</p>)
-        : <p className={styles.empty}>Not identified in this resume.</p>}
-    </section>
-  );
-}
-
-function Limitations({ items }: { items: string[] }) {
+function EvidenceList({ title, items, muted = false }: { title: string; items: string[]; muted?: boolean }) {
   if (!items.length) return null;
   return (
-    <div className={styles.limitations}>
-      <strong>Profile details to review</strong>
-      {items.map((item) => <p key={item}>{item}</p>)}
-    </div>
+    <article className={muted ? styles.watchouts : styles.evidence}>
+      <h3>{title}</h3>
+      <ol>{items.map((item) => <li key={item}>{item}</li>)}</ol>
+    </article>
   );
 }
