@@ -106,7 +106,9 @@ async def discover_jobs_for_profile(
         logger.info("Profile %s has no usable signal; skipping job discovery.", profile_id)
         async with session_factory() as session:
             repo = JobDiscoveryRepository(session)
-            run_id = await repo.create_run(profile_id=profile_id, user_id=user_id, preferences=prefs)
+            run_id = await repo.create_run(
+                profile_id=profile_id, user_id=user_id, preferences=prefs
+            )
             await repo.finish_run(
                 run_id,
                 status="no_candidates",
@@ -130,7 +132,9 @@ async def discover_jobs_for_profile(
         repo = JobDiscoveryRepository(session)
         run_id = await repo.create_run(profile_id=profile_id, user_id=user_id, preferences=prefs)
 
-    candidate_embedding = embed_query(_candidate_profile_text(candidate_json) or candidate_json.get("current_role", ""))
+    candidate_embedding = embed_query(
+        _candidate_profile_text(candidate_json) or candidate_json.get("current_role", "")
+    )
 
     initial_state: PipelineState = {
         "run_id": run_id,
@@ -169,7 +173,10 @@ async def discover_jobs_for_profile(
     elif not final_jobs:
         status, message = "no_jobs", "No jobs survived search, crawling and filtering for this run."
     elif not final_jobs[0]["judge"]["used_llm_judge"]:
-        status, message = "degraded_no_llm", "LLM judge unavailable this run; ranked by hybrid score only."
+        status, message = (
+            "degraded_no_llm",
+            "LLM judge unavailable this run; ranked by hybrid score only.",
+        )
     else:
         status, message = "ok", ""
 
@@ -209,6 +216,14 @@ async def get_latest_run(profile_id: UUID, user_id: str | None = None) -> JobDis
     return await store.get_latest_run(profile_id, user_id=user_id)
 
 
-async def get_runs(profile_id: UUID, user_id: str | None = None, limit: int = 10) -> list[JobDiscoveryResult]:
+async def get_runs(
+    profile_id: UUID, user_id: str | None = None, limit: int = 10
+) -> list[JobDiscoveryResult]:
     """Up to `limit` past runs for a profile, most recent first."""
     return await store.get_runs(profile_id, user_id=user_id, limit=limit)
+
+
+async def get_run_profile_id(run_id: UUID, user_id: str) -> UUID | None:
+    """Resolve an owned run to its source profile for cross-module validation."""
+    async with get_session_factory()() as session:
+        return await JobDiscoveryRepository(session).get_profile_id(run_id, user_id)

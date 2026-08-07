@@ -1,0 +1,69 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: dsai
+      POSTGRES_PASSWORD: dsai
+      POSTGRES_DB: dsai
+    volumes:
+      - dsai_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dsai -d dsai"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  searxng:
+    image: searxng/searxng:latest
+    restart: unless-stopped
+    volumes:
+      - ./backend/searxng:/etc/searxng:rw
+    environment:
+      SEARXNG_BASE_URL: http://searxng:8080/
+      INSTANCE_NAME: job-discovery-search
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  backend:
+    build:
+      context: ./backend
+      args:
+        ENABLE_DOCLING: ${ENABLE_DOCLING:-false}
+    env_file:
+      - ./backend/.env
+    environment:
+      SEARXNG_URL: http://searxng:8080
+      CRAWL4_AI_BASE_DIRECTORY: /tmp
+      DEBUG: "false"
+      RESUME_SCANNED_PDF_STRATEGY: ${RESUME_SCANNED_PDF_STRATEGY:-direct_vision}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      searxng:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/app/.venv/bin/python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  dsai_pgdata:

@@ -37,8 +37,13 @@ dependencies = [
     "crawl4ai>=0.9.2",
     "numpy>=2.5.1",
     "httpx>=0.28.1",
-    "docling>=2.70",
+    "playwright>=1.54.0",
 ]
+
+[project.optional-dependencies]
+# Experimental OCR/layout route. The production Docker image excludes this
+# unless ENABLE_DOCLING=true is supplied at build time.
+docling = ["docling>=2.70"]
 
 [dependency-groups]
 dev = [
@@ -76,4 +81,5 @@ packages = [
     "src/career_recommendation",
     "src/resume_parsing",
     "src/job_discovery_matching",
+    "src/career_report",
 ]

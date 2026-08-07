@@ -43,8 +43,8 @@ def get_engine() -> AsyncEngine:
         # Bounded on purpose. max_overflow=0 means the pool never silently
         # grows past pool_size; a leak surfaces as a timeout here rather than
         # as an EMAXCONNSESSION error from the pooler, which is easier to trace.
-        pool_size=5,
-        max_overflow=0,
+        pool_size=settings.database_pool_size,
+        max_overflow=settings.database_max_overflow,
         # Recycle before the pooler drops an idle connection server-side,
         # otherwise the first query on a stale connection fails.
         pool_recycle=300,

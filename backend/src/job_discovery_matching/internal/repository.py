@@ -79,6 +79,12 @@ class JobDiscoveryRepository:
         run.completed_at = datetime.now(UTC)
         await self._session.commit()
 
+    async def get_profile_id(self, run_id: UUID, user_id: str) -> UUID | None:
+        stmt = select(JobDiscoveryRun.profile_id).where(
+            JobDiscoveryRun.id == run_id, JobDiscoveryRun.user_id == user_id
+        )
+        return (await self._session.execute(stmt)).scalar_one_or_none()
+
     # ------------------------------------------------------------- postings --
 
     async def get_fresh_posting(self, url: str) -> JobPosting | None:

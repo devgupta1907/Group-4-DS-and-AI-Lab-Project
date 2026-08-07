@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     # --- database ---
     database_url: str = "postgresql+asyncpg://dsai:dsai@localhost:5432/dsai"
     db_echo: bool = False
+    database_pool_size: int = 2
+    database_max_overflow: int = 1
 
     # --- auth (dev resolver; Google SSO replaces this later) ---
     dev_user_id: str = "dev-user"
@@ -39,6 +41,7 @@ class Settings(BaseSettings):
     profile_encryption_key: str = ""
 
     # --- Google AI Studio (resume parsing) ---
+    google_api_key: str = ""
     google_ai_studio_api_key: str = ""
     resume_primary_model: str = "gemma-3-27b-it"
     resume_fallback_model: str = "gemini-2.5-flash"
@@ -57,6 +60,11 @@ class Settings(BaseSettings):
     resume_text_layer_min_chars: int = 100
     resume_completeness_threshold: float = 0.4
 
+    @property
+    def effective_google_api_key(self) -> str:
+        """One shared key, with the old resume-specific name kept as an alias."""
+        return self.google_api_key or self.google_ai_studio_api_key
+
 
 @lru_cache
 def get_settings() -> Settings:
@@ -66,7 +74,7 @@ def get_settings() -> Settings:
 class GlobalConfig:
     """Application-wide configuration for the Career Recommendation stack."""
 
-    GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+    GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY") or os.getenv("GOOGLE_AI_STUDIO_API_KEY")
 
     # Raw datasets live at the PROJECT root, not under backend/.
     DATA_DIR = BASE_DIR.parent / "data"
@@ -93,4 +101,6 @@ class GlobalConfig:
 
 
 if not GlobalConfig.GOOGLE_API_KEY:
-    raise ValueError("GOOGLE_API_KEY is not set. Please check your .env file.")
+    raise ValueError(
+        "GOOGLE_API_KEY or GOOGLE_AI_STUDIO_API_KEY is not set. Please check your .env file."
+    )
