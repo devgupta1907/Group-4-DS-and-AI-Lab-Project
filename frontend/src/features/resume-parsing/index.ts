@@ -3,6 +3,7 @@
  */
 export { ResumeParsingPage } from './pages/ResumeParsingPage';
 export { ResultsPanel } from './components/ResultsPanel';
+export { ProfileView } from './components/ProfileView';
 export { ResumeUploadPanel } from './components/ResumeUploadPanel';
 export { useFileValidation } from './hooks/useFileValidation';
 export { useResumeUpload } from './hooks/useResumeUpload';

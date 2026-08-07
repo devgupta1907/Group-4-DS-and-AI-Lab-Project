@@ -7,8 +7,10 @@ import {
   useCareerGuidance,
 } from '@features/career-guidance';
 import {
+  ProfileView,
   ResultsPanel,
   ResumeUploadPanel,
+  type ProfileRecord,
   useFileValidation,
   useResumeUpload,
 } from '@features/resume-parsing';
@@ -49,7 +51,7 @@ export function App() {
   );
 
   if (guidance.report) {
-    return <ReportPage report={guidance.report} />;
+    return <ReportPage report={guidance.report} parsedResume={upload.record} />;
   }
 
   return (
@@ -104,8 +106,25 @@ export function App() {
   );
 }
 
-function ReportPage({ report }: { report: NonNullable<ReturnType<typeof useCareerGuidance>['report']> }) {
-  return <main className={styles.reportPage}><TopBar step={4} /><CareerReportView report={report} /></main>;
+function ReportPage({
+  report,
+  parsedResume,
+}: {
+  report: NonNullable<ReturnType<typeof useCareerGuidance>['report']>;
+  parsedResume: ProfileRecord | null;
+}) {
+  return (
+    <main className={styles.reportPage}>
+      <TopBar step={4} />
+      {parsedResume && (
+        <details className={styles.parsedResume}>
+          <summary><span>Testing only</span><strong>View parsed resume data</strong></summary>
+          <div><ProfileView record={parsedResume} /></div>
+        </details>
+      )}
+      <CareerReportView report={report} />
+    </main>
+  );
 }
 
 function TopBar({ step }: { step: number }) {
