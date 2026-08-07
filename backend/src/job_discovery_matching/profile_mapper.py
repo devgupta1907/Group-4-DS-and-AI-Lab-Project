@@ -15,7 +15,7 @@ Field translation, and why:
     skills                                      -> skills                 (verbatim)
     most recent experience[].job_title          -> current_role
     (none — not modelled upstream)              -> domain            (left "")
-    (none — not modelled upstream)              -> experience_years  (left 0.0)
+    (none — not modelled upstream)              -> experience_years  (left None)
     (none — not modelled upstream)              -> remote_ok         (left False;
                                                       preferences.remote_only is the
                                                       real signal, applied in hard_filter)
@@ -61,7 +61,7 @@ def from_parsed_resume(parsed: ParsedProfile) -> dict[str, Any]:
         "domain": "",
         "location": parsed.contact.location or "",
         "remote_ok": False,
-        "experience_years": 0.0,
+        "experience_years": None,
         "min_salary_lpa": 0.0,
         "education": (parsed.education[0].degree or "") if parsed.education else "",
     }

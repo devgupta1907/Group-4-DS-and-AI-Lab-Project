@@ -18,6 +18,11 @@ from src.career_report.schemas import (
     CareerReportContent,
     FunnelData,
     JobOpportunity,
+    ProfileEducation,
+    ProfileExperience,
+    ProfileProject,
+    ProfileSnapshot,
+    SourceStatus,
 )
 from src.core.db import get_session_factory
 from src.core.security import CurrentUser
@@ -28,6 +33,60 @@ from src.resume_parsing.service import ResumeParsingService
 
 class ReportSourceNotFound(Exception):
     pass
+
+
+def _period(start: str | None, end: str | None, current: bool = False) -> str:
+    finish = "Present" if current else (end or "")
+    return " – ".join(part for part in [start or "", finish] if part)
+
+
+def _profile_snapshot(profile) -> ProfileSnapshot:
+    experience = [
+        ProfileExperience(
+            role=item.job_title or "Role not specified",
+            company=item.company or "",
+            location=item.location or "",
+            period=_period(item.start_date, item.end_date, bool(item.current_role)),
+            evidence=item.description or "",
+        )
+        for item in profile.experience
+    ]
+    education = [
+        ProfileEducation(
+            qualification=" in ".join(part for part in [item.degree, item.field] if part),
+            institution=item.institution or "",
+            period=_period(item.start_year, item.end_year),
+        )
+        for item in profile.education
+    ]
+    projects = [
+        ProfileProject(
+            name=item.name or "Project",
+            description=item.description or "",
+            technologies=item.technologies,
+        )
+        for item in profile.projects
+    ]
+    limitations = []
+    if not profile.projects:
+        limitations.append("No projects were identified in the supplied resume.")
+    if not profile.certifications:
+        limitations.append("No certifications were identified in the supplied resume.")
+    if not profile.experience:
+        limitations.append("No employment history was identified; role guidance is less specific.")
+    current = experience[0].role if experience else (profile.job_titles or ["Open profile"])[0]
+    return ProfileSnapshot(
+        current_positioning=current,
+        experience=experience,
+        education=education,
+        projects=projects,
+        certifications=[
+            " · ".join(part for part in [item.name, item.issuer, item.year] if part)
+            for item in profile.certifications
+        ],
+        demonstrated_strengths=profile.skills[:12],
+        data_limitations=limitations,
+    )
 
 
 async def run_guidance_pipeline(
@@ -120,6 +179,13 @@ async def generate_report(
         candidate_location=record.profile.contact.location,
         profile_skills=record.profile.skills,
         job_titles=record.profile.job_titles,
+        profile_snapshot=_profile_snapshot(record.profile),
+        source_status=SourceStatus(
+            career_status=career_run["status"],
+            career_message=career_run["message"],
+            job_status=job_result.status,
+            job_message=job_result.message,
+        ),
         narrative=narrative,
         skill_unlocks=build_skill_unlocks(
             jobs, [r.get("occupation_title", "") for r in recommendations]

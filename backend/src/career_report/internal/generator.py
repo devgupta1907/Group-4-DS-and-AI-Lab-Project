@@ -12,9 +12,10 @@ from src.career_report.schemas import (
     ReportNarrative,
     RoleGuidance,
     SkillUnlock,
+    WeeklyPlan,
 )
 
-PROMPT_VERSION = "v1"
+PROMPT_VERSION = "v2"
 
 
 def repeated_gaps(jobs: list[dict[str, Any]]) -> list[tuple[str, int]]:
@@ -95,6 +96,33 @@ def fallback_narrative(
         )
     ]
     priority = gaps[0] if gaps else "Make your strongest evidence more visible"
+    actions = [
+        ActionItem(
+            horizon="7_days",
+            action="Rewrite the profile summary around the strongest demonstrated role.",
+            based_on=f"Strongest direction: {strongest}",
+        ),
+        ActionItem(
+            horizon="7_days",
+            action="Add two outcome-focused bullets to the most relevant recent experience.",
+            based_on="Evidence in the current experience history",
+        ),
+        ActionItem(
+            horizon="30_days",
+            action=f"Create one focused proof-of-skill artifact around {priority}.",
+            based_on=f"Development priority: {priority}",
+        ),
+        ActionItem(
+            horizon="30_days",
+            action=f"Build a saved search for {strongest} and {adjacent} roles.",
+            based_on=f"Recommended directions: {strongest}; {adjacent}",
+        ),
+        ActionItem(
+            horizon="90_days",
+            action="Apply selectively and record recurring requirements and responses.",
+            based_on=f"{len(jobs)} shortlisted opportunities in this run",
+        ),
+    ]
     return ReportNarrative(
         headline=f"Your strongest current direction is {strongest}",
         executive_summary=[
@@ -107,21 +135,31 @@ def fallback_narrative(
         development_priority=priority,
         roles=roles,
         pathways=pathways,
-        actions=[
-            ActionItem(
-                horizon="7_days",
-                action="Tailor your resume toward the strongest recommended role.",
-                based_on=f"Strongest direction: {strongest}",
+        actions=actions,
+        weekly_plan=[
+            WeeklyPlan(
+                week=1,
+                theme="Clarify your positioning",
+                outcome=f"A resume clearly positioned for {strongest}",
+                tasks=actions[:2],
             ),
-            ActionItem(
-                horizon="30_days",
-                action=f"Build a small proof-of-skill project focused on {priority}.",
-                based_on=f"Repeated gap: {priority}",
+            WeeklyPlan(
+                week=2,
+                theme="Build market evidence",
+                outcome=f"One visible artifact demonstrating {priority}",
+                tasks=actions[2:3],
             ),
-            ActionItem(
-                horizon="90_days",
-                action="Apply selectively and track which requirements recur across responses.",
-                based_on=f"{len(jobs)} shortlisted opportunities",
+            WeeklyPlan(
+                week=3,
+                theme="Create a focused opportunity list",
+                outcome="A shortlist built around current-fit and adjacent roles",
+                tasks=actions[3:4],
+            ),
+            WeeklyPlan(
+                week=4,
+                theme="Run a measured application cycle",
+                outcome="Applications tracked with evidence about what the market rewards",
+                tasks=actions[4:],
             ),
         ],
         limitations=[
@@ -147,10 +185,12 @@ def generate_narrative(
             {"profile": profile, "recommendations": recommendations, "jobs": jobs}
         )
         prompt = (
-            "Create concise candidate-facing career guidance from the JSON evidence. "
+            "Create detailed, candidate-facing career guidance from the JSON evidence. "
             "Use only supplied roles, skills, gaps and jobs. Never invent facts, scores, "
             "URLs or qualifications. Suggestions must cite evidence. Use categorical "
-            "readiness and effort. Every action must name its evidence in based_on. "
+            "readiness and effort. Explore the candidate's current positioning before future "
+            "options. Provide 3-5 roles, three pathways, five or more actions, and a four-week "
+            "weekly_plan. Every action must name its evidence in based_on. "
             f"Allowed role titles: {allowed_roles}. Allowed skills to learn: {allowed_gaps}. "
             f"Evidence: {evidence}"
         )

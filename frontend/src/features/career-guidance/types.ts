@@ -43,6 +43,12 @@ export type RoleGuidance = {
   next_step: string;
 };
 
+export type ActionItem = {
+  horizon: '7_days' | '30_days' | '90_days';
+  action: string;
+  based_on: string;
+};
+
 export type CareerReport = {
   id: string;
   profile_id: string;
@@ -53,6 +59,27 @@ export type CareerReport = {
     candidate_location: string | null;
     profile_skills: string[];
     job_titles: string[];
+    profile_snapshot?: {
+      current_positioning: string;
+      experience: Array<{
+        role: string;
+        company: string;
+        location: string;
+        period: string;
+        evidence: string;
+      }>;
+      education: Array<{ qualification: string; institution: string; period: string }>;
+      projects: Array<{ name: string; description: string; technologies: string[] }>;
+      certifications: string[];
+      demonstrated_strengths: string[];
+      data_limitations: string[];
+    };
+    source_status?: {
+      career_status: string;
+      career_message: string;
+      job_status: string;
+      job_message: string;
+    };
     narrative: {
       headline: string;
       executive_summary: string[];
@@ -69,7 +96,13 @@ export type CareerReport = {
         learning_priorities: string[];
         example_job_titles: string[];
       }>;
-      actions: Array<{ horizon: string; action: string; based_on: string }>;
+      actions: ActionItem[];
+      weekly_plan?: Array<{
+        week: number;
+        theme: string;
+        outcome: string;
+        tasks: ActionItem[];
+      }>;
       limitations: string[];
     };
     skill_unlocks: Array<{

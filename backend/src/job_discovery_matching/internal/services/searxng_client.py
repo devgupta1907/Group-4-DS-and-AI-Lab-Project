@@ -34,7 +34,6 @@ async def search(query: str, max_results: int = 8) -> list[dict]:
                     resp.status_code, query, resp.text[:500],
                 )
                 return []
-            print(resp.text)
             data = resp.json()
     except (httpx.HTTPError, ValueError) as exc:
         logger.warning("SearXNG query failed for %r: %s", query, exc)

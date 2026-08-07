@@ -30,10 +30,16 @@ def render_html(report: CareerReport) -> str:
         <a href="{escape(job.source_url)}">{escape(job.source_url)}</a></article>"""
         for job in content.opportunities
     )
-    actions = "".join(
-        f"<article><b>{escape(action.horizon.replace('_', ' '))}</b>"
-        f"<p>{escape(action.action)}</p><small>{escape(action.based_on)}</small></article>"
-        for action in narrative.actions
+    experience = "".join(
+        f"""<article class="experience"><div><h3>{escape(item.role)}</h3><span>{escape(item.period)}</span></div>
+        <p>{escape(" · ".join(part for part in [item.company, item.location] if part))}</p>
+        <small>{escape(item.evidence)}</small></article>"""
+        for item in content.profile_snapshot.experience
+    )
+    weeks = "".join(
+        f"""<article class="week"><b>Week {week.week} · {escape(week.theme)}</b>
+        <p>{escape(week.outcome)}</p><ul>{_list([task.action for task in week.tasks])}</ul></article>"""
+        for week in narrative.weekly_plan
     )
     return f"""<!doctype html><html><head><meta charset="utf-8"><style>
     @page {{ size:A4; margin:16mm; @bottom-right {{content:"Career Guidance · " counter(page)}} }}
@@ -42,25 +48,30 @@ def render_html(report: CareerReport) -> str:
     .hero{{background:#111428;color:#f7f3e9;padding:28px;border-radius:18px;border-bottom:8px solid #c8ff61}}
     .kicker,span{{color:#7259ff;text-transform:uppercase;font-weight:bold;letter-spacing:.08em;font-size:8pt}}
     .summary,.grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}}
-    .summary p,.card,.job,.actions article{{border:1px solid #d9d6e2;border-radius:12px;padding:12px;break-inside:avoid}}
+    .summary p,.card,.job,.week,.experience{{border:1px solid #d9d6e2;border-radius:12px;padding:12px;break-inside:avoid}}
     .card strong{{color:#7259ff}} .job{{display:grid;grid-template-columns:1fr auto;gap:5px;margin-bottom:8px}}
     .job p,.job a{{grid-column:1/-1;margin:0}} .job b{{font-size:17pt;color:#7259ff}}
     a{{color:#4933c8;word-break:break-all}} ul{{padding-left:16px}} small{{color:#62657a}}
     .funnel{{display:flex;gap:8px}} .funnel div{{flex:1;padding:12px;background:#f3f0ff;border-radius:10px;text-align:center}}
-    .funnel b{{display:block;font-size:20pt}} .actions{{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}}
+    .funnel b{{display:block;font-size:20pt}} .weeks{{display:grid;grid-template-columns:1fr 1fr;gap:10px}}
+    .experience{{margin-bottom:8px}} .experience div{{display:flex;justify-content:space-between}} .experience p{{margin:3px 0}}
     </style></head><body>
     <section class="hero"><p class="kicker">Career Intelligence Report</p>
     <h1>{escape(narrative.headline)}</h1><p>{escape(content.candidate_name or "Candidate")} ·
     {escape(content.candidate_location or "Location not supplied")}</p></section>
     <h2>Executive guidance</h2><section class="summary">
     {"".join(f"<p>{escape(item)}</p>" for item in narrative.executive_summary)}</section>
+    <h2>Your professional profile today</h2>
+    <p><strong>Current positioning:</strong> {escape(content.profile_snapshot.current_positioning)}</p>
+    <p><strong>Demonstrated capabilities:</strong> {escape(", ".join(content.profile_snapshot.demonstrated_strengths))}</p>
+    <section>{experience or "<p>No experience entries were identified.</p>"}</section>
     <h2>Career directions</h2><section class="grid">{roles}</section>
     <h2>Job-market funnel</h2><section class="funnel">
     <div><b>{content.funnel.discovered}</b>discovered</div>
     <div><b>{content.funnel.filtered}</b>filtered</div>
     <div><b>{content.funnel.shortlisted}</b>shortlisted</div></section>
     <h2>Relevant opportunities</h2>{jobs}
-    <h2>Your action plan</h2><section class="actions">{actions}</section>
+    <h2>Your first four weeks</h2><section class="weeks">{weeks}</section>
     <h2>Methodology & limitations</h2><ul>{_list(content.methodology + narrative.limitations)}</ul>
     </body></html>"""
 

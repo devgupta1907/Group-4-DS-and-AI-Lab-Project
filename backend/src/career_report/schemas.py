@@ -54,6 +54,13 @@ class ActionItem(BaseModel):
     based_on: str
 
 
+class WeeklyPlan(BaseModel):
+    week: int
+    theme: str
+    outcome: str
+    tasks: list[ActionItem] = Field(default_factory=list)
+
+
 class ReportNarrative(BaseModel):
     headline: str
     executive_summary: list[str]
@@ -63,6 +70,7 @@ class ReportNarrative(BaseModel):
     roles: list[RoleGuidance]
     pathways: list[CareerPathway]
     actions: list[ActionItem]
+    weekly_plan: list[WeeklyPlan] = Field(default_factory=list)
     limitations: list[str]
 
 
@@ -84,11 +92,50 @@ class JobOpportunity(BaseModel):
     gaps: list[str]
 
 
+class ProfileExperience(BaseModel):
+    role: str
+    company: str = ""
+    location: str = ""
+    period: str = ""
+    evidence: str = ""
+
+
+class ProfileEducation(BaseModel):
+    qualification: str
+    institution: str = ""
+    period: str = ""
+
+
+class ProfileProject(BaseModel):
+    name: str
+    description: str = ""
+    technologies: list[str] = Field(default_factory=list)
+
+
+class ProfileSnapshot(BaseModel):
+    current_positioning: str = ""
+    experience: list[ProfileExperience] = Field(default_factory=list)
+    education: list[ProfileEducation] = Field(default_factory=list)
+    projects: list[ProfileProject] = Field(default_factory=list)
+    certifications: list[str] = Field(default_factory=list)
+    demonstrated_strengths: list[str] = Field(default_factory=list)
+    data_limitations: list[str] = Field(default_factory=list)
+
+
+class SourceStatus(BaseModel):
+    career_status: str = ""
+    career_message: str = ""
+    job_status: str = ""
+    job_message: str = ""
+
+
 class CareerReportContent(BaseModel):
     candidate_name: str | None = None
     candidate_location: str | None = None
     profile_skills: list[str]
     job_titles: list[str]
+    profile_snapshot: ProfileSnapshot = Field(default_factory=ProfileSnapshot)
+    source_status: SourceStatus = Field(default_factory=SourceStatus)
     narrative: ReportNarrative
     skill_unlocks: list[SkillUnlock]
     funnel: FunnelData
