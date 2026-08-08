@@ -11,6 +11,68 @@ search:
   formats:
     - html
     - json
+  # SearXNG waits only 3s by default. A slow engine that would have
+  # answered is dropped, and from the client's side that is
+  # indistinguishable from "no results".
+  max_request_timeout: 10.0
 
 server:
   secret_key: "change-this-secret-key-in-production"
+
+outgoing:
+  request_timeout: 8.0
+  max_request_timeout: 12.0
+  pool_connections: 100
+  pool_maxsize: 20
+
+# Engine selection.
+#
+# The defaults lean on Google, DuckDuckGo, Startpage and Brave, all of
+# which throttle or CAPTCHA a self-hosted instance once it has issued a
+# few hundred queries from one IP. Observed after roughly two hours of
+# testing:
+#     brave        -> too many requests
+#     duckduckgo   -> CAPTCHA
+#     google cse   -> too many requests
+#     startpage    -> CAPTCHA
+# With all four blocked every query returns zero results while SearXNG
+# still answers HTTP 200, so the failure is silent.
+#
+# Mojeek runs its own crawler and does not challenge automated clients,
+# so it keeps returning results when the others have shut the door. Bing
+# is more tolerant than Google and is kept as a second source. The
+# blocked engines stay enabled deliberately: they are the better sources
+# when they are available, and SearXNG merges whatever responds rather
+# than failing on the ones that do not.
+engines:
+  - name: mojeek
+    disabled: false
+    timeout: 6.0
+
+  - name: bing
+    disabled: false
+    timeout: 6.0
+
+  - name: duckduckgo
+    disabled: false
+    timeout: 5.0
+
+  - name: brave
+    disabled: false
+    timeout: 5.0
+
+  - name: startpage
+    disabled: false
+    timeout: 5.0
+
+  # Reference sources return encyclopedia articles for a job-title query,
+  # which the crawler then fetches and the judge discards. Turning them
+  # off removes that work rather than filtering it later.
+  - name: wikipedia
+    disabled: true
+  - name: wikidata
+    disabled: true
+  - name: currency
+    disabled: true
+  - name: duckduckgo definitions
+    disabled: true

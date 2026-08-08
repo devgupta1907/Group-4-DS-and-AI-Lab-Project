@@ -231,3 +231,17 @@ class JobDiscoveryRepository:
             .order_by(JobDiscoveryRanking.rank_position.asc())
         )
         return list((await self._session.execute(stmt)).scalars().all())
+
+
+    async def find_postings_by_embedding(
+        self, embedding: list[float], limit: int = 20
+    ) -> list[JobPosting]:
+
+        stmt = (
+            select(JobPosting)
+            .where(JobPosting.embedding.isnot(None))
+            .order_by(JobPosting.embedding.cosine_distance(embedding))
+            .limit(limit)
+        )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
