@@ -16,7 +16,6 @@ pure request/response call with no side effects.
 """
 
 from __future__ import annotations
-
 import logging
 from uuid import UUID
 

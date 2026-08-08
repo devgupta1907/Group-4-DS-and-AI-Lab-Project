@@ -2,8 +2,8 @@
 Career Recommendation — Retrieval step.
 
 Takes a validated Candidate Profile JSON (output of Resume Parsing) and
-pulls the top-K nearest ESCO occupations from the persisted ChromaDB
-index built by ingestion.py.
+pulls the top-K nearest ESCO occupations from the persisted vector store
+built by ingestion.py.
 
 Works against the enriched v2 index, whose documents contain:
     Occupation title / Alternative titles / Description /
@@ -11,17 +11,10 @@ Works against the enriched v2 index, whose documents contain:
 """
 
 from langchain_core.documents import Document
-
 from src.core.config import GlobalConfig
-# from db.chroma_manager import get_vector_store
 from db.supabase_manager import get_vector_store
 from career_recommendation.config import CareerRecommendationModuleConfig
 
-# BGE models are asymmetric: short queries must carry this instruction
-# prefix so they land near long passages in the vector space. Documents
-# are indexed WITHOUT a prefix — only the query side gets it.
-# Gemini handles this via task_type instead (RETRIEVAL_QUERY vs
-# RETRIEVAL_DOCUMENT), so no prefix is applied when using Gemini.
 BGE_QUERY_PREFIX = "Represent this sentence for searching relevant passages: "
 
 
@@ -29,10 +22,6 @@ def build_query_text(candidate_profile: dict) -> str:
     """
     Turns a Candidate Profile dict into a single text string for
     embedding + semantic search against the ESCO index.
-
-    Mirrors the shape of the indexed documents (title-like signal first,
-    then skills, then free-text context) so the query and the documents
-    are comparable.
     """
     parts = []
 
@@ -79,9 +68,7 @@ def build_query_text(candidate_profile: dict) -> str:
 
 def retrieve_candidate_occupations(candidate_profile: dict) -> list[tuple[Document, float]]:
     """
-    Step 1 of Career Recommendation: embed the candidate profile and pull
-    the top-K (RETRIEVAL_TOP_K = 20) nearest ESCO occupations from the
-    persisted ChromaDB index.
+    the actual retrieval call. Gets the vector store, builds the query text, and asks for the top RETRIEVAL_TOP_K (20) nearest documents by relevance score.
 
     Returns a list of (Document, relevance_score) tuples ordered by
     descending relevance. Each Document carries occupation_title,
@@ -97,8 +84,6 @@ def retrieve_candidate_occupations(candidate_profile: dict) -> list[tuple[Docume
 
 
 if __name__ == "__main__":
-    # Manual smoke test only — not a substitute for the formal
-    # Milestone 5 Recall@K / Precision@K / MRR evaluation.
     sample_profile = {
         "job_titles": ["Data Analyst"],
         "skills": ["Python", "SQL", "data visualisation", "statistics"],
