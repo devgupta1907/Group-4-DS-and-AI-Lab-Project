@@ -13,7 +13,8 @@ from urllib.parse import urlparse
 from src.job_discovery_matching.config import JobDiscoveryModuleConfig as Cfg
 from src.job_discovery_matching.internal.pipeline.state import PipelineState
 from src.job_discovery_matching.internal.services import searxng_client
-
+from src.core.db import get_session_factory
+from src.job_discovery_matching.internal.repository import JobDiscoveryRepository
 logger = logging.getLogger(__name__)
 
 _NON_VACANCY_TERMS = (
@@ -92,10 +93,21 @@ async def run(state: PipelineState) -> PipelineState:
         len(job_urls),
     )
     if not job_urls:
+
         logger.warning(
-            "Zero job URLs found across all %d queries: %s. Check SearXNG directly — "
-            "this is almost always a SearXNG/upstream-engine problem, not this module.",
+            "Zero job URLs found across all %d queries: %s. Falling back to "
+            "the stored posting store.",
             len(queries), queries,
         )
+        async with get_session_factory()() as session:
+            repo = JobDiscoveryRepository(session)
+            cached = await repo.find_postings_by_embedding(
+                state["<EMBEDDING_KEY>"], limit=Cfg.MAX_JOB_URLS
+            )
+        job_urls = [p.url for p in cached]
+        state["job_urls"] = job_urls
+        state["used_cached_postings"] = bool(job_urls)
+        logger.info("Recovered %d postings from the store", len(job_urls))
+
     state.setdefault("progress", []).append("search_complete")
     return state
