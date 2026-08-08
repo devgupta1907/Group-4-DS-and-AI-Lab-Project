@@ -1,0 +1,97 @@
+.frame {
+  position: relative;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  background: var(--c-surface);
+  box-shadow: var(--e-1);
+}
+
+.page {
+  position: relative;
+  /* Roughly A4. Taller pages crop rather than stretch the card, so the frame
+     keeps a predictable height while parsing. */
+  aspect-ratio: 1 / 1.32;
+  overflow: hidden;
+  background: #fff;
+}
+
+.page img,
+.page canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.fallback {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  background: var(--c-surface-sunken);
+  color: var(--c-text-subtle);
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  letter-spacing: .12em;
+}
+
+/* --- scanning ---------------------------------------------------------- */
+
+/* Dims the page so the beam reads as light passing over it. */
+.page::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgb(15 42 51 / 18%);
+}
+
+.beam {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 32%;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgb(113 196 204 / 22%) 45%,
+    rgb(113 196 204 / 55%) 50%,
+    rgb(113 196 204 / 22%) 55%,
+    transparent 100%
+  );
+  border-bottom: 2px solid var(--c-aqua);
+  animation: sweep 2.1s cubic-bezier(.65, 0, .35, 1) infinite;
+  will-change: transform;
+}
+
+/* A faint grid sells "machine reading" rather than "loading". */
+.grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgb(113 196 204 / 14%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(113 196 204 / 14%) 1px, transparent 1px);
+  background-size: 28px 28px;
+  pointer-events: none;
+}
+
+@keyframes sweep {
+  0% { transform: translateY(-34%); }
+  100% { transform: translateY(310%); }
+}
+
+.caption {
+  padding: var(--s-3) var(--s-4);
+  border-top: 1px solid var(--c-border);
+  background: var(--c-surface);
+  color: var(--c-teal);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .beam { animation: none; top: 34%; }
+}
