@@ -18,13 +18,6 @@ WHY DIRECT SQL AND NOT langchain's SupabaseVectorStore
     literal ourselves ("[0.1,0.2,...]"::vector) avoids it entirely.
     Reads through langchain (db/supabase_manager.py) are fine — it is
     only the write path that is broken.
-
-KNOWN LIMITATION
-    BGE truncates at 512 tokens; the longest occupation documents reach
-    ~1,300 tokens, so tails (usually the optional-skills segment) are
-    silently dropped by the encoder. Chunking would fix this but requires
-    changing retrieval to dedupe/aggregate multiple chunks per
-    occupation. Accepted and recorded rather than worked around here.
 """
 
 from __future__ import annotations

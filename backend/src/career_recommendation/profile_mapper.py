@@ -8,12 +8,6 @@ CandidateProfile, and the field names don't line up everywhere:
     resume_parsing.schemas.Experience.job_title
         -> career_recommendation.models.ExperienceEntry.title
 
-
-Fields deliberately dropped on the way through:
-  - contact (name, location, links): pure PII, and nothing downstream
-    (retrieval.build_query_text, re_ranker.deterministic_rerank) reads
-    it for matching.
-  - certifications: not currently used as a retrieval signal.
 """
 
 from __future__ import annotations

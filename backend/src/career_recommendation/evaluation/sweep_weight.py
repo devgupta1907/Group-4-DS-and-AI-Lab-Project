@@ -6,10 +6,10 @@ Run from backend/:
 import json
 from pathlib import Path
 
-from career_recommendation.config import CareerRecommendationModuleConfig as Cfg
-from career_recommendation.retrieval import retrieve_candidate_occupations
-from career_recommendation import re_ranker
-from career_recommendation.evaluation.evaluate_gold import (
+from src.career_recommendation.config import CareerRecommendationModuleConfig as Cfg
+from src.career_recommendation.retrieval import retrieve_candidate_occupations
+from src.career_recommendation import re_ranker
+from src.career_recommendation.evaluation.evaluate_gold import (
     load_gold, to_profile, reciprocal_rank, hit_rate_at_k, _mean, MAP_PATH
 )
 
