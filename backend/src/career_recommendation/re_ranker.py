@@ -24,13 +24,14 @@ Robustness behaviour:
 """
 
 import logging
+from uuid import UUID
 
 from langchain_core.documents import Document
 from pydantic import BaseModel, Field
 
-from services.llm_client import llm
 from career_recommendation.config import CareerRecommendationModuleConfig as Cfg
 from career_recommendation.retrieval import retrieve_candidate_occupations
+from services.llm_client import llm
 
 logger = logging.getLogger(__name__)
 
@@ -83,17 +84,19 @@ def deterministic_rerank(candidate_profile: dict, retrieved: list[tuple[Document
             + len(matched_opt) * Cfg.OPTIONAL_SKILL_WEIGHT
         )
 
-        scored.append({
-            "document": doc,
-            "occupation_title": doc.metadata.get("occupation_title"),
-            "occupation_uri": doc.metadata.get("occupation_uri"),
-            "similarity_score": similarity_score,
-            "weighted_skill_score": weighted,
-            "matched_skill_count": len(matched_ess) + len(matched_opt),
-            "matched_essential": sorted(matched_ess),
-            "matched_optional": sorted(matched_opt),
-            "matched_skills": sorted(matched_ess | matched_opt),
-        })
+        scored.append(
+            {
+                "document": doc,
+                "occupation_title": doc.metadata.get("occupation_title"),
+                "occupation_uri": doc.metadata.get("occupation_uri"),
+                "similarity_score": similarity_score,
+                "weighted_skill_score": weighted,
+                "matched_skill_count": len(matched_ess) + len(matched_opt),
+                "matched_essential": sorted(matched_ess),
+                "matched_optional": sorted(matched_opt),
+                "matched_skills": sorted(matched_ess | matched_opt),
+            }
+        )
 
     # --- Stage 1: hard-requirement exclusion ---
     # Only applies if the candidate actually listed skills.
@@ -105,9 +108,7 @@ def deterministic_rerank(candidate_profile: dict, retrieved: list[tuple[Document
 
     # Flag profiles where no skill evidence was found at all, so the LLM
     # prompt and user message can say so honestly.
-    used_relaxed_matching = had_skills and not any(
-        r["weighted_skill_score"] > 0 for r in scored
-    )
+    used_relaxed_matching = had_skills and not any(r["weighted_skill_score"] > 0 for r in scored)
 
     # --- Blended ranking ---
     # Semantic similarity is the primary signal; exact skill overlap is a
@@ -121,7 +122,7 @@ def deterministic_rerank(candidate_profile: dict, retrieved: list[tuple[Document
 
     filtered.sort(key=lambda r: r["final_score"], reverse=True)
 
-    ranked = filtered[:Cfg.FINAL_TOP_K]
+    ranked = filtered[: Cfg.FINAL_TOP_K]
     meta = {"had_skills": had_skills, "used_relaxed_matching": used_relaxed_matching}
     return ranked, meta
 
@@ -130,12 +131,21 @@ def deterministic_rerank(candidate_profile: dict, retrieved: list[tuple[Document
 # LLM explanation step
 # ---------------------------------------------------------------------
 
+
 class OccupationExplanation(BaseModel):
-    occupation_title: str = Field(description="Exact occupation title, must match one of the provided candidates.")
-    occupation_uri: str = Field(description="Exact ESCO URI, must match one of the provided candidates.")
+    occupation_title: str = Field(
+        description="Exact occupation title, must match one of the provided candidates."
+    )
+    occupation_uri: str = Field(
+        description="Exact ESCO URI, must match one of the provided candidates."
+    )
     confidence: str = Field(description="One of: high, medium, low.")
-    explanation: str = Field(description="1-3 sentence recruiter-style explanation of why this occupation fits.")
-    matched_evidence: list[str] = Field(description="Specific candidate skills/experience supporting this match.")
+    explanation: str = Field(
+        description="1-3 sentence recruiter-style explanation of why this occupation fits."
+    )
+    matched_evidence: list[str] = Field(
+        description="Specific candidate skills/experience supporting this match."
+    )
 
 
 class CareerRecommendationResult(BaseModel):
@@ -145,6 +155,7 @@ class CareerRecommendationResult(BaseModel):
     status: str = Field(description="ok | degraded_no_llm | no_candidates")
     message: str = Field(default="", description="Optional user-facing note.")
     recommendations: list[OccupationExplanation]
+    run_id: UUID | None = Field(default=None, description="Persisted run identifier.")
 
 
 def _fallback_explanation(r: dict) -> OccupationExplanation:
@@ -157,9 +168,13 @@ def _fallback_explanation(r: dict) -> OccupationExplanation:
 
     bits = []
     if r["matched_essential"]:
-        bits.append(f"{len(r['matched_essential'])} essential skill(s): {', '.join(r['matched_essential'])}")
+        bits.append(
+            f"{len(r['matched_essential'])} essential skill(s): {', '.join(r['matched_essential'])}"
+        )
     if r["matched_optional"]:
-        bits.append(f"{len(r['matched_optional'])} optional skill(s): {', '.join(r['matched_optional'])}")
+        bits.append(
+            f"{len(r['matched_optional'])} optional skill(s): {', '.join(r['matched_optional'])}"
+        )
 
     if bits:
         explanation = (
@@ -322,16 +337,22 @@ def _demo(label: str, profile: dict) -> None:
 
 
 if __name__ == "__main__":
-    _demo("Case 1: profile with skills", {
-        "job_titles": ["Data Analyst"],
-        "skills": ["Python", "SQL", "data visualisation", "statistics", "machine learning"],
-        "experience": [{"title": "Junior Data Analyst"}],
-        "projects": [],
-    })
+    _demo(
+        "Case 1: profile with skills",
+        {
+            "job_titles": ["Data Analyst"],
+            "skills": ["Python", "SQL", "data visualisation", "statistics", "machine learning"],
+            "experience": [{"title": "Junior Data Analyst"}],
+            "projects": [],
+        },
+    )
 
-    _demo("Case 2: profile with NO skills listed", {
-        "job_titles": ["Junior Data Analyst"],
-        "skills": [],
-        "experience": [{"title": "Junior Data Analyst"}],
-        "projects": [{"description": "Built dashboards summarising sales data."}],
-    })
+    _demo(
+        "Case 2: profile with NO skills listed",
+        {
+            "job_titles": ["Junior Data Analyst"],
+            "skills": [],
+            "experience": [{"title": "Junior Data Analyst"}],
+            "projects": [{"description": "Built dashboards summarising sales data."}],
+        },
+    )

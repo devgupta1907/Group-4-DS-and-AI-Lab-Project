@@ -14,8 +14,10 @@ Two invariants this file is responsible for:
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from collections.abc import AsyncIterator, Callable
+from time import perf_counter
 from uuid import UUID
 
 from src.core.config import get_settings
@@ -24,6 +26,10 @@ from src.resume_parsing.errors import (
     ExtractionFailed,
     ProfileNotFound,
     ResumeParsingError,
+)
+from src.resume_parsing.internal.document_conversion import (
+    DocumentTextConversionError,
+    DocumentTextConverter,
 )
 from src.resume_parsing.internal.domain import PageArtifact, ValidationReport
 from src.resume_parsing.internal.pipeline import (
@@ -55,10 +61,13 @@ class ResumeParsingServiceImpl:
         self,
         repository: ResumeParsingRepository,
         provider_factory: Callable[[], ExtractionProvider],
+        text_converter_factory: Callable[[], DocumentTextConverter],
     ) -> None:
         self._repository = repository
         self._provider_factory = provider_factory
         self._provider: ExtractionProvider | None = None
+        self._text_converter_factory = text_converter_factory
+        self._text_converter: DocumentTextConverter | None = None
         self._settings = get_settings()
 
     @property
@@ -67,6 +76,13 @@ class ResumeParsingServiceImpl:
         if self._provider is None:
             self._provider = self._provider_factory()
         return self._provider
+
+    @property
+    def _document_text(self) -> DocumentTextConverter:
+        """Resolve Docling only when the configured branch actually needs it."""
+        if self._text_converter is None:
+            self._text_converter = self._text_converter_factory()
+        return self._text_converter
 
     # ------------------------------------------------------------------ parse --
 
@@ -99,7 +115,42 @@ class ResumeParsingServiceImpl:
                 ParseStage.READING,
                 f"{document.page_count} page(s), {document.route.value} path",
             )
-            pages = preprocessing.to_pages(document)
+            preprocess_started = perf_counter()
+            if document.route.value == "text":
+                strategy = "native_text"
+            elif document.media_type == "application/pdf":
+                strategy = self._settings.resume_scanned_pdf_strategy
+            else:
+                # Docling is a scanned-PDF option; standalone image uploads
+                # continue through the direct-vision branch.
+                strategy = "direct_vision"
+            if strategy == "docling_text":
+                try:
+                    converted = await asyncio.to_thread(
+                        self._document_text.convert, document
+                    )
+                except DocumentTextConversionError as exc:
+                    logger.warning("Docling preprocessing failed: %s", type(exc).__name__)
+                    raise ExtractionFailed(
+                        "Docling could not read this resume."
+                    ) from exc
+                pages = preprocessing.text_artifact(converted)
+            else:
+                pages = preprocessing.to_pages(document)
+            preprocess_seconds = perf_counter() - preprocess_started
+            logger.info(
+                "Resume preprocessing completed strategy=%s pages=%d "
+                "input_units=%d duration_seconds=%.3f",
+                strategy,
+                len(pages),
+                sum(
+                    len(page.text or "")
+                    if page.text is not None
+                    else len(page.image_png or b"")
+                    for page in pages
+                ),
+                preprocess_seconds,
+            )
 
             yield events.stage(ParseStage.EXTRACTING, self._extraction.primary_model)
             merged, report, model_used, fallback_used = await self._run_extraction(

@@ -11,8 +11,9 @@ import io
 import fitz
 import pytest
 
+from evals.metrics import _normalise_date
 from src.resume_parsing.errors import TooManyPages, UnreadableDocument, UnsupportedFileType
-from src.resume_parsing.internal.pipeline import postprocess, routing, validation
+from src.resume_parsing.internal.pipeline import postprocess, preprocess, routing, validation
 from src.resume_parsing.internal.providers.base import ProviderError
 from src.resume_parsing.internal.providers.google_ai_studio import (
     extract_json_object,
@@ -78,6 +79,34 @@ def test_page_limit_is_enforced() -> None:
 
 
 # --------------------------------------------------------------- postprocess --
+
+
+def test_external_document_text_becomes_one_model_input() -> None:
+    pages = preprocess.text_artifact("  EXPERIENCE  \n\n  Data Analyst  ")
+    assert len(pages) == 1
+    assert pages[0].text == "EXPERIENCE\nData Analyst"
+    assert not pages[0].is_visual
+
+
+def test_empty_external_document_text_is_rejected() -> None:
+    with pytest.raises(UnreadableDocument):
+        preprocess.text_artifact(" \n ")
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        ("Aug 2022", "2022-08"),
+        ("08/2022", "2022-08"),
+        ("2022-08", "2022-08"),
+        ("CURRENT", "present"),
+        ("2019", "2019"),
+    ],
+)
+def test_resume_dates_are_normalised_without_inventing_precision(
+    source: str, expected: str
+) -> None:
+    assert _normalise_date(source) == expected
 
 
 def test_normalise_fills_missing_keys_rather_than_dropping_them() -> None:

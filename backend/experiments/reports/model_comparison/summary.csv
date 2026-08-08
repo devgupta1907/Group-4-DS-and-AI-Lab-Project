@@ -1,0 +1,3 @@
+model,resumes,successful_runs,average_latency_seconds,exact_copy_rate,resumes_with_descriptions
+Gemma 4 31B,5,5,95.97712200000001,0.3333333333333333,3
+Gemini 3.5 Flash,5,5,14.274420000000001,0.9166666666666666,3

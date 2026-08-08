@@ -5,3 +5,9 @@ chroma.sqlite3
 __pycache__/
 .env
 
+# Raw runs contain resume text and parsed profiles. Keep them local; the
+# de-identified aggregate under experiments/results/ is tracked in Git.
+backend/experiments/runs/
+backend/experiments/*.log
+backend/experiments/reports/*TEMP*.md
+backend/experiments/reports/*.docx

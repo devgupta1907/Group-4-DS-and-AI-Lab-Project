@@ -18,7 +18,7 @@ import logging
 import re
 
 from src.job_discovery_matching.internal.pipeline.state import PipelineState
-import json
+
 logger = logging.getLogger(__name__)
 
 _EXPERIENCE_RANGE_RE = re.compile(r"(\d{1,2})\s*(?:-|to)\s*(\d{1,2})\s*\+?\s*years?", re.IGNORECASE)
@@ -41,7 +41,12 @@ def _guess_experience_range(text: str) -> tuple[float, float] | None:
 
 
 def _passes_experience(candidate: dict, job_text: str) -> bool:
-    years = candidate.get("experience_years") or 0
+    # resume_parsing does not publish experience_years, so 0/None means
+    # "no signal", not "zero years". Treating it as literal zero rejects
+    # every posting that states any requirement at all.
+    years = candidate.get("experience_years")
+    if not years:
+        return True
     guessed = _guess_experience_range(job_text[:3000])
     if guessed is None:
         return True
@@ -63,13 +68,23 @@ def _passes_location(candidate: dict, job_json: dict, job_text: str, preferences
     if candidate.get("remote_ok") and is_remote:
         return True
 
-    target_location = (preferences or {}).get("target_location") or candidate.get("location") or ""
+    # A resume location is evidence about the candidate, not consent to reject
+    # every role outside that exact string. Only an explicit search preference
+    # is a hard location constraint.
+    target_location = (preferences or {}).get("target_location") or ""
     if not target_location:
         return True
 
+    # candidate.location comes from the resume contact block and is often a
+    # full street address ("6993 Jacobson Gardens, Philadelphia, PA"), which
+    # never appears verbatim in a posting. Match any comma-separated
+    # component longer than three characters instead — city or state is
+    # enough signal for a stage that is meant to be permissive.
     haystack = f"{job_json.get('location', '')} {job_text[:1500]}".lower()
-    return target_location.strip().lower() in haystack or is_remote
-
+    parts = [p.strip().lower() for p in target_location.split(",") if len(p.strip()) > 3]
+    if not parts:
+        return True
+    return is_remote or any(p in haystack for p in parts)
 
 async def run(state: PipelineState) -> PipelineState:
     candidate = state["candidate_json"]

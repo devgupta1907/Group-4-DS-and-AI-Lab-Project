@@ -19,7 +19,12 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import hashlib
+import json
 import sys
+from pathlib import Path
+from threading import Lock
+from time import perf_counter
 
 from dotenv import load_dotenv
 from langsmith import Client, traceable
@@ -29,6 +34,9 @@ load_dotenv()
 from evals import gold, metrics  # noqa: E402
 from evals.prompts import VARIANTS  # noqa: E402
 from src.core.config import get_settings  # noqa: E402
+from src.resume_parsing.internal.document_conversion.docling import (  # noqa: E402
+    build_docling_converter,
+)
 from src.resume_parsing.internal.pipeline import (  # noqa: E402
     extraction,
     postprocess,
@@ -40,6 +48,20 @@ from src.resume_parsing.internal.providers.google_ai_studio import (  # noqa: E4
 )
 
 DATASET = "resume-parsing-gold"
+INPUT_STRATEGIES = ("direct_vision", "docling_text")
+
+
+class MetricsRecorder:
+    """Append de-identified stage timings for screenshots and local analysis."""
+
+    def __init__(self, path: Path) -> None:
+        self._path = path
+        self._path.parent.mkdir(parents=True, exist_ok=True)
+        self._lock = Lock()
+
+    def write(self, row: dict) -> None:
+        with self._lock, self._path.open("a", encoding="utf-8") as stream:
+            stream.write(json.dumps(row, sort_keys=True) + "\n")
 
 
 # ------------------------------------------------------------------ dataset --
@@ -85,24 +107,87 @@ def ensure_dataset(client: Client, split: str) -> str:
 # ------------------------------------------------------------------- target --
 
 
-def make_target(variant: str):
+def make_target(variant: str, input_strategy: str, recorder: MetricsRecorder):
     """Build the function LangSmith calls once per dataset example."""
     settings = get_settings()
     prompt = VARIANTS[variant]
     provider = build_provider(system_prompt=prompt)
     model = settings.resume_primary_model
+    converter = build_docling_converter() if input_strategy == "docling_text" else None
 
     @traceable(name=f"parse_resume[{variant}]", run_type="chain")
     def target(inputs: dict) -> dict:
+        total_started = perf_counter()
         path = gold.GOLD_DIR / inputs["pdf"]
         content = path.read_bytes()
         document = routing.route(path.name, "application/pdf", content)
-        pages = preprocess.to_pages(document)
+        pages = []
+        preprocess_seconds = 0.0
+        input_units = 0
         try:
+            preprocess_started = perf_counter()
+            if converter is None:
+                pages = preprocess.to_pages(document)
+            else:
+                pages = preprocess.text_artifact(converter.convert(document))
+            preprocess_seconds = perf_counter() - preprocess_started
+            input_units = sum(
+                len(page.text or "")
+                if page.text is not None
+                else len(page.image_png or b"")
+                for page in pages
+            )
+            model_started = perf_counter()
             raw = asyncio.run(
                 extraction.extract_pages(provider, pages, model=model)
             )
-            return postprocess.merge(raw).model_dump(mode="json")
+            model_seconds = perf_counter() - model_started
+            profile = postprocess.merge(raw).model_dump(mode="json")
+            report = metrics.schema_metrics(profile)
+            recorder.write(
+                {
+                    "resume_id": inputs["resume_id"],
+                    "category": inputs["category"],
+                    "input_strategy": input_strategy,
+                    "prompt_variant": variant,
+                    "model": model,
+                    "preprocess_seconds": round(preprocess_seconds, 6),
+                    "model_seconds": round(model_seconds, 6),
+                    "total_seconds": round(perf_counter() - total_started, 6),
+                    "input_kind": "text" if converter else "vision",
+                    "input_units": input_units,
+                    "page_count": document.page_count,
+                    "schema_valid": next(
+                        item["score"] for item in report if item["key"] == "schema_valid"
+                    ),
+                    "coverage": next(
+                        item["score"] for item in report if item["key"] == "coverage"
+                    ),
+                    "output_sha256": hashlib.sha256(
+                        json.dumps(profile, sort_keys=True).encode()
+                    ).hexdigest(),
+                    "success": True,
+                }
+            )
+            return profile
+        except Exception as exc:
+            recorder.write(
+                {
+                    "resume_id": inputs["resume_id"],
+                    "category": inputs["category"],
+                    "input_strategy": input_strategy,
+                    "prompt_variant": variant,
+                    "model": model,
+                    "preprocess_seconds": round(preprocess_seconds, 6),
+                    "total_seconds": round(perf_counter() - total_started, 6),
+                    "input_kind": "text" if converter else "vision",
+                    "input_units": input_units,
+                    "page_count": document.page_count,
+                    "success": False,
+                    "error_type": type(exc).__name__,
+                }
+            )
+            raise
         finally:
             pages.clear()
 
@@ -157,6 +242,18 @@ def main() -> int:
         help="Run the oracle/empty baselines. Validates plumbing without a model.",
     )
     parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument(
+        "--input-strategy",
+        default="direct_vision",
+        choices=INPUT_STRATEGIES,
+        help="Send rendered pages directly, or run Docling and send its text.",
+    )
+    parser.add_argument(
+        "--metrics-jsonl",
+        type=Path,
+        default=Path("experiments/results/pipeline_timings.jsonl"),
+        help="Append de-identified local stage timings here.",
+    )
     args = parser.parse_args()
 
     client = Client()
@@ -186,18 +283,20 @@ def main() -> int:
         return 1
 
     settings = get_settings()
+    recorder = MetricsRecorder(args.metrics_jsonl)
     for variant in variants:
-        print(f"\nvariant: {variant}")
+        print(f"\nvariant: {variant}; input strategy: {args.input_strategy}")
         run(
             client,
             dataset_name,
-            make_target(variant),
-            f"{settings.resume_primary_model}-{variant}",
+            make_target(variant, args.input_strategy, recorder),
+            f"{settings.resume_primary_model}-{variant}-{args.input_strategy}",
             {
                 "prompt_variant": variant,
                 "model": settings.resume_primary_model,
                 "split": args.split,
                 "render_dpi": settings.resume_render_dpi,
+                "input_strategy": args.input_strategy,
             },
             args.limit,
         )

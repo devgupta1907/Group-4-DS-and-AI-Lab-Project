@@ -1,5 +1,33 @@
 # AI-Powered Intelligent Job Search and Career Autopilot</h1>
 
+## Run the complete application
+
+Copy `backend/.env.example` to `backend/.env`, set `PROFILE_ENCRYPTION_KEY`
+and `GOOGLE_API_KEY`, then start the production-like local stack:
+
+```bash
+docker compose up --build
+```
+
+Open http://localhost:8080. PostgreSQL, SearXNG, migrations, the FastAPI
+backend, and the frontend are started together.
+
+The default image uses direct vision for scanned PDFs and does not install
+Docling. To build the optional experimental Docling route:
+
+```bash
+ENABLE_DOCLING=true RESUME_SCANNED_PDF_STRATEGY=docling_text docker compose up --build
+```
+
+For hot-reload development:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+```
+
+The development frontend is available at http://localhost:5173 and the API at
+http://localhost:8000.
+
 
 ## 📑 Table of Contents
 - [Problem Statement](#-problem-statement)

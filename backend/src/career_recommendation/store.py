@@ -45,8 +45,15 @@ def _get_session_factory() -> sessionmaker[Session]:
     resume_parsing, so the driver prefix is swapped here rather than
     keeping two URLs in .env that could drift apart.
     """
-    url = get_settings().database_url.replace("+asyncpg", "+psycopg2")
-    engine = create_engine(url, pool_pre_ping=True)
+    settings = get_settings()
+    url = settings.database_url.replace("+asyncpg", "+psycopg2")
+    engine = create_engine(
+        url,
+        pool_pre_ping=True,
+        pool_size=settings.database_pool_size,
+        max_overflow=settings.database_max_overflow,
+        pool_recycle=300,
+    )
     return sessionmaker(engine, expire_on_commit=False)
 
 
@@ -105,6 +112,16 @@ def get_latest_run(profile_id: UUID, user_id: str | None = None) -> dict | None:
     with _get_session_factory()() as session:
         run = session.execute(stmt).scalar_one_or_none()
 
+    return None if run is None else _to_dict(run)
+
+
+def get_run(run_id: UUID, user_id: str | None = None) -> dict | None:
+    """One exact recommendation run, optionally constrained to its owner."""
+    stmt = select(CareerRecommendationRun).where(CareerRecommendationRun.id == run_id)
+    if user_id is not None:
+        stmt = stmt.where(CareerRecommendationRun.user_id == user_id)
+    with _get_session_factory()() as session:
+        run = session.execute(stmt).scalar_one_or_none()
     return None if run is None else _to_dict(run)
 
 

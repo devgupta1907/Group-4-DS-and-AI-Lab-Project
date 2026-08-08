@@ -24,6 +24,8 @@ import asyncio
 import json
 import logging
 import re
+import sys
+import threading
 from dataclasses import dataclass
 
 from crawl4ai import AsyncWebCrawler, BrowserConfig, CacheMode, CrawlerRunConfig
@@ -61,11 +63,31 @@ _run_config = CrawlerRunConfig(
     page_timeout=Cfg.CRAWL_TIMEOUT_MS,
 )
 
+_loop: asyncio.AbstractEventLoop | None = None
+_loop_init_lock = threading.Lock()
+
+
+def _ensure_loop() -> asyncio.AbstractEventLoop:
+    global _loop
+    with _loop_init_lock:
+        if _loop is not None and _loop.is_running():
+            return _loop
+        _loop = (
+            asyncio.ProactorEventLoop() if sys.platform == "win32" else asyncio.new_event_loop()
+        )
+        threading.Thread(target=_loop.run_forever, name="crawler-loop", daemon=True).start()
+        return _loop
+
+
+async def _on_crawler_loop(coro):
+    """Run a coroutine on the private crawler loop, awaited from any loop."""
+    return await asyncio.wrap_future(asyncio.run_coroutine_threadsafe(coro, _ensure_loop()))
+
 _crawler: AsyncWebCrawler | None = None
 _crawler_lock = asyncio.Lock()
 
 
-async def get_crawler() -> AsyncWebCrawler:
+async def _get_crawler() -> AsyncWebCrawler:
     """Lazily start one shared headless-browser instance for the process.
 
     Lock-protected so two concurrent extraction tasks can't both see
@@ -83,7 +105,7 @@ async def get_crawler() -> AsyncWebCrawler:
     return _crawler
 
 
-async def close_crawler() -> None:
+async def _close_crawler()-> None:
     """Call on app shutdown to cleanly tear down the browser."""
     global _crawler
     async with _crawler_lock:
@@ -95,7 +117,7 @@ async def close_crawler() -> None:
             _crawler = None
 
 
-async def _reset_crawler() -> None:
+async def _reset_crawler_inner() -> None:
     """Force-recreate the shared browser after a crash, so remaining URLs
     in the batch don't all fail behind a dead browser process."""
     global _crawler
@@ -106,7 +128,10 @@ async def _reset_crawler() -> None:
             except Exception:  # noqa: BLE001
                 pass
             _crawler = None
-
+            
+async def close_crawler() -> None:
+    """Call on app shutdown to cleanly tear down the browser."""
+    await _on_crawler_loop(_close_crawler())
 
 _JSONLD_RE = re.compile(
     r'<script[^>]+type=["\']application/ld\+json["\'][^>]*>(.*?)</script>',
@@ -202,20 +227,23 @@ async def crawl_and_extract(url: str) -> ExtractedJob | None:
     content. No LLM call happens in this function. If the shared browser
     has crashed, it's relaunched once and the fetch is retried.
     """
-    for attempt in range(2):
-        crawler = await get_crawler()
-        try:
-            result = await crawler.arun(url=url, config=_run_config)
-            break
-        except Exception as exc:  # noqa: BLE001
-            if _CRASH_SIGNATURE in str(exc) and attempt == 0:
-                logger.warning("Crawl4AI browser crashed, relaunching and retrying %s", url)
-                await _reset_crawler()
-                continue
-            logger.warning("Crawl4AI failed for %s: %s", url, exc)
-            return None
-    else:
+    async def _fetch():
+        # Runs entirely on the crawler loop: the browser must be created
+        # and used on the same loop, so the retry lives in here too.
+        for attempt in range(2):
+            crawler = await _get_crawler()
+            try:
+                return await crawler.arun(url=url, config=_run_config)
+            except Exception as exc:  # noqa: BLE001
+                if _CRASH_SIGNATURE in str(exc) and attempt == 0:
+                    logger.warning("Crawl4AI browser crashed, relaunching and retrying %s", url)
+                    await _reset_crawler_inner()
+                    continue
+                logger.warning("Crawl4AI failed for %s: %s", url, exc)
+                return None
         return None
+
+    result = await _on_crawler_loop(_fetch())
 
     if not result or not result.success:
         return None

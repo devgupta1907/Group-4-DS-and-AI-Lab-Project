@@ -30,7 +30,7 @@ from src.job_discovery_matching.internal.services.embedding_client import embed_
 from src.job_discovery_matching.models import JobDiscoveryResult, SearchPreferences
 from src.job_discovery_matching.profile_mapper import from_parsed_resume, has_usable_signal
 from src.resume_parsing.schemas import CandidateProfile as ParsedProfile
-
+from src.career_recommendation import store as career_store
 logger = logging.getLogger(__name__)
 
 
@@ -78,13 +78,37 @@ async def discover_jobs_for_profile(
     prefs = (preferences or SearchPreferences()).model_dump()
     candidate_json = from_parsed_resume(profile)
 
+# Chain the modules: search on the ESCO occupations Career Recommendation
+    # produced, not just the candidate's own past job titles. "agricultural
+    # engineer" is a far better search term than "AGRICULTURAL CONNECTIVITY
+    # VALIDATION TEST ENGINEER". Falls through silently when no recommendation
+    # exists, so job discovery still works standalone.
+    try:
+        run = career_store.get_latest_run(profile_id, user_id=user_id)
+        if run and run.get("result", {}).get("recommendations"):
+            titles = [
+                r["occupation_title"]
+                for r in run["result"]["recommendations"][:2]
+                if r.get("occupation_title")
+            ]
+            existing = candidate_json.get("target_roles") or []
+            candidate_json["target_roles"] = titles + [t for t in existing if t not in titles]
+            logger.info("Seeded target_roles from career recommendation: %s", titles)
+    except Exception:
+        logger.warning("Could not read career recommendation for %s; continuing.", profile_id, exc_info=True)
+
+
+
+
     session_factory = get_session_factory()
 
     if not has_usable_signal(candidate_json):
         logger.info("Profile %s has no usable signal; skipping job discovery.", profile_id)
         async with session_factory() as session:
             repo = JobDiscoveryRepository(session)
-            run_id = await repo.create_run(profile_id=profile_id, user_id=user_id, preferences=prefs)
+            run_id = await repo.create_run(
+                profile_id=profile_id, user_id=user_id, preferences=prefs
+            )
             await repo.finish_run(
                 run_id,
                 status="no_candidates",
@@ -108,7 +132,9 @@ async def discover_jobs_for_profile(
         repo = JobDiscoveryRepository(session)
         run_id = await repo.create_run(profile_id=profile_id, user_id=user_id, preferences=prefs)
 
-    candidate_embedding = embed_query(_candidate_profile_text(candidate_json) or candidate_json.get("current_role", ""))
+    candidate_embedding = embed_query(
+        _candidate_profile_text(candidate_json) or candidate_json.get("current_role", "")
+    )
 
     initial_state: PipelineState = {
         "run_id": run_id,
@@ -147,7 +173,10 @@ async def discover_jobs_for_profile(
     elif not final_jobs:
         status, message = "no_jobs", "No jobs survived search, crawling and filtering for this run."
     elif not final_jobs[0]["judge"]["used_llm_judge"]:
-        status, message = "degraded_no_llm", "LLM judge unavailable this run; ranked by hybrid score only."
+        status, message = (
+            "degraded_no_llm",
+            "LLM judge unavailable this run; ranked by hybrid score only.",
+        )
     else:
         status, message = "ok", ""
 
@@ -187,6 +216,14 @@ async def get_latest_run(profile_id: UUID, user_id: str | None = None) -> JobDis
     return await store.get_latest_run(profile_id, user_id=user_id)
 
 
-async def get_runs(profile_id: UUID, user_id: str | None = None, limit: int = 10) -> list[JobDiscoveryResult]:
+async def get_runs(
+    profile_id: UUID, user_id: str | None = None, limit: int = 10
+) -> list[JobDiscoveryResult]:
     """Up to `limit` past runs for a profile, most recent first."""
     return await store.get_runs(profile_id, user_id=user_id, limit=limit)
+
+
+async def get_run_profile_id(run_id: UUID, user_id: str) -> UUID | None:
+    """Resolve an owned run to its source profile for cross-module validation."""
+    async with get_session_factory()() as session:
+        return await JobDiscoveryRepository(session).get_profile_id(run_id, user_id)

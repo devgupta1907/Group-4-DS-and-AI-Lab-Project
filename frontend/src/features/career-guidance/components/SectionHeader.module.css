@@ -1,0 +1,4 @@
+.header{display:grid;grid-template-columns:42px minmax(0,1fr);gap:var(--s-4);align-items:start;margin:var(--s-7) 0 var(--s-5);padding-bottom:var(--s-5);border-bottom:1px solid var(--c-border)}
+.header>span{display:grid;width:34px;height:34px;place-items:center;border-radius:50%;background:var(--c-accent-soft);color:var(--c-violet-dark);font-size:var(--t-xs);font-weight:800}
+.header h2{font-size:clamp(2rem,4vw,3.25rem);line-height:1.05;letter-spacing:-.035em}
+.header p{max-width:720px;margin-top:var(--s-3);color:var(--c-text-muted);font-size:var(--t-md)}
