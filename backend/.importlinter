@@ -3,6 +3,10 @@ root_packages =
     src
 include_external_packages = True
 
+# =====================================================================
+# resume_parsing
+# =====================================================================
+
 # --- Rule 2: the module is a layered slice. Imports only ever point downward. ---
 # `service` sits at the bottom because it is a pure contract: the router calls
 # it and `internal` implements it, so both depend on it and it depends on
@@ -37,34 +41,19 @@ forbidden_modules =
 [importlinter:contract:internals-are-private]
 name = resume_parsing.internal is private to the module
 type = forbidden
-# Only direct imports are violations: `dependencies` is the composition root and
-# is *supposed* to reach into internal/, so every chain through it is expected.
 allow_indirect_imports = True
 source_modules =
     src.app
     src.core
     src.career_recommendation
+    src.job_discovery_matching
 forbidden_modules =
     src.resume_parsing.internal
-
-# --- Module isolation: resume_parsing is self-contained. ---
-[importlinter:contract:module-isolation]
-name = resume_parsing does not depend on other feature modules
-type = forbidden
-# Only direct imports are violations: `dependencies` is the composition root and
-# is *supposed* to reach into internal/, so every chain through it is expected.
-allow_indirect_imports = True
-source_modules =
-    src.resume_parsing
-forbidden_modules =
-    src.career_recommendation
 
 # --- Only the repository executes SQL. ---
 [importlinter:contract:sql-lives-in-the-repository]
 name = only internal.repository and internal.models may import sqlalchemy
 type = forbidden
-# Only direct imports are violations: `dependencies` is the composition root and
-# is *supposed* to reach into internal/, so every chain through it is expected.
 allow_indirect_imports = True
 source_modules =
     src.resume_parsing.service
@@ -78,3 +67,87 @@ source_modules =
 forbidden_modules =
     sqlalchemy
     asyncpg
+
+# =====================================================================
+# career_recommendation
+# =====================================================================
+
+# --- Internals are private. `store` and `service` are the public surface. ---
+[importlinter:contract:career-rec-internals-are-private]
+name = career_recommendation.internal is private to the module
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    src.app
+    src.core
+    src.resume_parsing
+    src.job_discovery_matching
+forbidden_modules =
+    src.career_recommendation.internal
+
+# --- Module isolation. ---
+# career_recommendation MAY read resume_parsing's public service (that is the
+# merge point: it fetches a decrypted profile by profile_id). It must never
+# depend on job_discovery_matching, which sits downstream of it.
+[importlinter:contract:career-rec-isolation]
+name = career_recommendation does not depend on downstream feature modules
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    src.career_recommendation
+forbidden_modules =
+    src.job_discovery_matching
+
+# =====================================================================
+# job_discovery_matching
+# =====================================================================
+
+# --- Internals are private. ---
+[importlinter:contract:job-discovery-internals-are-private]
+name = job_discovery_matching.internal is private to the module
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    src.app
+    src.core
+    src.resume_parsing
+    src.career_recommendation
+forbidden_modules =
+    src.job_discovery_matching.internal
+
+# --- Only the repository and models execute SQL. ---
+[importlinter:contract:job-discovery-sql-lives-in-the-repository]
+name = job_discovery_matching keeps SQL out of the pipeline nodes and service contract
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    src.job_discovery_matching.models
+    src.job_discovery_matching.config
+    src.job_discovery_matching.profile_mapper
+    src.job_discovery_matching.internal.pipeline.state
+    src.job_discovery_matching.internal.services
+forbidden_modules =
+    sqlalchemy
+    asyncpg
+
+# =====================================================================
+# Pipeline direction
+# =====================================================================
+# The chain is resume_parsing -> career_recommendation -> job_discovery_matching.
+# Dependencies point UPSTREAM only: a downstream module reads what an upstream
+# one produced, never the reverse. This is the contract that keeps the three
+# modules independently testable and stops a cycle forming.
+#
+# Concretely, this is what allows job_discovery_matching.service to import
+# career_recommendation.store (to seed search queries from the recommended ESCO
+# occupations) while forbidding career_recommendation from ever importing
+# job_discovery_matching.
+[importlinter:contract:pipeline-flows-one-way]
+name = resume_parsing depends on no feature module
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    src.resume_parsing
+forbidden_modules =
+    src.career_recommendation
+    src.job_discovery_matching
