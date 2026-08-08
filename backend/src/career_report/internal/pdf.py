@@ -21,7 +21,7 @@ def render_html(report: CareerReport) -> str:
     narrative = content.narrative
     assessment = narrative.profile_assessment
     roles = "".join(
-        f"""<article class="card"><span>{escape(role.readiness.replace("_", " "))}</span>
+        f"""<article class="card"><span class="tag">{escape(role.readiness.replace("_", " "))}</span>
         <h3>{escape(role.title)}</h3><p>{escape(role.rationale)}</p>
         <strong>{escape(role.confidence)} confidence · {escape(role.effort)} effort</strong>
         <h4>Why this is credible</h4><ul>{_list(role.evidence)}</ul>
@@ -41,28 +41,45 @@ def render_html(report: CareerReport) -> str:
         for week in narrative.weekly_plan
     )
     return f"""<!doctype html><html><head><meta charset="utf-8"><style>
-    @page {{ size:A4; margin:16mm; @bottom-right {{content:"Career Guidance · " counter(page)}} }}
-    *{{box-sizing:border-box}} body{{font-family:Arial,sans-serif;color:#111428;background:#fff;font-size:10pt;line-height:1.45}}
-    h1,h2,h3{{margin:0 0 8px}} h1{{font-size:30pt;line-height:1.05}} h2{{font-size:18pt;margin-top:24px}}
-    .hero{{background:#111428;color:#f7f3e9;padding:28px;border-radius:18px;border-bottom:8px solid #c8ff61}}
-    .kicker,span{{color:#7259ff;text-transform:uppercase;font-weight:bold;letter-spacing:.08em;font-size:8pt}}
-    .summary,.grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}}
-    .summary p,.card,.job,.week,.assessment{{border:1px solid #d9d6e2;border-radius:12px;padding:12px;break-inside:avoid}}
-    .card strong{{color:#7259ff}} .job{{display:grid;grid-template-columns:1fr auto;gap:5px;margin-bottom:8px}}
-    .job p,.job a{{grid-column:1/-1;margin:0}} .job b{{font-size:17pt;color:#7259ff}}
-    a{{color:#4933c8;word-break:break-all}} ul{{padding-left:16px}} small{{color:#62657a}}
-    .funnel{{display:flex;gap:8px}} .funnel div{{flex:1;padding:12px;background:#f3f0ff;border-radius:10px;text-align:center}}
-    .funnel b{{display:block;font-size:20pt}} .weeks{{display:grid;grid-template-columns:1fr 1fr;gap:10px}}
-    .assessment{{border-left:5px solid #7259ff}} h4{{margin:10px 0 3px}}
+    @page {{ size:A4; margin:14mm 13mm 15mm; @bottom-right {{content:"DiscoverMyRole · " counter(page); font-size:7.5pt; color:#7d939c}} }}
+    *{{box-sizing:border-box}}
+    body{{font-family:'DM Sans',Arial,sans-serif;color:#0f2a33;background:#fff;font-size:9pt;line-height:1.45;margin:0}}
+    h1,h2,h3,h4{{margin:0 0 6px;letter-spacing:-.02em}}
+    h1{{font-size:19pt;line-height:1.12}}
+    h2{{font-size:12.5pt;margin:18px 0 8px;padding-bottom:4px;border-bottom:1.5px solid #114656;color:#114656}}
+    h3{{font-size:10pt}} h4{{font-size:8pt;margin:7px 0 2px;color:#5d7480;text-transform:uppercase;letter-spacing:.06em}}
+    p{{margin:0 0 5px}} ul{{margin:0;padding-left:14px}} li{{margin-bottom:2px}}
+    a{{color:#1c6377;word-break:break-all;text-decoration:none}}
+    .kicker,span.tag{{color:#4aa9b4;text-transform:uppercase;font-weight:700;letter-spacing:.09em;font-size:7pt}}
+    /* Header is a document header, not a landing page: one band, no oversized type. */
+    .hero{{background:#0f2a33;color:#f4f7f8;padding:16px 18px;border-radius:12px;border-left:5px solid #71c4cc}}
+    .hero p:last-child{{margin:6px 0 0;color:#cfe0e4;font-size:8.5pt}}
+    /* Two columns, not three: three forced 4-5 words per line on A4. */
+    .summary{{display:grid;grid-template-columns:1fr 1fr;gap:8px}}
+    .grid{{display:grid;grid-template-columns:1fr 1fr;gap:8px}}
+    .summary p,.card,.job,.week,.assessment{{border:1px solid #d3e0e3;border-radius:9px;padding:9px 11px;break-inside:avoid}}
+    .card h3{{margin:3px 0 4px;color:#114656}} .card strong{{color:#4aa9b4;font-size:8pt}}
+    .assessment{{border-left:4px solid #114656;background:#f4f7f8}}
+    .job{{display:grid;grid-template-columns:1fr auto;gap:3px 10px;margin-bottom:6px;align-items:start}}
+    .job h3{{margin:0;color:#114656}} .job p,.job a{{grid-column:1/-1;margin:0;font-size:8pt}}
+    .job b{{font-size:14pt;color:#114656;line-height:1}}
+    .funnel{{display:flex;gap:8px}}
+    .funnel div{{flex:1;padding:9px;background:#e3f2f4;border-radius:9px;text-align:center;font-size:8pt;color:#5d7480}}
+    .funnel b{{display:block;font-size:16pt;color:#114656;line-height:1.1}}
+    .weeks{{display:grid;grid-template-columns:1fr 1fr;gap:8px}}
+    .week b{{color:#114656}} .week p{{color:#5d7480;font-size:8pt}}
+    small{{color:#7d939c}}
     </style></head><body>
-    <section class="hero"><p class="kicker">Career Intelligence Report</p>
-    <h1>{escape(narrative.headline)}</h1><p>{escape(content.candidate_name or "Candidate")} ·
+    <section class="hero"><p class="kicker">Career Guidance Report</p>
+    <h1>{escape(narrative.headline)}</h1>
+    <p>{escape(content.candidate_name or "Candidate")} ·
     {escape(content.candidate_location or "Location not supplied")}</p></section>
     <h2>Executive guidance</h2><section class="summary">
     {"".join(f"<p>{escape(item)}</p>" for item in narrative.executive_summary)}</section>
     <h2>Your professional profile today</h2>
     <section class="assessment"><h3>{escape(assessment.seniority_signal)}</h3>
-    <p>{escape(assessment.market_position)}</p><p><strong>Evidence depth:</strong> {escape(assessment.evidence_depth)}</p>
+    <p>{escape(assessment.market_position)}</p>
+    <p><strong>Evidence depth:</strong> {escape(assessment.evidence_depth)}</p>
     <p><strong>Strongest lane:</strong> {escape(assessment.strongest_lane)}</p>
     <h4>What supports this assessment</h4><ul>{_list(assessment.evidence_summary)}</ul>
     <h4>Differentiators</h4><ul>{_list(assessment.differentiators)}</ul>
@@ -74,7 +91,7 @@ def render_html(report: CareerReport) -> str:
     <div><b>{content.funnel.shortlisted}</b>shortlisted</div></section>
     <h2>Relevant opportunities</h2>{jobs}
     <h2>Your first four weeks</h2><section class="weeks">{weeks}</section>
-    <h2>Methodology & limitations</h2><ul>{_list(content.methodology + narrative.limitations)}</ul>
+    <h2>Methodology &amp; limitations</h2><ul>{_list(content.methodology + narrative.limitations)}</ul>
     </body></html>"""
 
 
