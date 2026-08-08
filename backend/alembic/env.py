@@ -19,6 +19,8 @@ from src.core.db import Base
 # Importing a module's models registers its tables on Base.metadata.
 import src.resume_parsing.internal.models  # noqa: F401
 import src.career_recommendation.internal.models  # noqa: F401
+import src.job_discovery_matching.internal.models  # noqa: F401
+import src.career_report.internal.models  # noqa: F401
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)

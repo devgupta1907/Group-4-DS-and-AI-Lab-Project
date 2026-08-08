@@ -15,6 +15,7 @@ from unittest.mock import MagicMock
 
 os.environ.setdefault("GOOGLE_API_KEY", "test-dummy-key-not-a-real-credential")
 os.environ.setdefault("EMBEDDING_PROVIDER", "huggingface")
+os.environ.setdefault("CRAWL4_AI_BASE_DIRECTORY", "/tmp")
 
 # Supabase credentials are read at import time by db/supabase_manager.py
 # and career_recommendation/ingestion.py. Dummy values keep those imports

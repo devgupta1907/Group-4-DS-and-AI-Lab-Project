@@ -18,7 +18,7 @@ import logging
 import re
 
 from src.job_discovery_matching.internal.pipeline.state import PipelineState
-import json
+
 logger = logging.getLogger(__name__)
 
 _EXPERIENCE_RANGE_RE = re.compile(r"(\d{1,2})\s*(?:-|to)\s*(\d{1,2})\s*\+?\s*years?", re.IGNORECASE)
@@ -47,7 +47,6 @@ def _passes_experience(candidate: dict, job_text: str) -> bool:
     years = candidate.get("experience_years")
     if not years:
         return True
-
     guessed = _guess_experience_range(job_text[:3000])
     if guessed is None:
         return True
@@ -69,7 +68,10 @@ def _passes_location(candidate: dict, job_json: dict, job_text: str, preferences
     if candidate.get("remote_ok") and is_remote:
         return True
 
-    target_location = (preferences or {}).get("target_location") or candidate.get("location") or ""
+    # A resume location is evidence about the candidate, not consent to reject
+    # every role outside that exact string. Only an explicit search preference
+    # is a hard location constraint.
+    target_location = (preferences or {}).get("target_location") or ""
     if not target_location:
         return True
 

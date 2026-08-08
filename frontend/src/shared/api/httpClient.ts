@@ -43,6 +43,24 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
   return (await response.json()) as T;
 }
 
+/** Requests an endpoint that intentionally lives outside the /api namespace. */
+export async function requestFromRoot<T>(
+  path: string,
+  init: RequestInit = {},
+): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(path, {
+      ...init,
+      headers: { ...authHeaders(), ...init.headers },
+    });
+  } catch (cause) {
+    throw toApiError(cause);
+  }
+  if (!response.ok) throw await readError(response);
+  return (await response.json()) as T;
+}
+
 /**
  * POSTs a file and returns the raw streaming response.
  *

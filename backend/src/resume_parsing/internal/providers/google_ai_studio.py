@@ -209,7 +209,7 @@ class GoogleAiStudioProvider:
 def build_provider(system_prompt: str | None = None) -> GoogleAiStudioProvider:
     settings = get_settings()
     return GoogleAiStudioProvider(
-        api_key=settings.google_ai_studio_api_key,
+        api_key=settings.effective_google_api_key,
         primary_model=settings.resume_primary_model,
         fallback_model=settings.resume_fallback_model,
         timeout_seconds=settings.resume_request_timeout_seconds,

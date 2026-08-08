@@ -28,11 +28,9 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel, model_validator
 
 from src.career_recommendation import ingestion, store
-from src.career_recommendation.config import CareerRecommendationModuleConfig as Cfg
 from src.career_recommendation.models import CandidateProfile
-from src.career_recommendation.profile_mapper import from_parsed_resume
 from src.career_recommendation.re_ranker import CareerRecommendationResult
-from src.career_recommendation.service import recommend_for_profile
+from src.career_recommendation.service import recommend_and_persist, recommend_for_profile
 from src.core.config import GlobalConfig
 from src.core.security import CurrentUser, get_current_user
 from src.db.supabase_manager import get_vector_store
@@ -109,26 +107,15 @@ async def recommend(
             detail=f"No profile {request.profile_id} for this user.",
         ) from exc
 
-    profile = from_parsed_resume(record.profile)
-    result = _run(profile)
-
     try:
-        store.save_run(
+        return recommend_and_persist(
+            record.profile,
             profile_id=request.profile_id,
             user_id=user.id,
-            result=result.model_dump(mode="json"),
-            status=result.status,
-            message=result.message,
-            embedding_provider=GlobalConfig.EMBEDDING_PROVIDER,
-            llm_model=GlobalConfig.LLM_MODEL,
-            skill_bonus_weight=Cfg.SKILL_BONUS_WEIGHT,
         )
-    except Exception:
-        # The recommendation itself succeeded; failing to store it should
-        # not fail the request. Same fail-soft rule the pipeline uses.
-        logger.exception("Could not persist run for profile %s", request.profile_id)
-
-    return result
+    except Exception as exc:
+        logger.exception("Recommendation pipeline failed")
+        raise HTTPException(status_code=500, detail="Career recommendation failed.") from exc
 
 
 def _run(profile: CandidateProfile) -> CareerRecommendationResult:
