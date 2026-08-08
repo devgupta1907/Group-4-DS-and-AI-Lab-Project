@@ -8,19 +8,6 @@ Pipeline:
 
 Reads essential/optional skills from DOCUMENT METADATA (written by
 ingestion.py).
-
-Robustness behaviour:
-  - No skills listed at all: nothing is excluded on skills; ranking
-    falls back to similarity, and the LLM is told to reason from
-    role/experience instead and say so.
-  - Skills listed but zero overlap with anything retrieved: instead of
-    returning nothing, fall back to similarity-only ranking, flag it
-    as low-confidence, and tell the user their skill list may be
-    incomplete.
-  - LLM call fails: fall back to a deterministic-only explanation
-    built purely from the re-ranker's own numbers, rather than
-    raising. (Retrying against a backup model is a possible future
-    improvement, not done here.)
 """
 
 import logging

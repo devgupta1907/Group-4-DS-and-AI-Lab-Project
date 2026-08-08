@@ -9,10 +9,6 @@ should need to import retrieval.py / re_ranker.py internals directly.
 
     from career_recommendation.service import recommend_for_profile
     result = recommend_for_profile(profile_dict_or_model)
-
-Persistence is opt-in: if the profile carries a candidate_id, the run
-is saved via store.py and can be re-fetched later; if not, this is a
-pure request/response call with no side effects.
 """
 
 from __future__ import annotations
