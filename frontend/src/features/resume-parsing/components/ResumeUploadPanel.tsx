@@ -25,17 +25,35 @@ export function ResumeUploadPanel({
 
   return (
     <Card
-      title="Upload a resume"
-      description="Parsed into a structured profile. Nothing is stored until parsing succeeds."
+      title="Upload your resume"
+      description="Read once, turned into a structured profile. Nothing is stored until parsing succeeds."
     >
       <div className={styles.panel}>
         {isIdle && !upload.file && (
-          <FileDropzone
-            accept={ACCEPT_ATTRIBUTE}
-            hint={UPLOAD_HINT}
-            disabled={isParsing}
-            onSelect={onSelect}
-          />
+          <>
+            {/* Above the dropzone, not below it. Uploading a resume means
+                handing over a document full of personal history, so what
+                happens to it should be readable before the choice is made
+                rather than discovered afterwards. */}
+            <div className={styles.privacy}>
+              <span className={styles.privacyIcon} aria-hidden="true">🔒</span>
+              <div>
+                <p className={styles.privacyTitle}>Your personal data is safe here</p>
+                <ul className={styles.privacyList}>
+                  <li>Email addresses and phone numbers are never extracted or stored.</li>
+                  <li>The file itself is never kept — only the structured profile is saved.</li>
+                  <li>Stored fields are encrypted, and you can delete your profile at any time.</li>
+                </ul>
+              </div>
+            </div>
+
+            <FileDropzone
+              accept={ACCEPT_ATTRIBUTE}
+              hint={UPLOAD_HINT}
+              disabled={isParsing}
+              onSelect={onSelect}
+            />
+          </>
         )}
 
         {upload.file && (

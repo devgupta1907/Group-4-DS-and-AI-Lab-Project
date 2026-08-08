@@ -1,35 +1,46 @@
+/**
+ * The dropzone is the primary action on the landing screen, so it is sized
+ * as a target rather than as a form field: a tall, obviously-clickable area
+ * with the aqua highlight reserved for hover and drag states.
+ */
 .zone {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--s-1);
-  padding: var(--s-6) var(--s-5);
-  border: 1.5px dashed var(--c-border-strong);
-  border-radius: var(--r-md);
-  background: var(--c-surface-sunken);
+  gap: var(--s-2);
+  min-height: 260px;
+  padding: clamp(2.5rem, 6vw, 4rem) var(--s-5);
+  border: 2px dashed var(--c-border-strong);
+  border-radius: var(--r-lg);
+  background:
+    radial-gradient(120% 120% at 50% 0%, var(--c-aqua-soft) 0%, transparent 62%),
+    var(--c-surface-sunken);
   text-align: center;
   cursor: pointer;
   transition:
     border-color var(--m-fast),
-    background var(--m-fast);
+    background var(--m-fast),
+    transform var(--m-fast);
 }
 
 .zone:hover:not(.disabled) {
-  border-color: var(--c-accent);
-  background: var(--c-accent-soft);
+  border-color: var(--c-aqua-500);
+  background: var(--c-aqua-soft);
+  transform: translateY(-2px);
 }
 
 /* The label wraps the input, so focus on the input must surface on the zone. */
 .zone:focus-within {
   outline: 2px solid var(--c-accent);
-  outline-offset: 2px;
+  outline-offset: 3px;
 }
 
 .dragging {
-  border-color: var(--c-accent);
+  border-color: var(--c-teal);
   border-style: solid;
-  background: var(--c-accent-soft);
+  background: var(--c-aqua-soft);
+  transform: translateY(-2px);
 }
 
 .disabled {
@@ -50,22 +61,35 @@
 }
 
 .icon {
-  font-size: 1.25rem;
-  color: var(--c-text-subtle);
-  margin-bottom: var(--s-1);
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  margin-bottom: var(--s-3);
+  border-radius: 50%;
+  background: var(--c-surface);
+  box-shadow: var(--e-1);
+  color: var(--c-teal);
+  font-size: 1.6rem;
 }
 
 .primary {
-  font-weight: 550;
   color: var(--c-text);
+  font-size: var(--t-md);
+  font-weight: 600;
 }
 
 .link {
-  color: var(--c-accent);
+  color: var(--c-teal);
   text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .hint {
-  font-size: var(--t-xs);
   color: var(--c-text-subtle);
+  font-size: var(--t-sm);
+}
+
+@media (width <= 640px) {
+  .zone { min-height: 210px; }
 }

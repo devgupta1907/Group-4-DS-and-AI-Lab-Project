@@ -1,14 +1,112 @@
-.report{max-width:1120px;margin:var(--s-7) auto;color:var(--c-text)}
-.hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--s-7);padding:var(--s-7);background:var(--c-ink);color:var(--c-paper);border-radius:var(--r-lg)}
-.kicker{color:var(--c-lime);font-size:var(--t-xs);font-weight:700;letter-spacing:.1em;text-transform:uppercase}
-.hero h1{max-width:760px;margin:var(--s-3) 0 0;font-size:clamp(2.75rem,6vw,5rem);line-height:1;letter-spacing:-.045em}
-.positioning{margin-top:var(--s-4);color:var(--c-lime);font-size:var(--t-md);font-weight:700}
-.intro{max-width:720px;margin-top:var(--s-5);font-size:var(--t-md);line-height:1.6;color:#deddec}
-.heroActions{display:flex;min-width:170px;flex-direction:column;align-items:flex-end;justify-content:space-between;gap:var(--s-5);font-size:var(--t-sm);color:#b8b7ca}
-.heroActions a{padding:var(--s-3) var(--s-4);border-radius:var(--r-sm);background:var(--c-violet);color:white;font-weight:700}
-.contents{display:grid;grid-template-columns:repeat(4,1fr);margin:var(--s-5) 0 var(--s-7);border:1px solid var(--c-border);border-radius:var(--r-md);background:var(--c-surface)}
-.contents a{padding:var(--s-4);border-right:1px solid var(--c-border);color:var(--c-text);font-size:var(--t-sm);font-weight:700}
-.contents a:last-child{border-right:0}.contents a:hover{background:var(--c-accent-soft);text-decoration:none}
-.footer{margin-top:var(--s-7);padding:var(--s-6);border-top:1px solid var(--c-border);color:var(--c-text-muted)}
-.footer h2{margin-bottom:var(--s-4);font-size:var(--t-lg);color:var(--c-text)}.footer p+p{margin-top:var(--s-2)}
-@media(max-width:760px){.hero{grid-template-columns:1fr;padding:var(--s-6)}.heroActions{align-items:flex-start}.contents{grid-template-columns:1fr 1fr}.contents a:nth-child(2){border-right:0}.contents a:nth-child(-n+2){border-bottom:1px solid var(--c-border)}}
+/**
+ * Report shell. The hero was sized for a landing page (5rem headline, 3rem
+ * padding); as the top of a dense document it only pushed the substance below
+ * the fold, so it is scaled to a document header instead.
+ */
+.report {
+  max-width: 1120px;
+  margin: var(--s-6) auto;
+  color: var(--c-text);
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--s-6);
+  align-items: end;
+  padding: var(--s-6);
+  border-radius: var(--r-lg);
+  background: var(--c-ink);
+  color: var(--c-paper);
+}
+
+.kicker {
+  color: var(--c-aqua);
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  max-width: 720px;
+  margin: var(--s-2) 0 0;
+  font-size: clamp(1.75rem, 3.2vw, 2.6rem);
+  letter-spacing: -.035em;
+  line-height: 1.08;
+}
+
+.positioning {
+  margin-top: var(--s-2);
+  color: var(--c-aqua);
+  font-size: var(--t-base);
+  font-weight: 700;
+}
+
+.intro {
+  max-width: 760px;
+  margin-top: var(--s-3);
+  color: #cfe0e4;
+  font-size: var(--t-base);
+  line-height: 1.55;
+}
+
+.heroActions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  align-items: flex-end;
+  justify-content: flex-end;
+  min-width: 160px;
+  color: #a8c2c9;
+  font-size: var(--t-xs);
+}
+
+.heroActions a {
+  padding: var(--s-2) var(--s-4);
+  border-radius: var(--r-sm);
+  background: var(--c-aqua-500);
+  color: var(--c-ink);
+  font-size: var(--t-sm);
+  font-weight: 700;
+}
+
+.heroActions a:hover { background: var(--c-aqua); text-decoration: none; }
+
+.contents {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin: var(--s-4) 0 var(--s-6);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  background: var(--c-surface);
+}
+
+.contents a {
+  padding: var(--s-3) var(--s-4);
+  border-right: 1px solid var(--c-border);
+  color: var(--c-text);
+  font-size: var(--t-sm);
+  font-weight: 700;
+}
+
+.contents a:last-child { border-right: 0; }
+.contents a:hover { background: var(--c-accent-soft); text-decoration: none; }
+
+.footer {
+  margin-top: var(--s-6);
+  padding: var(--s-5) 0 0;
+  border-top: 1px solid var(--c-border);
+  color: var(--c-text-muted);
+}
+
+.footer h2 { margin-bottom: var(--s-3); color: var(--c-text); font-size: var(--t-md); }
+.footer p + p { margin-top: var(--s-2); }
+
+@media (width <= 760px) {
+  .hero { grid-template-columns: 1fr; padding: var(--s-5); }
+  .heroActions { align-items: flex-start; }
+  .contents { grid-template-columns: 1fr 1fr; }
+  .contents a:nth-child(2) { border-right: 0; }
+  .contents a:nth-child(-n + 2) { border-bottom: 1px solid var(--c-border); }
+}

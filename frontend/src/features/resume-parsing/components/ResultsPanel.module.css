@@ -5,31 +5,34 @@
   opacity: 0.5;
 }
 
-.working {
-  position: relative;
-  overflow: hidden;
+/* --- scanning state ---------------------------------------------------- */
+
+.scanning {
+  display: grid;
+  gap: var(--s-5);
+  padding: var(--s-5);
+  justify-items: center;
 }
 
-/* A slow shimmer across the placeholder, so a long parse still feels alive. */
-.working::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--c-surface-sunken),
-    transparent
-  );
-  opacity: 0.6;
-  animation: sweep 1.8s ease-in-out infinite;
+/* The page is shown at reading width rather than filling the panel: large
+   enough to recognise as your own document, small enough that the caption
+   below it stays in view without scrolling. */
+.scanning > figure {
+  width: min(100%, 420px);
 }
 
-@keyframes sweep {
-  from {
-    transform: translateX(-100%);
-  }
-  to {
-    transform: translateX(100%);
-  }
+.scanningText {
+  text-align: center;
+}
+
+.scanningTitle {
+  color: var(--c-text);
+  font-size: var(--t-md);
+  font-weight: 650;
+}
+
+.scanningBody {
+  margin-top: var(--s-2);
+  color: var(--c-text-muted);
+  line-height: 1.5;
 }

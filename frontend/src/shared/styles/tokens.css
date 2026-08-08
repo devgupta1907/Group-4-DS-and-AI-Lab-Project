@@ -1,30 +1,49 @@
+/**
+ * Design tokens — DiscoverMyRole.
+ *
+ * The palette is taken from the logo: a deep teal for structure and text, a
+ * light aqua for highlights and interactive states. The old violet/lime/coral
+ * names are kept as aliases so the report and section stylesheets that
+ * reference them keep working — they now resolve to teal-family colours.
+ */
 :root {
-  --c-paper: #f6f1e7;
-  --c-ink: #111428;
-  --c-violet: #7457ff;
-  --c-violet-dark: #5138d6;
-  --c-lime: #c8ff61;
-  --c-coral: #ff715b;
-  --c-muted: #686878;
+  /* --- brand, sampled from the logo --- */
+  --c-teal-900: #0b3543;
+  --c-teal: #114656;
+  --c-teal-600: #1c6377;
+  --c-aqua: #71c4cc;
+  --c-aqua-500: #4aa9b4;
+  --c-aqua-soft: #e3f2f4;
 
+  --c-ink: #0f2a33;
+  --c-paper: #f4f7f8;
+  --c-muted: #5d7480;
+
+  /* --- semantic --- */
   --c-bg: var(--c-paper);
-  --c-surface: #fffdf8;
-  --c-surface-sunken: #ede7dd;
-  --c-border: #d8d1c6;
-  --c-border-strong: #aaa2a0;
+  --c-surface: #ffffff;
+  --c-surface-sunken: #eef4f5;
+  --c-border: #d3e0e3;
+  --c-border-strong: #a9c3c9;
   --c-text: var(--c-ink);
   --c-text-muted: var(--c-muted);
-  --c-text-subtle: #898693;
-  --c-accent: var(--c-violet);
-  --c-accent-hover: var(--c-violet-dark);
-  --c-accent-soft: #e9e3ff;
-  --c-accent-ring: rgb(116 87 255 / 35%);
-  --c-success: #176b49;
-  --c-success-soft: #daf4de;
-  --c-warning: #775500;
-  --c-warning-soft: #fff0bd;
-  --c-danger: #9e3024;
-  --c-danger-soft: #ffe5df;
+  --c-text-subtle: #7d939c;
+  --c-accent: var(--c-teal);
+  --c-accent-hover: var(--c-teal-900);
+  --c-accent-soft: var(--c-aqua-soft);
+  --c-accent-ring: rgb(17 70 86 / 30%);
+  --c-success: #12695a;
+  --c-success-soft: #d8f2ec;
+  --c-warning: #7a5a12;
+  --c-warning-soft: #fdf0cf;
+  --c-danger: #9c3628;
+  --c-danger-soft: #fde6e1;
+
+  /* --- aliases kept so existing stylesheets resolve --- */
+  --c-violet: var(--c-teal);
+  --c-violet-dark: var(--c-teal-900);
+  --c-lime: var(--c-aqua);
+  --c-coral: var(--c-aqua-500);
 
   --font-display: 'Space Grotesk', 'Arial Narrow', sans-serif;
   --font-body: 'DM Sans', Arial, sans-serif;
@@ -36,9 +55,9 @@
   --r-sm: 8px; --r-md: 14px; --r-lg: 22px; --r-pill: 999px;
   --t-xs: .75rem; --t-sm: .8125rem; --t-base: 1rem;
   --t-md: 1.125rem; --t-lg: 1.5rem; --t-xl: 2rem;
-  --e-1: 0 2px 0 rgb(17 20 40 / 8%);
-  --e-2: 0 12px 30px rgb(17 20 40 / 10%);
-  --e-3: 0 24px 60px rgb(17 20 40 / 14%);
+  --e-1: 0 2px 0 rgb(11 53 67 / 7%);
+  --e-2: 0 12px 30px rgb(11 53 67 / 9%);
+  --e-3: 0 24px 60px rgb(11 53 67 / 13%);
   --m-fast: 140ms ease; --m-base: 240ms ease;
   --layout-max: 1440px;
 }

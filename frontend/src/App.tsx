@@ -50,26 +50,42 @@ export function App() {
     return <ReportPage report={guidance.report} />;
   }
 
+  // Once a file is in flight the extracted profile needs the room, so the
+  // stage widens from a single centred column into two.
+  const stageIsBusy = upload.status !== 'idle' || Boolean(upload.file);
+
   return (
     <main className={styles.app}>
       <TopBar step={step} />
-      {step === 1 && <section className={styles.hero}>
-        <div>
-          <p className="eyebrow">Career navigation, grounded in your evidence</p>
-          <h1>Your resume knows where you’ve been. Let’s map what’s next.</h1>
-        </div>
-        <p className={styles.heroCopy}>One guided analysis turns your experience into career
-          directions, skill unlocks, live opportunities, and a practical 90-day plan.</p>
-      </section>}
 
       {step === 1 && (
-        <section className={styles.resumeStage}>
-          <ResumeUploadPanel
-            upload={upload}
-            rejection={rejection}
-            onSelect={handleSelect}
-          />
-          <ResultsPanel upload={upload} />
+        <section className={styles.stage}>
+          <p className={styles.slogan}>
+            Your resume knows where you&rsquo;ve been &mdash; let&rsquo;s map what&rsquo;s next.
+          </p>
+
+          <div className={stageIsBusy ? styles.stageSplit : styles.stageSolo}>
+            <div className={styles.uploadWrap}>
+              <ResumeUploadPanel
+                upload={upload}
+                rejection={rejection}
+                onSelect={handleSelect}
+              />
+            </div>
+            {stageIsBusy && (
+              <div className={styles.resultsWrap}>
+                <ResultsPanel upload={upload} />
+              </div>
+            )}
+          </div>
+
+          {!stageIsBusy && (
+            <ul className={styles.promise}>
+              <li><b>Career directions</b><span>Matched against the ESCO occupation taxonomy.</span></li>
+              <li><b>Live opportunities</b><span>Real postings, ranked and explained.</span></li>
+              <li><b>A 90-day plan</b><span>Concrete weekly steps, not generic advice.</span></li>
+            </ul>
+          )}
         </section>
       )}
 
@@ -115,7 +131,10 @@ function ReportPage({ report }: {
 function TopBar({ step }: { step: number }) {
   return (
     <header className={styles.topbar}>
-      <a href="/" className={styles.brand}>VECTOR<span>/</span>CAREER</a>
+      <a href="/" className={styles.brand}>
+        <img src="/logo.png" alt="" aria-hidden="true" />
+        <span>Discover<b>MyRole</b></span>
+      </a>
       <nav aria-label="Analysis progress">
         {['Resume', 'Review', 'Analysis', 'Report'].map((label, index) => (
           <span className={index + 1 <= step ? styles.activeStep : ''} key={label}>

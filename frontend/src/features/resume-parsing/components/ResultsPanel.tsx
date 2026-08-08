@@ -3,6 +3,7 @@ import { Card, EmptyState } from '@shared/ui';
 import type { ResumeUpload } from '../hooks/useResumeUpload';
 
 import { ProfileView } from './ProfileView';
+import { ResumeScanPreview } from './ResumeScanPreview';
 import styles from './ResultsPanel.module.css';
 
 type ResultsPanelProps = {
@@ -25,11 +26,18 @@ export function ResultsPanel({ upload }: ResultsPanelProps) {
   if (upload.status === 'parsing') {
     return (
       <Card title="Extracted profile" flush>
-        <div className={styles.working}>
-          <EmptyState
-            title="Reading the resume"
-            description="Fields appear here as soon as the model finishes the document."
-          />
+        {/* Parsing runs long enough that a placeholder reads as a stall.
+            Showing the user's own document with a scan line passing over it
+            gives the wait a subject — and it is honest, because a rendered
+            page image really is what gets sent to the model. */}
+        <div className={styles.scanning}>
+          {upload.file && <ResumeScanPreview file={upload.file} />}
+          <div className={styles.scanningText}>
+            <p className={styles.scanningTitle}>Scanning the resume</p>
+            <p className={styles.scanningBody}>
+              Fields appear here as soon as the model finishes the document.
+            </p>
+          </div>
         </div>
       </Card>
     );
