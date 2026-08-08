@@ -46,7 +46,7 @@ def _get_session_factory() -> sessionmaker[Session]:
     keeping two URLs in .env that could drift apart.
     """
     url = get_settings().database_url.replace("+asyncpg", "+psycopg2")
-    engine = create_engine(url, pool_pre_ping=True)
+    engine = create_engine(url, pool_pre_ping=True, pool_size=3, max_overflow=0, pool_recycle=300)
     return sessionmaker(engine, expire_on_commit=False)
 
 

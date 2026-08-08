@@ -30,7 +30,7 @@ from src.job_discovery_matching.internal.services.embedding_client import embed_
 from src.job_discovery_matching.models import JobDiscoveryResult, SearchPreferences
 from src.job_discovery_matching.profile_mapper import from_parsed_resume, has_usable_signal
 from src.resume_parsing.schemas import CandidateProfile as ParsedProfile
-
+from src.career_recommendation import store as career_store
 logger = logging.getLogger(__name__)
 
 
@@ -77,6 +77,28 @@ async def discover_jobs_for_profile(
     """
     prefs = (preferences or SearchPreferences()).model_dump()
     candidate_json = from_parsed_resume(profile)
+
+# Chain the modules: search on the ESCO occupations Career Recommendation
+    # produced, not just the candidate's own past job titles. "agricultural
+    # engineer" is a far better search term than "AGRICULTURAL CONNECTIVITY
+    # VALIDATION TEST ENGINEER". Falls through silently when no recommendation
+    # exists, so job discovery still works standalone.
+    try:
+        run = career_store.get_latest_run(profile_id, user_id=user_id)
+        if run and run.get("result", {}).get("recommendations"):
+            titles = [
+                r["occupation_title"]
+                for r in run["result"]["recommendations"][:2]
+                if r.get("occupation_title")
+            ]
+            existing = candidate_json.get("target_roles") or []
+            candidate_json["target_roles"] = titles + [t for t in existing if t not in titles]
+            logger.info("Seeded target_roles from career recommendation: %s", titles)
+    except Exception:
+        logger.warning("Could not read career recommendation for %s; continuing.", profile_id, exc_info=True)
+
+
+
 
     session_factory = get_session_factory()
 
