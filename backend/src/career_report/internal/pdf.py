@@ -4,6 +4,9 @@
 
 from __future__ import annotations
 
+import asyncio
+import sys
+import threading
 from html import escape
 
 from src.career_report.schemas import CareerReport
@@ -75,7 +78,45 @@ def render_html(report: CareerReport) -> str:
     </body></html>"""
 
 
+# --- Private browser event loop ---------------------------------------
+# Playwright starts Chromium with asyncio.create_subprocess_exec(), which only
+# the Proactor loop implements on Windows. uvicorn chooses the server's loop
+# itself and can install the Selector policy, which surfaces here as a bare
+# NotImplementedError with an empty message. Rather than constrain how the app
+# is launched, the browser runs on a Proactor loop owned by this module on its
+# own daemon thread. Callers still `await render_pdf()` as normal.
+#
+# job_discovery_matching/internal/services/crawler_service.py carries the same
+# machinery for the same reason; if a third module ever needs a browser, this
+# belongs in src/core/ rather than being copied again.
+_pdf_loop: asyncio.AbstractEventLoop | None = None
+_pdf_loop_lock = threading.Lock()
+
+
+def _ensure_pdf_loop() -> asyncio.AbstractEventLoop:
+    global _pdf_loop
+    with _pdf_loop_lock:
+        if _pdf_loop is not None and _pdf_loop.is_running():
+            return _pdf_loop
+        _pdf_loop = (
+            asyncio.ProactorEventLoop() if sys.platform == "win32" else asyncio.new_event_loop()
+        )
+        threading.Thread(target=_pdf_loop.run_forever, name="pdf-loop", daemon=True).start()
+        return _pdf_loop
+
+
 async def render_pdf(report: CareerReport) -> bytes:
+    """Render the report to PDF bytes.
+
+    Thin wrapper: the actual browser work is handed to the private Proactor
+    loop above, then awaited from whatever loop the caller is running on.
+    """
+    return await asyncio.wrap_future(
+        asyncio.run_coroutine_threadsafe(_render_pdf_inner(report), _ensure_pdf_loop())
+    )
+
+
+async def _render_pdf_inner(report: CareerReport) -> bytes:
     from playwright.async_api import async_playwright
 
     async with async_playwright() as playwright:
