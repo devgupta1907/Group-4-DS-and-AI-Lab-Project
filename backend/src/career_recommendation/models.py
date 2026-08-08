@@ -1,28 +1,13 @@
 """
 Career Recommendation — Candidate Profile contract.
 
-This is the validated input boundary between Resume Parsing (upstream,
-writes it) and Career Recommendation (this module, reads it). Every
-field here mirrors what `retrieval.build_query_text()` and
-`re_ranker.deterministic_rerank()` already read out of a plain dict —
-this model just makes that contract explicit and checkable, instead of
-each function doing `.get(...)` against an unvalidated dict.
+This is the validated boundary between Resume Parsing and this module. 
+This model makes the contract explicit and checkable, instead of a bad
+profile failing somewhere deep in the pipeline.
 
-Nothing downstream changes: `retrieve_candidate_occupations()` and
-`deterministic_rerank()` still take plain dicts (via `.model_dump()`),
-so this model is additive. `service.py` is the one place that requires
-a `CandidateProfile` on the way in.
-
-NOTE: field names/shape are inferred from current usage in
-retrieval.py and re_ranker.py (job_titles, skills, experience[].title,
-projects[].description, education[].degree/field). If the actual
-Resume Parsing output schema (parsed_resume_schema.json) differs in
-field naming, reconcile the two at merge time — this is the piece
-flagged as "merge-critical" in the handoff notes.
 """
 
 from __future__ import annotations
-
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -59,9 +44,7 @@ class CandidateProfile(BaseModel):
 
     candidate_id: str | None = Field(
         default=None,
-        description="Stable identifier for this candidate, if known. "
-        "Required to persist/retrieve recommendations via the API "
-        "layer; optional for a one-off `service.recommend_for_profile` call.",
+        description="Identifier for this candidate; retrieve recommendations through the API layer (store.py);"
     )
     job_titles: list[str] = Field(default_factory=list)
     skills: list[str] = Field(default_factory=list)
@@ -69,19 +52,22 @@ class CandidateProfile(BaseModel):
     education: list[EducationEntry] = Field(default_factory=list)
     projects: list[ProjectEntry] = Field(default_factory=list)
 
+
     @field_validator("job_titles", "skills", mode="before")
     @classmethod
     def _drop_blank_strings(cls, value):
+        """
+        Resume-parsing output can realistically include empty or whitespace-only entries.
+        This validator cleans them out so that the rest of the pipeline doesn't have to deal with them.
+        """
         if value is None:
             return []
         return [v for v in value if isinstance(v, str) and v.strip()]
 
+
     def has_usable_signal(self) -> bool:
         """
-        Mirrors the check in retrieval.build_query_text(): a profile
-        with nothing to embed should be rejected before it reaches the
-        vector store, with a clear error, rather than raising deep
-        inside retrieval.
+        True if there's anything in this profile worth searching on.
         """
         return bool(
             self.job_titles

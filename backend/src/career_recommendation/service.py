@@ -16,9 +16,7 @@ pure request/response call with no side effects.
 """
 
 from __future__ import annotations
-
 import logging
-
 from career_recommendation.models import CandidateProfile
 from career_recommendation.re_ranker import CareerRecommendationResult, deterministic_rerank, explain_recommendations
 from career_recommendation.retrieval import retrieve_candidate_occupations

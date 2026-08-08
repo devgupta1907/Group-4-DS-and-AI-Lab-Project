@@ -2,27 +2,25 @@
 Career Recommendation — Deterministic re-ranking + LLM explanation.
 
 Pipeline:
-  1. Hard-requirement exclusion
-  2. Weighted ESCO skill-match score
-       essential match = 1.0, optional match = 0.5
-  3. Cosine similarity as tiebreak
-  -> Top-N (FINAL_TOP_K = 5) passed to the explanation LLM.
+  1. Weighted ESCO skill-match score (essential match = 1.0, optional match = 0.5)
+  2. Blend with the retrieval similarity score
+  3. Cut to FINAL_TOP_K (5), send those to the explanation LLM
 
-Reads essential/optional skills from DOCUMENT METADATA (written by the
-v2 ingestion), not by string-parsing page_content. The old parser looked
-for a "Core Skills:" header that no longer exists in the enriched index.
+Reads essential/optional skills from DOCUMENT METADATA (written by
+ingestion.py).
 
 Robustness behaviour:
-  - No skills listed at all -> nothing is hard-excluded; ranking falls
-    back to role/experience similarity and the LLM is told to assess on
-    that basis and suggest the candidate add skills.
-  - Skills listed but zero overlap with anything retrieved -> instead of
-    returning nothing, relax to similarity-only ranking, mark it clearly
-    as low-confidence, and surface a message suggesting the candidate
-    review their skill list.
-  - LLM call fails -> fall back to a deterministic-only explanation
-    rather than raising. (A retry against a second/backup model is a
-    planned improvement, deferred pending a team decision.)
+  - No skills listed at all: nothing is excluded on skills; ranking
+    falls back to similarity, and the LLM is told to reason from
+    role/experience instead and say so.
+  - Skills listed but zero overlap with anything retrieved: instead of
+    returning nothing, fall back to similarity-only ranking, flag it
+    as low-confidence, and tell the user their skill list may be
+    incomplete.
+  - LLM call fails: fall back to a deterministic-only explanation
+    built purely from the re-ranker's own numbers, rather than
+    raising. (Retrying against a backup model is a possible future
+    improvement, not done here.)
 """
 
 import logging
@@ -59,12 +57,9 @@ def _get_occupation_skills(doc: Document) -> tuple[set[str], set[str]]:
     return essential, optional
 
 
-def deterministic_rerank(
-    candidate_profile: dict,
-    retrieved: list[tuple[Document, float]],
-) -> tuple[list[dict], dict]:
+def deterministic_rerank(candidate_profile: dict, retrieved: list[tuple[Document, float]]) -> tuple[list[dict], dict]:
     """
-    Applies deterministic re-ranking and cuts to FINAL_TOP_K.
+    takes the 20 occupations from retrieval and re-scores them using exact skill overlap, blended with the semantic similarity score. Cuts down to FINAL_TOP_K (5)
 
     Returns (ranked, meta). `meta` records HOW the ranking was produced
     so the LLM prompt and user-facing message can adapt:
