@@ -61,6 +61,7 @@ Three modules communicate through a shared candidate profile and a shared databa
 
 - **Job Discovery and Matching** — a seven-node LangGraph pipeline: generates search queries from the candidate profile (Gemini 2.5 Flash-Lite), searches via a self-hosted SearXNG instance, extracts postings with Crawl4AI, applies rule-based hard filters (experience, location), ranks by a hybrid of BM25 lexical score and semantic embedding similarity, and scores the shortlist with an LLM judge (Gemma 4 31B). Results are cached in Redis with a one-hour TTL. This module is evaluated independently and is not yet integrated into the shared profile flow.
 
+![Project Architecure](./docs/architecture/architecture_diagram.png)
 
 ## Tech stack
 
