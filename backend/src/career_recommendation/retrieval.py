@@ -12,8 +12,8 @@ Works against the enriched v2 index, whose documents contain:
 
 from langchain_core.documents import Document
 from src.core.config import GlobalConfig
-from db.supabase_manager import get_vector_store
-from career_recommendation.config import CareerRecommendationModuleConfig
+from src.db.supabase_manager import get_vector_store
+from src.career_recommendation.config import CareerRecommendationModuleConfig
 
 BGE_QUERY_PREFIX = "Represent this sentence for searching relevant passages: "
 

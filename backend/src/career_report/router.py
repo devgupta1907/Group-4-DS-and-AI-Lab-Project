@@ -22,6 +22,7 @@ async def create_report(
     try:
         return await service.run_guidance_pipeline(
             profile_id=request.profile_id,
+            career_run_id=request.career_run_id,
             preferences=SearchPreferences(
                 target_location=request.target_location,
                 remote_only=request.remote_only,

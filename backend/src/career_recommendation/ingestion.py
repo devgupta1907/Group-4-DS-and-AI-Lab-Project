@@ -36,7 +36,7 @@ from psycopg2.extras import execute_batch
 
 from src.career_recommendation.config import CareerRecommendationModuleConfig
 from src.core.config import GlobalConfig
-from services.llm_client import document_embeddings
+from src.services.llm_client import document_embeddings
 
 logger = logging.getLogger(__name__)
 

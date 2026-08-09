@@ -2,7 +2,9 @@ import { useCallback, useMemo, useState } from 'react';
 
 import {
   CareerReportView,
+  reviewCv,
   useCareerGuidance,
+  type CvReview,
 } from '@features/career-guidance';
 import {
   ProfileView,
@@ -25,33 +27,59 @@ export function App() {
   const validate = useFileValidation();
   const guidance = useCareerGuidance();
   const [rejection, setRejection] = useState<string | null>(null);
-  const step = useMemo(
-    () => guidance.report ? 4 : guidance.status !== 'idle' ? 3 : upload.record ? 2 : 1,
-    [guidance.report, guidance.status, upload.record],
-  );
+  const [cvReview, setCvReview] = useState<CvReview | null>(null);
+  const [cvLoading, setCvLoading] = useState(false);
+  const [cvError, setCvError] = useState<string | null>(null);
+
+  const step = useMemo(() => {
+    if (guidance.report) return 4;
+    if (guidance.status === 'recommending' || guidance.status === 'reporting') return 3;
+    if (upload.record) return 2;
+    return 1;
+  }, [guidance.report, guidance.status, upload.record]);
+
   const handleSelect = useCallback(
     (file: File) => {
       const problem = validate(file);
       setRejection(problem?.message ?? null);
       if (!problem) {
         guidance.reset();
+        setCvReview(null);
+        setCvError(null);
         upload.upload(file);
       }
     },
     [guidance, upload, validate],
   );
 
-  const runAnalysis = useCallback(
-    () => { if (upload.record) void guidance.analyse(upload.record.id, DEFAULT_PREFERENCES); },
-    [guidance, upload.record],
-  );
+  // Straight to the report. The intermediate careers dialog was removed: once
+  // the confidence bands and per-role reasoning came out of it, it showed five
+  // bare occupation titles, which is not enough for the user to decide
+  // anything on. The occupations still appear in the report, where they carry
+  // their evidence.
+  const runReport = useCallback(() => {
+    if (upload.record) void guidance.buildReport(upload.record.id, DEFAULT_PREFERENCES);
+  }, [guidance, upload.record]);
+
+  const runCvReview = useCallback(async () => {
+    if (!upload.record) return;
+    setCvLoading(true);
+    setCvError(null);
+    try {
+      setCvReview(await reviewCv(upload.record.id));
+    } catch {
+      // Surfaced rather than swallowed: a button that silently does nothing
+      // reads as a broken page.
+      setCvError('The review could not be generated. Please try again.');
+    } finally {
+      setCvLoading(false);
+    }
+  }, [upload.record]);
 
   if (guidance.report) {
     return <ReportPage report={guidance.report} />;
   }
 
-  // Once a file is in flight the extracted profile needs the room, so the
-  // stage widens from a single centred column into two.
   const stageIsBusy = upload.status !== 'idle' || Boolean(upload.file);
 
   return (
@@ -81,7 +109,7 @@ export function App() {
 
           {!stageIsBusy && (
             <ul className={styles.promise}>
-              <li><b>Career directions</b><span>Matched against the ESCO occupation taxonomy.</span></li>
+              <li><b>Career directions</b><span>Matched against relevant occupations.</span></li>
               <li><b>Live opportunities</b><span>Real postings, ranked and explained.</span></li>
               <li><b>A 90-day plan</b><span>Concrete weekly steps, not generic advice.</span></li>
             </ul>
@@ -92,28 +120,107 @@ export function App() {
       {step === 2 && upload.record && (
         <section className={styles.reviewProfile}>
           <header>
-            <div><p className="eyebrow">Step 02 · Review parsed resume</p>
+            <div>
+              <p className="eyebrow">Step 02 · Review parsed resume</p>
               <h1>Check what we extracted before analysis.</h1>
-              <p>Career guidance will use exactly this profile.</p></div>
-            <button className="primary-action" type="button" onClick={runAnalysis}>
-              Next: generate report <span aria-hidden="true">→</span>
-            </button>
+              <p>Career guidance will use exactly this profile.</p>
+            </div>
+            {/* Both actions live together at the top: one critiques the CV,
+                one moves forward. Pairing them makes the review a visible
+                option rather than something buried below the fold. */}
+            <div className={styles.headerActions}>
+              <button
+                className={styles.secondaryAction}
+                type="button"
+                onClick={runCvReview}
+                disabled={cvLoading}
+              >
+                {cvLoading ? 'Checking…' : 'Major Mistakes in CV'}
+              </button>
+              <button className="primary-action" type="button" onClick={runReport}>
+                Get Analysis <span aria-hidden="true">→</span>
+              </button>
+            </div>
           </header>
+
+          {cvError && <div className={styles.error}>{cvError}</div>}
+
           <ProfileView record={upload.record} />
+
           <footer>
             <button className={styles.textButton} type="button" onClick={upload.reset}>
               Use another resume
             </button>
-            <button className="primary-action" type="button" onClick={runAnalysis}>
-              Next: generate report <span aria-hidden="true">→</span>
+            <button className="primary-action" type="button" onClick={runReport}>
+              Get Analysis <span aria-hidden="true">→</span>
             </button>
           </footer>
         </section>
       )}
 
-      {step === 3 && <AnalysisStage status={guidance.status} error={guidance.error}
-        onRetry={runAnalysis} />}
+      {step === 3 && (
+        <AnalysisStage error={guidance.error} onRetry={runReport} />
+      )}
+
+      {cvReview && (
+        <CvReviewDialog review={cvReview} onClose={() => setCvReview(null)} />
+      )}
     </main>
+  );
+}
+
+/**
+ * Critical findings only.
+ *
+ * The full review carries important and minor items too, but a list of a dozen
+ * things to fix is not actionable. What gets a resume rejected at screening is
+ * the useful subset, so that is what is shown.
+ */
+function CvReviewDialog({ review, onClose }: { review: CvReview; onClose: () => void }) {
+  const critical = review.findings.filter((f) => f.severity === 'critical');
+
+  return (
+    <div className={styles.overlay} role="dialog" aria-modal="true" aria-labelledby="cv-title">
+      <div className={styles.dialogWide}>
+        {/* No score. A bare number out of 100 carried no scale, no basis and
+            no comparison, so it invited a question the feature could not
+            answer. The findings are the substance. */}
+        <header className={styles.cvHead}>
+          <p className="eyebrow">Major mistakes in your CV</p>
+          <h2 id="cv-title">{critical.length > 0
+            ? `${critical.length} thing${critical.length === 1 ? '' : 's'} to fix first`
+            : 'Nothing major found'}</h2>
+          <p className={styles.cvOverall}>{review.overall}</p>
+        </header>
+
+        {critical.length === 0 && (
+          <p className={styles.dialogNote}>
+            Nothing here would get your resume rejected at screening. Smaller
+            improvements appear in the full report.
+          </p>
+        )}
+
+        <ul className={styles.findings}>
+          {critical.map((finding, index) => (
+            <li key={`${finding.area}-${index}`}>
+              <span className={styles.findingArea}>{finding.area}</span>
+              <p className={styles.findingIssue}>{finding.issue}</p>
+              {finding.evidence && (
+                <p className={styles.findingEvidence}>&ldquo;{finding.evidence}&rdquo;</p>
+              )}
+              <p className={styles.findingFix}><b>Fix:</b> {finding.fix}</p>
+            </li>
+          ))}
+        </ul>
+
+        <div className={styles.dialogActions}>
+          <span />
+          <button className="primary-action" type="button" onClick={onClose}>
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -146,25 +253,26 @@ function TopBar({ step }: { step: number }) {
   );
 }
 
+/**
+ * One message for both phases, and no duration.
+ *
+ * Naming the stage told the user about our pipeline rather than about their
+ * request, and quoting a time we cannot hold — job search latency depends on
+ * external engines — turns a slow run into a broken promise.
+ */
 function AnalysisStage({
-  status,
   error,
   onRetry,
 }: {
-  status: string;
   error: string | null;
   onRetry: () => void;
 }) {
   return (
     <section className={styles.analysis}>
       <div className={styles.orbit} aria-hidden="true"><i /><i /><i /></div>
-      <p className="eyebrow">Step 03 · Intelligence in motion</p>
-      <h2>{status === 'reporting' ? 'Writing your guidance report…' : 'Reading the market around you…'}</h2>
-      <p>
-        {status === 'reporting'
-          ? 'Connecting the strongest evidence, recurring gaps, and practical next moves.'
-          : 'Career matching and live job discovery are running together.'}
-      </p>
+      <p className="eyebrow">Step 03 · Analysis</p>
+      <h2>Generating your report…</h2>
+      <p>Please keep this page open.</p>
       {error && <div className={styles.error}>{error}<button onClick={onRetry}>Try again</button></div>}
     </section>
   );

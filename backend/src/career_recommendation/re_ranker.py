@@ -16,9 +16,9 @@ from uuid import UUID
 from langchain_core.documents import Document
 from pydantic import BaseModel, Field
 
-from career_recommendation.config import CareerRecommendationModuleConfig as Cfg
-from career_recommendation.retrieval import retrieve_candidate_occupations
-from services.llm_client import llm
+from src.career_recommendation.config import CareerRecommendationModuleConfig as Cfg
+from src.career_recommendation.retrieval import retrieve_candidate_occupations
+from src.services.llm_client import llm
 
 logger = logging.getLogger(__name__)
 

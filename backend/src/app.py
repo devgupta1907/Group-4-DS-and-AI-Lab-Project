@@ -23,6 +23,7 @@ from src.career_report import register_career_report
 from src.core.config import get_settings
 from src.job_discovery_matching import register_job_discovery
 from src.resume_parsing import register_resume_parsing
+from src.cv_review import register_cv_review
 
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
@@ -58,5 +59,5 @@ def create_app() -> FastAPI:
     app.include_router(career_recommendation_router)
     register_job_discovery(app)
     register_career_report(app)
-
+    register_cv_review(app)
     return app

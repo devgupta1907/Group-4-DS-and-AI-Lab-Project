@@ -95,27 +95,34 @@ async def run_guidance_pipeline(
     preferences: SearchPreferences,
     user: CurrentUser,
     resume_service: ResumeParsingService,
+    career_run_id: UUID | None = None,
 ) -> CareerReport:
-    """The single end-to-end entry point after a resume has been reviewed."""
     record = await resume_service.get_profile(profile_id, user)
-    career_task = asyncio.to_thread(
-        recommend_and_persist,
-        record.profile,
-        profile_id=profile_id,
-        user_id=user.id,
-    )
-    jobs_task = jobs_service.discover_jobs_for_profile(
+
+    if career_run_id is None:
+        career_result = await asyncio.to_thread(
+            recommend_and_persist,
+            record.profile,
+            profile_id=profile_id,
+            user_id=user.id,
+        )
+        career_run_id = career_result.run_id
+
+    if career_run_id is None:
+        raise ReportSourceNotFound
+
+    jobs_result = await jobs_service.discover_jobs_for_profile(
         record.profile,
         profile_id=profile_id,
         user_id=user.id,
         preferences=preferences,
     )
-    career_result, jobs_result = await asyncio.gather(career_task, jobs_task)
-    if career_result.run_id is None or jobs_result.run_id is None:
+    if jobs_result.run_id is None:
         raise ReportSourceNotFound
+
     return await generate_report(
         profile_id=profile_id,
-        career_run_id=career_result.run_id,
+        career_run_id=career_run_id,
         job_run_id=jobs_result.run_id,
         user=user,
         resume_service=resume_service,
