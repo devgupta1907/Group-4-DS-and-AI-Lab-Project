@@ -29,7 +29,7 @@ from src.resume_parsing.service import ResumeParsingService
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/jobs", tags=["job-discovery-matching"])
+router = APIRouter(prefix="/api/jobs", tags=["job-discovery-matching"])
 
 
 class SearchRequest(SearchPreferences):

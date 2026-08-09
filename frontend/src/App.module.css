@@ -213,3 +213,154 @@
   .reviewProfile > header { display: grid; align-items: start; }
   .reviewProfile > footer { display: grid; gap: var(--s-3); }
 }
+
+/* --- step 2 header actions -------------------------------------------- */
+
+.headerActions {
+  display: flex;
+  flex-shrink: 0;
+  gap: var(--s-3);
+  align-items: center;
+}
+
+.secondaryAction {
+  padding: var(--s-3) var(--s-5);
+  border: 1px solid var(--c-teal);
+  border-radius: var(--r-pill);
+  background: var(--c-surface);
+  color: var(--c-teal);
+  font: inherit;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--m-fast);
+}
+
+.secondaryAction:hover:not(:disabled) { background: var(--c-aqua-soft); }
+.secondaryAction:disabled { cursor: not-allowed; opacity: .6; }
+
+/* --- dialogs ----------------------------------------------------------- */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: var(--s-5);
+  overflow-y: auto;
+  background: rgb(15 42 51 / 55%);
+}
+
+.dialog,
+.dialogWide {
+  max-height: 88vh;
+  padding: var(--s-6);
+  overflow-y: auto;
+  border-radius: var(--r-lg);
+  background: var(--c-surface);
+  box-shadow: var(--e-3);
+}
+
+.dialog { width: min(100%, 620px); }
+
+/* Landscape: findings quote resume text, which needs the width to stay
+   readable rather than wrapping every few words. */
+.dialogWide { width: min(100%, 960px); }
+
+.dialog h2,
+.dialogWide h2 {
+  margin: var(--s-2) 0 var(--s-4);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  letter-spacing: -.03em;
+}
+
+.dialogNote {
+  margin-top: var(--s-4);
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-md);
+  background: var(--c-warning-soft);
+  color: var(--c-warning);
+  font-size: var(--t-sm);
+  line-height: 1.5;
+}
+
+.dialogActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--s-5);
+  padding-top: var(--s-5);
+  border-top: 1px solid var(--c-border);
+}
+
+/* --- CV review ---------------------------------------------------------- */
+
+.cvHead {
+  padding-bottom: var(--s-4);
+  border-bottom: 1px solid var(--c-border);
+}
+
+.cvOverall {
+  max-width: 70ch;
+  color: var(--c-text);
+  font-size: var(--t-md);
+  line-height: 1.5;
+}
+
+.findings {
+  display: grid;
+  gap: var(--s-3);
+  margin: var(--s-5) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.findings li {
+  padding: var(--s-4) var(--s-5);
+  border: 1px solid var(--c-border);
+  border-left: 3px solid var(--c-danger);
+  border-radius: var(--r-md);
+  background: var(--c-surface-sunken);
+}
+
+.findingArea {
+  color: var(--c-text-subtle);
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.findingIssue {
+  margin-top: var(--s-2);
+  color: var(--c-text);
+  font-size: var(--t-md);
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.findingEvidence {
+  margin-top: var(--s-3);
+  padding-left: var(--s-4);
+  border-left: 2px solid var(--c-border-strong);
+  color: var(--c-text-muted);
+  font-size: var(--t-sm);
+  font-style: italic;
+  line-height: 1.5;
+}
+
+.findingFix {
+  margin-top: var(--s-3);
+  color: var(--c-text-muted);
+  font-size: var(--t-sm);
+  line-height: 1.55;
+}
+
+.findingFix b { color: var(--c-teal); }
+
+@media (width <= 720px) {
+  .headerActions { width: 100%; }
+  .headerActions button { flex: 1; }
+  .dialogActions { display: grid; gap: var(--s-3); }
+}

@@ -13,7 +13,7 @@
   "n_failures": 0,
   "skipped": [],
   "failures": [],
-  "elapsed_seconds": 82.4,
+  "elapsed_seconds": 163.9,
   "retrieval_stage": {
     "MRR": 0.6544,
     "HitRate@1": 0.5192,

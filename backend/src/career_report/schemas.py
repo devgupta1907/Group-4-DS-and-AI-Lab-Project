@@ -14,6 +14,7 @@ Effort = Literal["low", "medium", "high"]
 
 class GenerateReportRequest(BaseModel):
     profile_id: UUID
+    career_run_id: UUID | None = None
     target_location: str | None = None
     remote_only: bool = False
     min_salary_lpa: float | None = None

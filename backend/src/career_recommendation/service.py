@@ -15,15 +15,15 @@ from __future__ import annotations
 import logging
 from uuid import UUID
 
-from career_recommendation import store
-from career_recommendation.config import CareerRecommendationModuleConfig as Cfg
-from career_recommendation.models import CandidateProfile
-from career_recommendation.re_ranker import (
+from src.career_recommendation import store
+from src.career_recommendation.config import CareerRecommendationModuleConfig as Cfg
+from src.career_recommendation.models import CandidateProfile
+from src.career_recommendation.re_ranker import (
     CareerRecommendationResult,
     deterministic_rerank,
     explain_recommendations,
 )
-from career_recommendation.retrieval import retrieve_candidate_occupations
+from src.career_recommendation.retrieval import retrieve_candidate_occupations
 from src.career_recommendation.profile_mapper import from_parsed_resume
 from src.core.config import GlobalConfig
 from src.resume_parsing.schemas import CandidateProfile as ParsedProfile

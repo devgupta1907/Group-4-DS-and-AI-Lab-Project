@@ -9,8 +9,8 @@ vector store, no network. Run with:
 
 from langchain_core.documents import Document
 
-from career_recommendation.config import CareerRecommendationModuleConfig as Cfg
-from career_recommendation.re_ranker import deterministic_rerank
+from src.career_recommendation.config import CareerRecommendationModuleConfig as Cfg
+from src.career_recommendation.re_ranker import deterministic_rerank
 
 
 def _doc(title, uri, essential="", optional=""):

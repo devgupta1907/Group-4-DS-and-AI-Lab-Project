@@ -3,7 +3,7 @@ from supabase.client import create_client, Client
 from langchain_community.vectorstores import SupabaseVectorStore
 
 # Import your BAAI embedding model from wherever you initialized it
-from services.llm_client import embeddings 
+from src.services.llm_client import embeddings
 
 def get_vector_store() -> SupabaseVectorStore:
     """

@@ -1,7 +1,7 @@
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain_huggingface import HuggingFaceEmbeddings
 
-from core.config import GlobalConfig
+from src.core.config import GlobalConfig
 
 
 def _build_embeddings(task_type: str):

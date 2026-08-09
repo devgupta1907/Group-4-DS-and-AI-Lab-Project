@@ -40,7 +40,7 @@ from src.resume_parsing.service import ResumeParsingService
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/career", tags=["career-recommendation"])
+router = APIRouter(prefix="/api/career", tags=["career-recommendation"])
 
 # Guards against overlapping rebuilds: build_vector_store() truncates the
 # documents table before rewriting it, so two concurrent runs would leave

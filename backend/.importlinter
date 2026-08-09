@@ -151,3 +151,16 @@ source_modules =
 forbidden_modules =
     src.career_recommendation
     src.job_discovery_matching
+
+
+[importlinter:contract:cv-review-is-a-leaf]
+name = nothing depends on cv_review
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    src.resume_parsing
+    src.career_recommendation
+    src.job_discovery_matching
+    src.career_report
+forbidden_modules =
+    src.cv_review
