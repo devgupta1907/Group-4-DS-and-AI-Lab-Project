@@ -1,8 +1,4 @@
-"""Node 2 — Search Module: search_queries[] -> job_urls[].
 
-Zero LLM calls. Fans out each query to SearXNG and de-duplicates URLs
-across all queries, capped at `Cfg.MAX_JOB_URLS`.
-"""
 
 from __future__ import annotations
 
@@ -93,21 +89,19 @@ async def run(state: PipelineState) -> PipelineState:
         len(job_urls),
     )
     if not job_urls:
-
         logger.warning(
             "Zero job URLs found across all %d queries: %s. Falling back to "
-            "the stored posting store.",
+            "the stored posting corpus.",
             len(queries), queries,
         )
         async with get_session_factory()() as session:
             repo = JobDiscoveryRepository(session)
-            cached = await repo.find_postings_by_embedding(
-                state["<EMBEDDING_KEY>"], limit=Cfg.MAX_JOB_URLS
-            )
-        job_urls = [p.url for p in cached]
+            cached = await repo.find_recent_postings(limit=Cfg.MAX_JOB_URLS)
+
+        job_urls = [posting.url for posting in cached]
         state["job_urls"] = job_urls
         state["used_cached_postings"] = bool(job_urls)
-        logger.info("Recovered %d postings from the store", len(job_urls))
+        logger.info("Recovered %d postings from the stored corpus", len(job_urls))
 
     state.setdefault("progress", []).append("search_complete")
     return state

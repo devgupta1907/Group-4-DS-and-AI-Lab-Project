@@ -1,10 +1,4 @@
-"""★ The only place in this module that executes SQL. ★
 
-Mirrors resume_parsing's repository philosophy: every ownership check
-(`user_id`) lives here, and no ORM object crosses this module's boundary
-— callers get plain values or the public Pydantic models from
-`job_discovery_matching.models`.
-"""
 
 from __future__ import annotations
 
@@ -217,10 +211,7 @@ class JobDiscoveryRepository:
         return list((await self._session.execute(stmt)).scalars().all())
 
     async def get_rankings_with_judge(self, run_id: UUID) -> list[JobDiscoveryRanking]:
-        """All rankings for a run, ordered by rank_position. `posting` and
-        `judge_result` are eagerly loaded (selectinload) so callers can read
-        them after this coroutine returns, without triggering lazy I/O
-        outside the session's async context."""
+
         stmt = (
             select(JobDiscoveryRanking)
             .where(JobDiscoveryRanking.run_id == run_id)
@@ -233,14 +224,11 @@ class JobDiscoveryRepository:
         return list((await self._session.execute(stmt)).scalars().all())
 
 
-    async def find_postings_by_embedding(
-        self, embedding: list[float], limit: int = 20
-    ) -> list[JobPosting]:
+    async def find_recent_postings(self, limit: int = 20) -> list[JobPosting]:
 
         stmt = (
             select(JobPosting)
-            .where(JobPosting.embedding.isnot(None))
-            .order_by(JobPosting.embedding.cosine_distance(embedding))
+            .order_by(JobPosting.first_seen_at.desc())
             .limit(limit)
         )
         result = await self._session.execute(stmt)
