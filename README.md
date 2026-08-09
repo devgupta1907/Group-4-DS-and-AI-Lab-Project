@@ -77,7 +77,6 @@ Stated plainly, per the Milestone 5 report:
 
 - **The LLM judge stage in Job Discovery does not currently pass its own acceptance criteria** — no prompt variant tested reaches a passing rate; the best achieves 0.5 on schema validity and 0.5 on calibration.
 - **Crawl success caps at 50%** on the best configuration — roughly half of discovered job postings cannot currently be extracted (client-side rendering, bot blocking, or missing structured metadata).
-- **Job Discovery and Matching is not yet integrated** with the shared candidate-profile database flow.
 - **Resume Parsing has no formal per-field precision/recall/F1** in this milestone — functional and integration-verified, but not yet measured at that granularity.
 - The occupation taxonomy (ESCO) is European in origin, so regional and emerging job titles (e.g. "Network Security Engineer") map less reliably — a measured, not hypothetical, source of error.
 
