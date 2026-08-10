@@ -187,7 +187,7 @@ flowchart LR
 
 ![Gemma 4 latency distribution](report_assets/gemma_baseline_latency.png)
 
-*Figure 2. Gemma latency distribution on a logarithmic scale.*
+*Figure 1. Gemma latency distribution on a logarithmic scale.*
 
 - The typical resume completed in **13.81 seconds** (median).
 - The middle 50% completed between **11.19 and 18.62 seconds**.
@@ -197,7 +197,7 @@ flowchart LR
 
 ![Gemma baseline section metrics](report_assets/gemma_baseline_sections.png)
 
-*Figure 3. Gemma baseline predictions scored against the final reference dataset. Contact, Education and Experience exceeded the target; Skills, Projects and Certifications required further work.*
+*Figure 2. Gemma baseline predictions scored against the final reference dataset. Contact, Education and Experience exceeded the target; Skills, Projects and Certifications required further work.*
 
 ### Baseline failure evidence
 
@@ -372,31 +372,78 @@ The same smoke cohort improved from **0/5 to 5/5 schema-valid raw responses**. T
 
 ### Evidence supporting normalization
 
+Many baseline errors represented the same information differently rather than incorrect extraction. For example, `TIMOTHY DUNCAN` and `Timothy Duncan` differed only in case, while `Spring 2018` and `2018` contained the same required education year. These should not carry the same penalty as a wrong name or year.
+
 ### Implemented normalization rules
+
+| Rule | Example |
+|---|---|
+| Unicode, case and whitespace normalization | `PRESENT` → `present` |
+| Locality-only location | full street address → `Los Angeles, CA` |
+| Controlled degree aliases | `PhD` → `phd` |
+| Education-year extraction | `Spring 2018` → `2018` |
+| Date-range endpoints | `2016 - present` → start `2016`, end `present` |
+| Verified organization/location boundary | university or company name without its trailing locality |
+| Controlled skill aliases | `Amazon Web Services` → `AWS`; `Cloud EC2` → `EC2` |
+
+The rules changed comparison keys only. Saved model outputs remained untouched and no additional model calls were made.
 
 ### Raw versus normalized results
 
+![Raw versus normalized Gemma scores](report_assets/normalization_improvement.png)
+
+*Figure 3. The same 84 saved Gemma predictions improved from 0.5252 to 0.6121 aggregate micro-F1 after deterministic comparison normalization. Contact location produced the largest field gain, from 0.3759 to 0.8929.*
+
 ### Boundaries of normalization
+
+- Missing, hallucinated or materially incorrect values remain FP/FN errors.
+- OCR differences in names, employers and institutions are not fuzzy-matched in the official score.
+- Technical punctuation remains meaningful: `C`, `C++`, `C#` and `.NET` are not interchangeable.
+- Skills similarity is supplementary; it does not replace entity precision and recall.
 
 ## 7. Prompt Experiments
 
 ### Source-faithful extraction
 
+The first boundary experiment added the instruction to inspect every possible skill and preserve competency phrases. On the same five-resume smoke cohort, skills changed from **0.2268 to 0.1830 F1** because false positives increased from 34 to 87. One architect resume alone increased from 13 to 61 false skills after experience duties were mined as competencies.
+
+**Learning:** broad completeness instructions increase recall pressure across the whole document. The correction restored source-faithful extraction and explicitly prohibited converting ordinary duties into skills.
+
 ### Atomic versus complete-line skills
+
+An example-heavy atomic prompt increased recall from 0.6418 to 0.7164 but reduced precision from 0.5811 to 0.5333; F1 moved only from **0.6099 to 0.6115**. It recovered some atomic skills while introducing logistics, product-placement and rural-work concepts absent from the reference.
+
+A later full 86-resume prompt instructed: `Preserve each visibly listed skill line... do not split, expand, canonicalize, summarize or paraphrase it.` Skills F1 fell from **0.8198 to 0.5607** because the stricter section and grouping rules omitted many valid reference entities.
+
+**Learning:** an LLM does not execute examples as deterministic transformation rules. Additional examples or absolute wording can shift attention and trade precision for recall. Canonical aliases and safe list splitting were therefore kept in deterministic comparison logic, while the prompt focused on visible source boundaries.
 
 ### Project-boundary instructions
 
+The project prompt was changed to use visual titles, preserve meaningful text after a colon, reject labels such as `Member` or `Presenter`, and keep descriptions out of `name`. Project F1 improved from **0.1724 in the Gemma baseline to 0.455 in the later Gemma experiment**, but remained below target because named works were still omitted.
+
+**Learning:** boundary instructions help when a project is detected, but cannot guarantee complete detection of patents, publications or unusually formatted named work.
+
 ### Certification-boundary instructions
+
+A full-run experiment added explicit rules separating credentials from awards, affiliations and education. Certification F1 decreased from **0.7472 to 0.6503** instead of improving, so the change was rejected.
+
+**Learning:** adding a locally reasonable rule can change global model attention and output selection. Every prompt modification therefore requires measured validation; it is not accepted solely because its wording appears correct.
 
 ### Accepted and rejected experiments
 
-## 8. Experiment Progression
+| Experiment | Measured result | Decision |
+|---|---|---|
+| Broad skill/project boundary prompt | Skills 0.2268 → 0.1830 | Rejected: false positives increased sharply |
+| Atomic skill examples | Skills 0.6099 → 0.6115 | Rejected: negligible F1 gain and lower precision |
+| Source-faithful Gemini prompt | Skills 0.8198; Projects 0.8814 | Accepted |
+| Strict complete-line skills | Skills 0.8198 → 0.5607 | Rejected: recall collapsed |
+| Expanded certification boundaries | Certifications 0.7472 → 0.6503 | Rejected |
 
 ![Experiment progression against the current gold](report_assets/experiment_progression.png)
 
-*Figure 1. Diagnostic mean of the six section-level normalized micro-F1 scores, with every saved experiment rescored against the current effective gold. The figure shows the transition from Gemma experiments to Gemini experiments and retains regressions from rejected prompts.*
+*Figure 4. Diagnostic mean of the six section-level normalized micro-F1 scores against the final reference dataset. Regressions are retained because they justify why apparently reasonable prompt changes were removed.*
 
-## 9. Gemma 4 versus Gemini 3.5 Flash
+## 8. Gemma 4 versus Gemini 3.5 Flash
 
 ### Extraction quality
 
@@ -406,7 +453,7 @@ The same smoke cohort improved from **0/5 to 5/5 schema-valid raw responses**. T
 
 ### Schema adherence and operational reliability
 
-## 10. Final Results Against the Acceptance Threshold
+## 9. Final Results Against the Acceptance Threshold
 
 ### Section-level precision, recall and F1
 
@@ -414,7 +461,7 @@ The same smoke cohort improved from **0/5 to 5/5 schema-valid raw responses**. T
 
 ### Experience-description analysis
 
-## 11. Validity and Limitations
+## 10. Validity and Limitations
 
 ### Gold-review status
 
@@ -424,4 +471,4 @@ The same smoke cohort improved from **0/5 to 5/5 schema-valid raw responses**. T
 
 ### Cost-estimation limitations
 
-## 12. Conclusion and Production Recommendation
+## 11. Conclusion and Production Recommendation
