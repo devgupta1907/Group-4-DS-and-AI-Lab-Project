@@ -98,7 +98,7 @@ async def run(state: PipelineState) -> PipelineState:
             repo = JobDiscoveryRepository(session)
             cached = await repo.find_recent_postings(limit=Cfg.MAX_JOB_URLS)
 
-        job_urls = [posting.url for posting in cached]
+        job_urls = [posting.source_url for posting in cached]
         state["job_urls"] = job_urls
         state["used_cached_postings"] = bool(job_urls)
         logger.info("Recovered %d postings from the stored corpus", len(job_urls))
