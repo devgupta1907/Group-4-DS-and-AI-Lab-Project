@@ -210,12 +210,45 @@ flowchart LR
 | Projects | 5 | 10 | 38 | 0.17 |
 | Certifications | 47 | 17 | 61 | 0.55 |
 
-| Resume | Field | Gemma prediction | Gold reference | Error demonstrated |
-|---|---|---|---|---|
-| `devops_engineer__57` | Skills | `Application deployment: Terraform, Jenkins` | `Terraform`; `Jenkins` | A labelled group was retained instead of extracting its named tools. |
-| `architect__38d167423f55cd85` | Skills | `Architectural design`; `Architecture` | `Detailed knowledge of Atkins' standards, policies, codes and procedures...` | Source competency lines were rewritten into broader inferred labels. |
-| `business_analyst__7e5f0138ac0c3411` | Project name | `Act 4 Community: Web and Mobile Application Designed to Connect...` | `Act 4 Community` | The description was appended to the project name. |
-| `devops_engineer__57` | Certification name | `AWS Cloud Practitioner Validation Number 246DCT7D1BIQRS` | `AWS Cloud Practitioner` | A credential identifier was incorrectly included in the name. |
+**Evidence A — grouped technical skills**
+
+![Technical skills source evidence](report_assets/evidence/gemma_devops_skills.png)
+
+- **Prediction:** `Application deployment: Terraform, Jenkins`
+- **Reference:** `Terraform`; `Jenkins`
+- **Error:** the labelled group was retained instead of extracting its named tools.
+
+**Evidence B — competency phrases rewritten as inferred labels**
+
+![Competency phrase source evidence](report_assets/evidence/gemma_architect_skills.png)
+
+- **Prediction:** `Architectural design`; `Architecture`
+- **Reference:** the complete visibly listed competency phrases.
+- **Error:** source wording was replaced by broader inferred labels.
+
+**Evidence C — named work omitted**
+
+![Patent source evidence](report_assets/evidence/gemma_designer_patents.png)
+
+- **Prediction:** no projects.
+- **Reference:** nine named patents.
+- **Error:** the complete visible patent section was omitted.
+
+**Evidence D — project description included in its name**
+
+![Project source evidence](report_assets/evidence/gemma_business_projects.png)
+
+- **Prediction:** `Act 4 Community: Web and Mobile Application Designed to Connect...`
+- **Reference:** `Act 4 Community`
+- **Error:** text describing the project was appended to the project-name field.
+
+**Evidence E — credential identifier included in its name**
+
+![Certification source evidence](report_assets/evidence/gemma_devops_certification.png)
+
+- **Prediction:** `AWS Cloud Practitioner Validation Number 246DCT7D1BIQRS`
+- **Reference:** `AWS Cloud Practitioner`
+- **Error:** the validation number was retained inside the credential name.
 
 ## 4. Schema-Adherence Failure and Correction
 
