@@ -187,7 +187,7 @@ flowchart LR
 
 ![Gemma 4 latency distribution](report_assets/gemma_baseline_latency.png)
 
-*Figure 1. Gemma latency distribution on a logarithmic scale.*
+*Figure 1. Gemma 4 latency distribution on a logarithmic scale.*
 
 - The typical resume completed in **13.81 seconds** (median).
 - The middle 50% completed between **11.19 and 18.62 seconds**.
@@ -197,7 +197,7 @@ flowchart LR
 
 ![Gemma baseline section metrics](report_assets/gemma_baseline_sections.png)
 
-*Figure 2. Gemma baseline predictions scored against the final reference dataset. Contact, Education and Experience exceeded the target; Skills, Projects and Certifications required further work.*
+*Figure 2. Gemma 4 baseline predictions scored against the final reference dataset. Contact, Education and Experience exceeded the target; Skills, Projects and Certifications required further work.*
 
 ### Baseline failure evidence
 
@@ -241,12 +241,12 @@ The response contained relevant information, but did not match the application's
 ### Root cause
 
 - The Vertex implementation treated system-role support as evidence of schema-constrained decoding.
-- Gemma therefore received a short extraction instruction but not the complete schema in its visible prompt.
-- The configured response schema did not constrain this open-model MaaS response in the same way as a Gemini endpoint.
+- Gemma 4 therefore received a short extraction instruction but not the complete schema in its visible prompt.
+- The configured response schema did not constrain this open-model MaaS response in the same way as the Gemini 3.5 Flash endpoint.
 
 ### Vertex AI provider correction
 
-1. Route Gemma through Vertex AI's OpenAI-compatible structured-response interface.
+1. Route Gemma 4 through Vertex AI's OpenAI-compatible structured-response interface.
 2. Parse the response against the Pydantic extraction model.
 3. Insert the complete JSON Schema into the user prompt as a second safeguard.
 
@@ -390,9 +390,9 @@ The rules changed comparison keys only. Saved model outputs remained untouched a
 
 ### Raw versus normalized results
 
-![Raw versus normalized Gemma scores](report_assets/normalization_improvement.png)
+![Raw versus normalized Gemma 4 scores](report_assets/normalization_improvement.png)
 
-*Figure 3. The same Gemma predictions improved from 0.5252 to 0.6121 aggregate micro-F1 after deterministic comparison normalization. Contact location produced the largest field gain, from 0.3759 to 0.8929.*
+*Figure 3. The same Gemma 4 predictions improved from 0.5252 to 0.6121 aggregate micro-F1 after deterministic comparison normalization. Contact location produced the largest field gain, from 0.3759 to 0.8929.*
 
 ### Boundaries of normalization
 
