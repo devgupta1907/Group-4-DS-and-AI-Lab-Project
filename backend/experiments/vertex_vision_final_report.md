@@ -137,9 +137,43 @@ Output JSON only. No prose, no markdown, no code fences.
 
 ### Dataset and gold-standard review
 
+The evaluation used 86 image-based resumes covering 43 job categories. Every PDF was forced through the production vision route so that text availability in the source file could not change the extraction method. The model was not trained or fine-tuned on these records; they were used for iterative evaluation and error analysis.
+
+The original annotations were AI-assisted and therefore required correction. Manual review was performed against the source resume images, with 43 resumes recorded as fully source-reviewed and additional field-specific spot checks performed during failure analysis. Corrections were stored in versioned overlays rather than silently changing the historical source file.
+
 ### Metrics and acceptance criterion
 
+Each scalar or repeated field was converted into a set of extracted and reference values. Their intersection produced true positives; unmatched predictions produced false positives; and missing reference values produced false negatives.
+
+\[
+Precision = \frac{TP}{TP+FP}, \qquad
+Recall = \frac{TP}{TP+FN}, \qquad
+F1 = \frac{2TP}{2TP+FP+FN}
+\]
+
+Scores were micro-aggregated within each section so that every extracted value contributed to the result. The acceptance target was F1 ≥ 0.75 for Contact, Skills, Education, Experience, Projects and Certifications. Item-level true negatives were not reported because the universe of possible skills, employers or qualifications is unbounded. Presence/absence true negatives were retained as a separate diagnostic.
+
+Descriptions were evaluated separately because exact entity matching is inappropriate for long text. Experience entries were aligned by list position and assessed using description coverage and TF-IDF cosine similarity, with missing descriptions scored as zero.
+
 ### Experiment tracking and reproducibility
+
+Every inference attempt was appended to an immutable JSONL ledger. A successful record contains the resume identifier, model, complete prompt, prompt and provider fingerprints, raw response, production response, gold reference, schema result, TP/FP/FN evidence, latency, token usage and estimated cost. Restarting the notebook skips successful records for the same experiment while retaining failures and retries.
+
+Raw exact matching and deterministic normalized matching were stored as separate experiments. Normalization never rewrote the saved model response or triggered another model call. Its cache identity includes the source experiment, effective gold hash and normalization-code hash, ensuring that updated scoring logic cannot silently reuse stale results.
+
+```mermaid
+flowchart LR
+    A[86 resume PDFs] --> B[Vision rendering<br/>150 DPI]
+    B --> C[Vertex AI model]
+    C --> D[Schema validation]
+    D --> E[Production postprocessing]
+    E --> F[Append-only evidence ledger]
+    F --> G[Raw exact scoring]
+    F --> H[Deterministic normalized scoring]
+    G --> I[Precision, recall and F1]
+    H --> I
+    F --> J[Latency, tokens and cost]
+```
 
 ## 3. Gemma 4 Baseline
 
