@@ -187,7 +187,7 @@ flowchart LR
 
 ![Gemma 4 latency distribution](report_assets/gemma_baseline_latency.png)
 
-*Figure 2. Per-resume Gemma latency. The logarithmic axis retains the 619.14-second long-tail case without hiding the typical 13.81-second median.*
+*Figure 2. Gemma latency summary. The average is higher than the median because a small number of unusually slow resumes created a long tail.*
 
 ### Baseline results
 
