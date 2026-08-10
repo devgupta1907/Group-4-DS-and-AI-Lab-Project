@@ -195,11 +195,19 @@ flowchart LR
 
 ### Baseline failure evidence
 
-| Section | TP | FP | FN | F1 | Main observed problem |
-|---|---:|---:|---:|---:|---|
-| Skills | 597 | 630 | 580 | 0.50 | Responsibilities were returned as skills, while grouped and atomic values used inconsistent boundaries. |
-| Projects | 5 | 10 | 38 | 0.17 | Named works were missed and ordinary activities were sometimes promoted to projects. |
-| Certifications | 47 | 17 | 61 | Credentials outside obvious headings were missed and education/award boundaries were inconsistent. |
+| Section | TP | FP | FN | F1 |
+|---|---:|---:|---:|---:|
+| Skills | 597 | 630 | 580 | 0.50 |
+| Projects | 5 | 10 | 38 | 0.17 |
+| Certifications | 47 | 17 | 61 | 0.55 |
+
+| Resume | Field | Gemma prediction | Gold reference | Error demonstrated |
+|---|---|---|---|---|
+| `devops_engineer__57` | Skills | `Application deployment: Terraform, Jenkins` | `Terraform`; `Jenkins` | A labelled group was retained instead of extracting its named tools. |
+| `architect__38d167423f55cd85` | Skills | `Architectural design`; `Architecture` | `Detailed knowledge of Atkins' standards, policies, codes and procedures...` | Source competency lines were rewritten into broader inferred labels. |
+| `designer__91` | Projects | No projects extracted | Nine named US patents | A complete visible class of named work was omitted. |
+| `business_analyst__7e5f0138ac0c3411` | Project name | `Act 4 Community: Web and Mobile Application Designed to Connect...` | `Act 4 Community` | The description was appended to the project name. |
+| `devops_engineer__57` | Certification name | `AWS Cloud Practitioner Validation Number 246DCT7D1BIQRS` | `AWS Cloud Practitioner` | A credential identifier was incorrectly included in the name. |
 
 These errors established the experiment priorities: correct schema delivery, separate representational differences from extraction failures, and then modify only the prompts responsible for genuine omissions or hallucinations.
 
