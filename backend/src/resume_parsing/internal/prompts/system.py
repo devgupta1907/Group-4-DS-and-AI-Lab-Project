@@ -56,23 +56,20 @@ RULES
 FIELD RULES
 
 SKILLS
-- Extract skills only from content visibly contained under an explicit Skills,
-  Technical Skills, Core Competencies, Qualifications, Tools, Technologies,
-  Environment, Expertise, Professional Forte, Language Skills or Languages
-  heading. Inspect every listed item and do not stop after the first few.
-- Preserve each visibly listed skill line, bullet or grouped entry as one list
-  value. Copy its wording and grouping as closely as possible; do not split,
-  expand, canonicalize, summarize or paraphrase it.
-- First transcribe every entry in each explicit skill-like section from top to
-  bottom. Before scanning elsewhere, verify that every visible bullet or line in
-  those sections appears exactly once in skills.
-- Preserve meaningful technical punctuation and product spelling, including C++,
-  C#, .NET, CI/CD, slashes, ampersands and parenthesized tool groups.
-- Outside an explicit skill-like section, include only visibly named products,
-  tools, technologies, programming languages or frameworks. Copy the
-  named item only; do not convert its surrounding duty or achievement into a skill.
-- Never copy or derive a skill from a job title, employer name or role label, and
-  never infer a skill merely because a responsibility would normally require it.
+- Inspect every item under Skills, Technical Skills, Core Competencies,
+  Qualifications, Tools, Technologies and Environment; do not stop after the
+  first few items or select only the most technical ones.
+- Extract explicitly named skills, tools, technologies, languages, frameworks
+  and competencies. Preserve a competency phrase as one item when the document
+  presents that phrase as one bullet or list item.
+- Outside those sections, include only explicitly named tools, technologies,
+  methods or competencies. Do not convert a complete responsibility, achievement,
+  role, employer or unsupported implication into a skill.
+- Split an item only when it visibly enumerates distinct named skills or tools,
+  for example "Python, Java, SQL". Do not rewrite a competency sentence into
+  newly invented labels. Preserve meaningful punctuation such as C++, C#,
+  .NET and CI/CD.
+- Do not invent a parent or related technology.
 
 EXPERIENCE
 - Identify every visible employment entry first. Keep its title, employer,
@@ -100,85 +97,34 @@ EDUCATION
   accreditation text. Ignore placeholders such as University Name.
 - degree contains only the qualification; field contains only the major,
   discipline or specialisation. Do not duplicate one value into the other.
-- Under Education, return each distinct degree, diploma or academic credential as
-  its own education entry, including a credential printed as a nested bullet under
-  an institution. Inherit only its visibly shared institution and year from the
-  surrounding education block. An item explicitly labelled Certification,
-  Certificate, Licence or License belongs only in certifications, even when it is
-  printed under Education; do not duplicate it as education.
 - A single standalone education year is end_year and start_year is null. For a
   visible range, the first/left value is start_year and the second/right value is
   end_year. Preserve Present, Current or Ongoing as end_year for visibly ongoing
   education. Never place it in start_year, duplicate or reverse a date range.
 
 PROJECTS
-- Treat entries under Projects, Current Key Projects, Key Projects, Selected
-  Projects, Publications, Books, Patents, Patent Awards, Research, Exhibitions,
-  Selected Work and Conference Presentations as projects. Such a project
-  subsection may be nested inside Work History or an individual employment entry.
-- name contains only the concise identifying project title. Determine its boundary
-  from meaning and visual emphasis, not merely from a line break or punctuation.
-  When a short emphasized label is followed on the same line by explanatory text
-  describing the project's purpose, scope or deliverable, keep only the label in
-  name and place the explanatory text at the start of description.
-- When the complete phrase has consistent visual emphasis and functions as one
-  identifying title, retain the complete phrase as name rather than splitting it.
+- Treat entries under Projects, Selected Projects, Publications, Books, Research,
+  Exhibitions, Selected Work and Conference Presentations as projects.
+- Identify each project name from its visual role as a heading, title, caption or
+  named list entry. Preserve the complete visible title, including meaningful
+  text after a colon; a colon does not by itself mark the start of a description.
 - Do not use participation or authorship labels such as Exhibitor, Member,
   Presenter, Author or Contributor as project names. Do not create an additional
   project from such a label.
 - Prefer a specifically named work over a nearby generic context label such as
   "fourth-year project". Use a generic project label only when it is itself the
   sole visible name of that entry.
-- A book or authored work uses the printed work title as name, not a surrounding
-  achievement label such as `Becoming an Author`.
-- Do not infer projects from ordinary employment duties, technologies, portfolio
-  capabilities, awards, event names or plausible work that is not explicitly
-  presented as a named project or work.
-- A granted or listed patent is an authored/invented work and may be a project;
-  an ordinary award, honour or nomination without a named work is not a project.
 - description copies the visible project description word-for-word. Do not
   summarise, paraphrase, rewrite, improve, shorten or add claims.
 - technologies contains only explicitly named software, languages, frameworks or
   technical tools, not activities or methodologies.
-- Return each distinct project technology once. When a visible abbreviation and
-  its expanded form identify the same technology, prefer the expanded visible
-  name and do not return both. For example, SAP FG and SAP Field Glass in one
-  project become only SAP Field Glass.
 
 CERTIFICATIONS
-- Scan the complete resume for explicit credentials, including statements under
-  Certifications, Certificates, Licences, Training, Courses, Professional
-  Development, Education, Skills, Qualifications and summary text.
-- Extract certifications, licences, registrations and explicitly completed or
-  named training. An entry need not be under a dedicated certification heading.
-- A genuine credential or named training remains a certification when it is
-  printed under Skills, Additional Information or another section. Keep it in
-  certifications as well as transcribing it in skills when the document itself
-  explicitly lists it as a skill.
-- Under Education, extract an item here only when it is explicitly labelled
-  Certification, Certificate, Licence or License. Keep a degree, diploma or
-  academic credential in education, and never return the same item in both lists.
-- Do not classify awards, honours, prizes, rankings, nominations, recognition,
-  recipient distinctions, scholarships, memberships or affiliations as
-  certifications. Also exclude committees, task forces, boards, faculty roles,
-  chair or co-chair roles and participant roles when they describe only
-  professional involvement. An issuer and year alone do not make an item a
-  certification. Do not exclude a genuine credential merely because its issuer
-  contains words such as Board, Association, Institute or Society.
-- Do not classify ordinary skills, job duties or training delivered by the
-  candidate as certifications. A nearby skill is not a credential merely because
-  another list item says Certification.
-- Create one entry per credential or named training item. Do not bundle multiple
-  certificates or trainings into one name.
-- When the same credential is mentioned more than once across sections, return
-  one record only. Prefer the most specific visible name and combine its visibly
-  associated issuer and year; do not treat alternate wording as a second credential.
-- name is the complete visibly printed credential or training name. Preserve
-  meaningful acronyms and expansions, but exclude credential IDs, licence
-  numbers, validation numbers, URLs, issuer text and dates.
-- Pair issuer and year with the correct credential. issuer may come from an
-  explicitly associated parenthetical or adjacent line; never infer an awarding
-  organization solely from general knowledge.
+- Extract named qualifications, licences and completed training under headings
+  including Certifications, Licences, Training, Courses, Professional Development,
+  Achievements and Credentials.
+- name is the credential name only; exclude credential IDs, validation numbers,
+  URLs and issuer text. issuer and year contain only explicitly visible values.
 
 FINAL CHECK
 - Include every visible experience, education, project and certification entry
