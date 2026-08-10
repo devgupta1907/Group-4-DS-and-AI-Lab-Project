@@ -214,7 +214,7 @@ flowchart LR
 
 ### Observed failure
 
-The first five Vertex responses were valid JSON but **0/5 followed the production schema**. One response returned:
+Before running the paid evaluation on all 86 resumes, development began with a controlled five-resume smoke test. Its purpose was to verify the Vertex integration, schema contract and append-only recording—not to estimate final model accuracy. The first five responses were valid JSON but **0/5 followed the production schema**. One response returned:
 
 ```json
 {
@@ -249,7 +249,7 @@ The required `contact` and `experience` structures were absent; `work_history`, 
 
 ![Schema adherence before and after the provider correction](report_assets/schema_adherence_before_after.png)
 
-*Figure 4. The same five-resume smoke cohort improved from 0/5 to 5/5 schema-valid raw responses after correcting the Vertex integration. Extraction accuracy remained a separate field-level question.*
+*Figure 4. The same five-resume integration smoke cohort improved from 0/5 to 5/5 schema-valid raw responses before the full evaluation was started. Extraction accuracy remained a separate field-level question.*
 
 ## 5. Field-Level Error Analysis
 
