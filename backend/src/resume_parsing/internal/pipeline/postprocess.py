@@ -13,10 +13,10 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import Any
 
+from src.resume_parsing.internal.location import locality_only
 from src.resume_parsing.schemas import CandidateProfile
 
-_LIST_SECTIONS = ("skills", "education", "experience", "projects", "certifications",
-                  "job_titles")
+_LIST_SECTIONS = ("skills", "education", "experience", "projects", "certifications")
 
 
 def normalise(payload: dict) -> dict:
@@ -25,23 +25,22 @@ def normalise(payload: dict) -> dict:
     if not isinstance(contact, dict):
         contact = {}
 
+    experience = [_experience(e) for e in _objects(payload.get("experience"))]
     return {
         "contact": {
             "name": _scalar(contact.get("name")),
-            "location": _scalar(contact.get("location")),
+            "location": locality_only(contact.get("location")),
             "links": _unique_strings(contact.get("links")),
         },
         "skills": _unique_strings(payload.get("skills")),
         "education": [_entry(e, ("degree", "field", "institution", "start_year",
                                 "end_year")) for e in _objects(payload.get("education"))],
-        "experience": [
-            _experience(e) for e in _objects(payload.get("experience"))
-        ],
+        "experience": experience,
         "projects": [_project(p) for p in _objects(payload.get("projects"))],
         "certifications": [
             _entry(c, ("name", "issuer", "year")) for c in _objects(payload.get("certifications"))
         ],
-        "job_titles": _unique_strings(payload.get("job_titles")),
+        "job_titles": _titles_from_experience(experience),
     }
 
 
@@ -67,7 +66,7 @@ def merge(pages: Iterable[dict]) -> CandidateProfile:
 
     merged["contact"]["links"] = _unique_strings(merged["contact"]["links"])
     merged["skills"] = _unique_strings(merged["skills"])
-    merged["job_titles"] = _unique_strings(merged["job_titles"])
+    merged["job_titles"] = _titles_from_experience(merged["experience"])
     for section in ("education", "experience", "projects", "certifications"):
         merged[section] = _unique_objects(merged[section])
 
@@ -124,6 +123,11 @@ def _unique_strings(value: Any) -> list[str]:
     return result
 
 
+def _titles_from_experience(entries: list[dict]) -> list[str]:
+    """Derive the downstream title list; the model never predicts it twice."""
+    return _unique_strings([entry.get("job_title") for entry in entries])
+
+
 def _entry(raw: dict, keys: tuple[str, ...]) -> dict:
     return {key: _scalar(raw.get(key)) for key in keys}
 
@@ -131,6 +135,7 @@ def _entry(raw: dict, keys: tuple[str, ...]) -> dict:
 def _experience(raw: dict) -> dict:
     entry = _entry(raw, ("job_title", "company", "location", "start_date",
                          "end_date", "description"))
+    entry["location"] = locality_only(raw.get("location"))
     entry["current_role"] = _boolean(raw.get("current_role"))
     return entry
 

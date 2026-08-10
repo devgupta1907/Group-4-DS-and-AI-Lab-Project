@@ -15,7 +15,9 @@ from enum import StrEnum
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from src.resume_parsing.internal.location import locality_only
 
 
 class _Strict(BaseModel):
@@ -31,8 +33,13 @@ class _Strict(BaseModel):
 
 class Contact(_Strict):
     name: str | None = None
-    location: str | None = None
+    location: str | None = Field(
+        default=None,
+        description="Locality only; street, building, unit and postal data are removed.",
+    )
     links: list[str] = Field(default_factory=list)
+
+    _protect_location = field_validator("location", mode="before")(locality_only)
 
 
 class Education(_Strict):
@@ -46,11 +53,16 @@ class Education(_Strict):
 class Experience(_Strict):
     job_title: str | None = None
     company: str | None = None
-    location: str | None = None
+    location: str | None = Field(
+        default=None,
+        description="Locality only; street, building, unit and postal data are removed.",
+    )
     start_date: str | None = None
     end_date: str | None = None
     current_role: bool | None = None
     description: str | None = None
+
+    _protect_location = field_validator("location", mode="before")(locality_only)
 
 
 class Project(_Strict):

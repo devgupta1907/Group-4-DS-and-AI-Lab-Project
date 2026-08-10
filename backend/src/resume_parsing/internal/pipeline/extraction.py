@@ -34,6 +34,7 @@ async def extract_pages(
     profile from three of four pages beats no profile at all.
     """
     semaphore = asyncio.Semaphore(_MAX_CONCURRENT_PAGES)
+    errors: list[str] = []
 
     async def one(page: PageArtifact) -> dict | None:
         async with semaphore:
@@ -49,7 +50,8 @@ async def extract_pages(
                     perf_counter() - started,
                 )
                 return result
-            except ProviderError:
+            except ProviderError as exc:
+                errors.append(f"page {page.index}: {exc}")
                 logger.warning(
                     "Page %d failed extraction on %s after %.3f seconds",
                     page.index,
@@ -62,5 +64,6 @@ async def extract_pages(
     successful = [result for result in results if result is not None]
 
     if not successful:
-        raise ProviderError(f"No page could be extracted with {model}.")
+        detail = f" First error: {errors[0]}" if errors else ""
+        raise ProviderError(f"No page could be extracted with {model}.{detail}")
     return successful

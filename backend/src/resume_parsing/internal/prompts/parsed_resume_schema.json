@@ -21,7 +21,10 @@
       "required": ["name", "location", "links"],
       "properties": {
         "name": { "type": ["string", "null"] },
-        "location": { "type": ["string", "null"] },
+        "location": {
+          "type": ["string", "null"],
+          "description": "Locality only: city plus region/state and country when visible. Never include a street, building, unit, floor, PO box or postal code."
+        },
         "links": {
           "type": "array",
           "items": { "type": "string" },
@@ -66,7 +69,10 @@
         "properties": {
           "job_title": { "type": ["string", "null"] },
           "company": { "type": ["string", "null"] },
-          "location": { "type": ["string", "null"] },
+          "location": {
+            "type": ["string", "null"],
+            "description": "Locality only: city plus region/state and country when visible. Never include a street, building, unit, floor, PO box or postal code."
+          },
           "start_date": { "type": ["string", "null"] },
           "end_date": { "type": ["string", "null"] },
           "current_role": { "type": ["boolean", "null"] },

@@ -125,9 +125,50 @@ def test_blank_scalars_become_null() -> None:
     assert result["contact"]["location"] == "Pune"
 
 
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        ("123 Elm Street, Miami, FL 33183", "Miami, FL"),
+        ("P.O. Box 1673, Callahan, FL 32011", "Callahan, FL"),
+        (
+            "1515 Pacific Ave, Los Angeles, CA 90291, United States",
+            "Los Angeles, CA, United States",
+        ),
+        ("1013 Briarwood St. Bronx, NY 11776", "Bronx, NY"),
+        ("61 Wellfield Road, Roath, Cardiff CF24 3DG", "Roath, Cardiff"),
+        ("100 Montgomery St. 10th Floor", None),
+        ("Berlin, Germany", "Berlin, Germany"),
+        ("Remote", "Remote"),
+    ],
+)
+def test_locations_are_reduced_to_locality(source: str, expected: str | None) -> None:
+    result = postprocess.normalise({"contact": {"location": source}})
+    assert result["contact"]["location"] == expected
+
+
+def test_experience_locations_cannot_retain_an_exact_address() -> None:
+    result = postprocess.normalise(
+        {"experience": [{"location": "488 E Wimbledon Dr, Charleston, SC 29412"}]}
+    )
+    assert result["experience"][0]["location"] == "Charleston, SC"
+
+
 def test_skills_deduplicate_case_insensitively_keeping_first_casing() -> None:
     result = postprocess.normalise({"skills": ["Python", "python", "PYTHON", "SQL"]})
     assert result["skills"] == ["Python", "SQL"]
+
+
+def test_job_titles_are_derived_from_experience_and_model_values_are_ignored() -> None:
+    result = postprocess.normalise({
+        "experience": [
+            {"job_title": "Senior Analyst"},
+            {"job_title": "senior analyst"},
+            {"job_title": "Data Engineer"},
+        ],
+        "job_titles": ["Invented Title"],
+    })
+
+    assert result["job_titles"] == ["Senior Analyst", "Data Engineer"]
 
 
 def test_dates_are_preserved_exactly_as_written() -> None:
