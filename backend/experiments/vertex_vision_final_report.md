@@ -1,6 +1,19 @@
 # Resume Parsing Evaluation and Improvement
 
-## 1. Executive Summary
+## 1. Final Outcome
+
+The strongest complete experiment used Gemini 3.5 Flash with prompt v10. When rescored against the current reviewed gold, it passed the 0.75 F1 acceptance threshold in five of the six evaluated sections. Certifications reached 0.7472 F1, missing the threshold by 0.0028.
+
+| Section | Precision | Recall | F1 | Result |
+|---|---:|---:|---:|---|
+| Contact | — | — | 0.9823 | Pass |
+| Skills | — | — | 0.8198 | Pass |
+| Education | — | — | 0.9229 | Pass |
+| Experience | — | — | 0.9784 | Pass |
+| Projects | — | — | 0.8814 | Pass |
+| Certifications | — | — | 0.7472 | Below threshold |
+
+The following sections explain how schema correction, deterministic normalization, field-level error analysis and controlled prompt experiments produced this result. Precision and recall are reported with their supporting visualizations rather than approximated in this opening table.
 
 ## 2. Evaluation Methodology
 
