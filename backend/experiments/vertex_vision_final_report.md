@@ -187,7 +187,11 @@ flowchart LR
 
 ![Gemma 4 latency distribution](report_assets/gemma_baseline_latency.png)
 
-*Figure 2. Gemma latency summary. The average is higher than the median because a small number of unusually slow resumes created a long tail.*
+*Figure 2. Gemma latency distribution on a logarithmic scale.*
+
+- The typical resume completed in **13.81 seconds** (median).
+- The middle 50% completed between **11.19 and 18.62 seconds**.
+- A small long tail, including a **619.14-second** maximum, increased the mean to **22.24 seconds**; the median therefore represents normal latency more reliably.
 
 ### Baseline results
 
