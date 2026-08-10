@@ -18,6 +18,7 @@ import re
 import unicodedata
 from difflib import SequenceMatcher
 
+from src.resume_parsing.internal.location import locality_only
 from src.resume_parsing.internal.pipeline.validation import validate
 
 _EMAIL = re.compile(r"[\w.+-]+@[\w-]+\.[\w.]+")
@@ -244,6 +245,18 @@ def _flat_strings(profile: dict, section: str, key: str) -> set[str]:
     return out
 
 
+def _flat_locations(profile: dict, section: str, key: str) -> set[str]:
+    """Locality-level comparison using the production privacy sanitizer."""
+    out: set[str] = set()
+    for entry in profile.get(section) or []:
+        if not isinstance(entry, dict):
+            continue
+        location = locality_only(entry.get(key))
+        if location:
+            out.add(_norm(location))
+    return out
+
+
 def _phone_hits(blob: str) -> list[str]:
     return [
         span
@@ -361,7 +374,7 @@ def field_metrics(outputs: dict, reference_outputs: dict) -> list[dict]:
         "job_titles": pair(_strings, "job_titles"),
         "education_field": pair(_flat_strings, "education", "field"),
         "experience": pair(_entities, "experience", ("job_title", "company")),
-        "experience_location": pair(_flat_strings, "experience", "location"),
+        "experience_location": pair(_flat_locations, "experience", "location"),
         "certifications": pair(_entities, "certifications", ("name", "issuer")),
         "projects": pair(_entities, "projects", ("name",)),
         "technologies": pair(_flat_strings, "projects", "technologies"),
