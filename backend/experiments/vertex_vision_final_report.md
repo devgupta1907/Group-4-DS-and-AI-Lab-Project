@@ -346,15 +346,46 @@ The same smoke cohort improved from **0/5 to 5/5 schema-valid raw responses**. T
 
 ### Contact and location privacy
 
+| Prediction | Reference | Diagnosis | Action |
+|---|---|---|---|
+| `TIMOTHY DUNCAN` | `Timothy Duncan` | Casing only | Case-insensitive comparison |
+| `1515 Pacific Ave, Los Angeles, CA 90291` | `Los Angeles, CA` | Unnecessary personal address | Store and compare locality only |
+| `Tara Walton` | `Janice Walton` | Incorrect extraction | Retain as FP/FN; normalization must not hide it |
+
 ### Education
+
+| Prediction | Reference | Diagnosis | Action |
+|---|---|---|---|
+| `PhD` | `Ph.D.` | Punctuation variant | Controlled degree normalization |
+| `Northwestern State University..., Natchitoches, LA` | `Northwestern State University...` | Institution mixed with location | Remove verified trailing locality |
+| `Major in Visual Art` | `Visual Art` | Field label included | Remove explicit field-label framing |
+| `Spring 2018` | `2018` | Prediction is more precise than gold | Compare at the reference precision |
 
 ### Experience
 
+| Prediction | Reference | Diagnosis | Action |
+|---|---|---|---|
+| `2016 - present` in `start_date` | `2016` start; `Present` end | Date range placed in one field | Split visible ranges into paired endpoints |
+| `PRESENT` | `Present` | Casing only | Case-insensitive comparison |
+| `Hangley Aronchik Segal Puder & Schiller` | `Hangley Aronchick Segal Pudlin & Schiller` | OCR/content difference | Retain as an error; no fuzzy official match |
+
 ### Skills
+
+- Evidence A showed a labelled tool group retained as one value instead of its named tools.
+- Evidence B showed complete competency phrases rewritten into inferred labels.
+- Safe aliases and explicit list splitting belong in comparison normalization; invented or omitted skills remain prompt/model errors.
 
 ### Projects
 
+- Evidence C showed nine visible patents omitted completely.
+- Evidence D showed project descriptions contaminating the `name` field.
+- Missing projects require extraction changes; name/description boundary errors require targeted field instructions.
+
 ### Certifications
+
+- Evidence E showed a validation number included inside the credential name.
+- Other failures omitted completed training or confused awards and education with certifications.
+- The prompt must define credential boundaries; normalization may remove identifiers but cannot invent a missing credential.
 
 ## 6. Deterministic Normalization Experiments
 
