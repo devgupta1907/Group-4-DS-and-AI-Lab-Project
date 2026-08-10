@@ -182,9 +182,28 @@ flowchart LR
 
 ### Baseline configuration
 
+- **Model:** Gemma 4 26B on Vertex AI MaaS.
+- **Input:** resume-page images at 150 DPI.
+- **Prompt:** source transcription with inline JSON Schema.
+- **Coverage:** 84 successful resumes; two long image resumes timed out.
+- **Latency:** 13.81 s median and 22.24 s mean per successful resume.
+- **Schema:** 84/84 successful responses passed the extraction schema.
+
 ### Baseline results
 
+![Gemma baseline section metrics](report_assets/gemma_baseline_sections.png)
+
+*Figure 2. Gemma baseline predictions scored against the final reference dataset. Contact, Education and Experience exceeded the target; Skills, Projects and Certifications required further work.*
+
 ### Baseline failure evidence
+
+| Section | TP | FP | FN | F1 | Main observed problem |
+|---|---:|---:|---:|---:|---|
+| Skills | 597 | 630 | 580 | 0.50 | Responsibilities were returned as skills, while grouped and atomic values used inconsistent boundaries. |
+| Projects | 5 | 10 | 38 | 0.17 | Named works were missed and ordinary activities were sometimes promoted to projects. |
+| Certifications | 47 | 17 | 61 | Credentials outside obvious headings were missed and education/award boundaries were inconsistent. |
+
+These errors established the experiment priorities: correct schema delivery, separate representational differences from extraction failures, and then modify only the prompts responsible for genuine omissions or hallucinations.
 
 ## 4. Schema-Adherence Failure and Correction
 
