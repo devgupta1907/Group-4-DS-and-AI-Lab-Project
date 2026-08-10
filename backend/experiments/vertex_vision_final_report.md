@@ -182,9 +182,7 @@ flowchart LR
 
 ### Baseline configuration
 
-- **Model:** Gemma 4 26B on Vertex AI MaaS.
-- **Input:** resume-page images at 150 DPI.
-- **Prompt:** source transcription with inline JSON Schema.
+- **Model:** Gemma 4.
 - **Coverage:** 84 successful resumes; two long image resumes timed out.
 - **Latency:** 13.81 s median and 22.24 s mean per successful resume.
 - **Schema:** 84/84 successful responses passed the extraction schema.
