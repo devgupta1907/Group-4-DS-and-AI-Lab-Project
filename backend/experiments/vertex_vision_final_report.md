@@ -210,17 +210,46 @@ flowchart LR
 | `business_analyst__7e5f0138ac0c3411` | Project name | `Act 4 Community: Web and Mobile Application Designed to Connect...` | `Act 4 Community` | The description was appended to the project name. |
 | `devops_engineer__57` | Certification name | `AWS Cloud Practitioner Validation Number 246DCT7D1BIQRS` | `AWS Cloud Practitioner` | A credential identifier was incorrectly included in the name. |
 
-These errors established the experiment priorities: correct schema delivery, separate representational differences from extraction failures, and then modify only the prompts responsible for genuine omissions or hallucinations.
-
 ## 4. Schema-Adherence Failure and Correction
 
 ### Observed failure
 
+The first five Vertex responses were valid JSON but **0/5 followed the production schema**. One response returned:
+
+```json
+{
+  "professional_summary": "Current Accountant with over 15 years of experience",
+  "work_history": [{
+    "employer": "City of Alexandria",
+    "job_title": "ACCOUNTANT"
+  }],
+  "education": [{
+    "degree": "Bachelor | Accounting",
+    "graduation_date": "2002"
+  }]
+}
+```
+
+The required `contact` and `experience` structures were absent; `work_history`, `employer`, `professional_summary` and `graduation_date` were unsupported fields. The JSON parser succeeded, but downstream Pydantic validation could not treat this as a valid resume profile.
+
 ### Root cause
+
+- The Vertex implementation treated system-role support as evidence of schema-constrained decoding.
+- Gemma therefore received a short extraction instruction but not the complete schema in its visible prompt.
+- The configured response schema did not constrain this open-model MaaS response in the same way as a Gemini endpoint.
 
 ### Vertex AI provider correction
 
+1. Route Gemma through Vertex AI's OpenAI-compatible structured-response interface.
+2. Parse the response against the Pydantic extraction model.
+3. Insert the complete JSON Schema into the user prompt as a second safeguard.
+4. Fingerprint the provider source so a stale Jupyter import cannot be mistaken for a new experiment.
+
 ### Before-and-after evidence
+
+![Schema adherence before and after the provider correction](report_assets/schema_adherence_before_after.png)
+
+*Figure 4. The same five-resume smoke cohort improved from 0/5 to 5/5 schema-valid raw responses after correcting the Vertex integration. Extraction accuracy remained a separate field-level question.*
 
 ## 5. Field-Level Error Analysis
 
