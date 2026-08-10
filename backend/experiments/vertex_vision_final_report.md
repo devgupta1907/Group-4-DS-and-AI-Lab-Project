@@ -150,10 +150,11 @@ Output JSON only. No prose, no markdown, no code fences.
 | Recall | `TP / (TP + FN)` |
 | F1 | `2TP / (2TP + FP + FN)` |
 
-- TP, FP and FN were calculated for every extracted field value.
-- Section scores use micro-aggregation; the acceptance target is **F1 ≥ 0.75**.
-- Item-level TN is undefined because possible field values are unbounded.
-- Descriptions use coverage and TF-IDF cosine similarity rather than exact matching.
+- **TP, FP and FN:** distinguish correct extraction, hallucinated values and missed values for every field.
+- **Micro-aggregation:** weights every extracted value equally and prevents small, sparse fields from dominating a section; the target is **F1 ≥ 0.75**.
+- **No item-level TN:** the possible set of skills, employers, degrees and other free-text values is unbounded.
+- **Description similarity:** coverage and TF-IDF cosine are used because long source text can remain faithful without being character-for-character identical.
+- **Skills similarity:** reported beside entity F1 because gold may preserve grouped competency phrases while the model returns the same named skills separately; it is diagnostic and does not replace precision or recall.
 
 ### Experiment tracking and reproducibility
 
