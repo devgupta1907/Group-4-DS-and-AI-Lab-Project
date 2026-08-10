@@ -199,7 +199,10 @@ flowchart LR
 
 | Section | TP | FP | FN | F1 |
 |---|---:|---:|---:|---:|
+| Contact | 118 | 15 | 19 | 0.87 |
 | Skills | 597 | 630 | 580 | 0.50 |
+| Education | 263 | 53 | 106 | 0.77 |
+| Experience | 729 | 151 | 264 | 0.78 |
 | Projects | 5 | 10 | 38 | 0.17 |
 | Certifications | 47 | 17 | 61 | 0.55 |
 
