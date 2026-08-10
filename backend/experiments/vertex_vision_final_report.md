@@ -255,9 +255,55 @@ The response contained relevant information, but did not match the application's
 
 ### Before-and-after evidence
 
-![Schema adherence before and after the provider correction](report_assets/schema_adherence_before_after.png)
+**Before: valid JSON, incorrect application structure**
 
-*Figure 4. The same five-resume integration smoke cohort improved from 0/5 to 5/5 schema-valid raw responses before the full evaluation was started. Extraction accuracy remained a separate field-level question.*
+```json
+{
+  "professional_summary": "Current Accountant with over 15 years of experience",
+  "work_history": [{
+    "employer": "City of Alexandria",
+    "job_title": "ACCOUNTANT"
+  }],
+  "education": [{
+    "degree": "Bachelor | Accounting",
+    "graduation_date": "2002"
+  }]
+}
+```
+
+**After: valid JSON following the application structure**
+
+```json
+{
+  "contact": {
+    "name": "Jessica Claire",
+    "location": "Monterey, CA",
+    "links": []
+  },
+  "education": [{
+    "degree": null,
+    "field": null,
+    "institution": "Northwestern State University of Louisiana",
+    "start_year": null,
+    "end_year": "2002"
+  }],
+  "experience": [{
+    "company": "City Corp",
+    "job_title": "ACCOUNTANT",
+    "location": "Rexburg, ID",
+    "start_date": null,
+    "end_date": "08/2013",
+    "current_role": false,
+    "description": "Help prepare Financial Statements and Bank Reconciliations."
+  }],
+  "skills": ["Accounting & Bookkeeping Services"],
+  "projects": [],
+  "certifications": []
+}
+```
+
+The same smoke cohort improved from **0/5 to 5/5 schema-valid raw responses**. The full evaluation began only after this integration check passed.
+
 
 ## 5. Field-Level Error Analysis
 
