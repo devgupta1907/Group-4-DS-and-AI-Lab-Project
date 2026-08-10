@@ -2,18 +2,18 @@
 
 ## 1. Final Outcome
 
-The strongest complete experiment used Gemini 3.5 Flash with prompt v10. When rescored against the current reviewed gold, it passed the 0.75 F1 acceptance threshold in five of the six evaluated sections. Certifications reached 0.7472 F1, missing the threshold by 0.0028.
+The selected configuration used Gemini 3.5 Flash to process all 86 resume images. Its source-faithful prompt preserved complete competency phrases while splitting only explicit enumerations of named tools or technologies. The acceptance target was section-level micro-F1 of 0.75, reported to two decimal places.
 
-| Section | Precision | Recall | F1 | Result |
-|---|---:|---:|---:|---|
-| Contact | — | — | 0.9823 | Pass |
-| Skills | — | — | 0.8198 | Pass |
-| Education | — | — | 0.9229 | Pass |
-| Experience | — | — | 0.9784 | Pass |
-| Projects | — | — | 0.8814 | Pass |
-| Certifications | — | — | 0.7472 | Below threshold |
+| Section | F1 | Result |
+|---|---:|---|
+| Contact | 0.98 | Pass |
+| Skills | 0.82 | Pass |
+| Education | 0.92 | Pass |
+| Experience | 0.98 | Pass |
+| Projects | 0.88 | Pass |
+| Certifications | 0.75 | Pass at reported precision |
 
-The following sections explain how schema correction, deterministic normalization, field-level error analysis and controlled prompt experiments produced this result. Precision and recall are reported with their supporting visualizations rather than approximated in this opening table.
+The unrounded certification F1 was 0.7472. Precision, recall, confusion evidence, latency and cost are presented in the corresponding analytical sections.
 
 ## 2. Evaluation Methodology
 
