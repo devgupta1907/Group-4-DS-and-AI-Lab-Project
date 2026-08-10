@@ -359,7 +359,7 @@ The same smoke cohort improved from **0/5 to 5/5 schema-valid raw responses**. T
 | `PhD` | `Ph.D.` | Punctuation variant | Controlled degree normalization |
 | `Northwestern State University..., Natchitoches, LA` | `Northwestern State University...` | Institution mixed with location | Remove verified trailing locality |
 | `Major in Visual Art` | `Visual Art` | Field label included | Remove explicit field-label framing |
-| `Spring 2018` | `2018` | Prediction is more precise than gold | Compare at the reference precision |
+| `Spring 2018` | `2018` | Only the year is required | Normalize education dates to their visible year |
 
 ### Experience
 
