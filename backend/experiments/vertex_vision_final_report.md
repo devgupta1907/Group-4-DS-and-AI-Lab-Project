@@ -183,15 +183,17 @@ flowchart LR
 ### Baseline configuration
 
 - **Model:** Gemma 4.
-- **Coverage:** 84 successful resumes; two long image resumes timed out.
 - **Latency:** 13.81 s median and 22.24 s mean per successful resume.
-- **Schema:** 84/84 successful responses passed the extraction schema.
+
+![Gemma 4 latency distribution](report_assets/gemma_baseline_latency.png)
+
+*Figure 2. Per-resume Gemma latency. The logarithmic axis retains the 619.14-second long-tail case without hiding the typical 13.81-second median.*
 
 ### Baseline results
 
 ![Gemma baseline section metrics](report_assets/gemma_baseline_sections.png)
 
-*Figure 2. Gemma baseline predictions scored against the final reference dataset. Contact, Education and Experience exceeded the target; Skills, Projects and Certifications required further work.*
+*Figure 3. Gemma baseline predictions scored against the final reference dataset. Contact, Education and Experience exceeded the target; Skills, Projects and Certifications required further work.*
 
 ### Baseline failure evidence
 
@@ -205,7 +207,6 @@ flowchart LR
 |---|---|---|---|---|
 | `devops_engineer__57` | Skills | `Application deployment: Terraform, Jenkins` | `Terraform`; `Jenkins` | A labelled group was retained instead of extracting its named tools. |
 | `architect__38d167423f55cd85` | Skills | `Architectural design`; `Architecture` | `Detailed knowledge of Atkins' standards, policies, codes and procedures...` | Source competency lines were rewritten into broader inferred labels. |
-| `designer__91` | Projects | No projects extracted | Nine named US patents | A complete visible class of named work was omitted. |
 | `business_analyst__7e5f0138ac0c3411` | Project name | `Act 4 Community: Web and Mobile Application Designed to Connect...` | `Act 4 Community` | The description was appended to the project name. |
 | `devops_engineer__57` | Certification name | `AWS Cloud Practitioner Validation Number 246DCT7D1BIQRS` | `AWS Cloud Practitioner` | A credential identifier was incorrectly included in the name. |
 
