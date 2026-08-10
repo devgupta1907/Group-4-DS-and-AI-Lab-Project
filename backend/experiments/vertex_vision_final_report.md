@@ -233,7 +233,7 @@ Before running the paid evaluation on all 86 resumes, development began with a c
 }
 ```
 
-The required `contact` and `experience` structures were absent; `work_history`, `employer`, `professional_summary` and `graduation_date` were unsupported fields. The JSON parser succeeded, but downstream Pydantic validation could not treat this as a valid resume profile.
+The response contained relevant resume information, but stored it under a different structure and different key names. For example, `work_history` was used instead of `experience`, `employer` instead of `company`, and `graduation_date` instead of `education.end_year`; the required nested `contact` structure was also absent. The JSON parser succeeded, but the response did not match the application's Pydantic contract.
 
 ### Root cause
 
