@@ -210,46 +210,6 @@ flowchart LR
 | Projects | 5 | 10 | 38 | 0.17 |
 | Certifications | 47 | 17 | 61 | 0.55 |
 
-**Evidence A — grouped technical skills**
-
-![Technical skills source evidence](report_assets/evidence/gemma_devops_skills.png)
-
-- **Prediction:** `Application deployment: Terraform, Jenkins`
-- **Reference:** `Terraform`; `Jenkins`
-- **Error:** the labelled group was retained instead of extracting its named tools.
-
-**Evidence B — competency phrases rewritten as inferred labels**
-
-![Competency phrase source evidence](report_assets/evidence/gemma_architect_skills.png)
-
-- **Prediction:** `Architectural design`; `Architecture`
-- **Reference:** the complete visibly listed competency phrases.
-- **Error:** source wording was replaced by broader inferred labels.
-
-**Evidence C — named work omitted**
-
-![Patent source evidence](report_assets/evidence/gemma_designer_patents.png)
-
-- **Prediction:** no projects.
-- **Reference:** nine named patents.
-- **Error:** the complete visible patent section was omitted.
-
-**Evidence D — project description included in its name**
-
-![Project source evidence](report_assets/evidence/gemma_business_projects.png)
-
-- **Prediction:** `Act 4 Community: Web and Mobile Application Designed to Connect...`
-- **Reference:** `Act 4 Community`
-- **Error:** text describing the project was appended to the project-name field.
-
-**Evidence E — credential identifier included in its name**
-
-![Certification source evidence](report_assets/evidence/gemma_devops_certification.png)
-
-- **Prediction:** `AWS Cloud Practitioner Validation Number 246DCT7D1BIQRS`
-- **Reference:** `AWS Cloud Practitioner`
-- **Error:** the validation number was retained inside the credential name.
-
 ## 4. Schema-Adherence Failure and Correction
 
 ### Observed failure
@@ -371,21 +331,42 @@ The same smoke cohort improved from **0/5 to 5/5 schema-valid raw responses**. T
 
 ### Skills
 
-- Evidence A showed a labelled tool group retained as one value instead of its named tools.
-- Evidence B showed complete competency phrases rewritten into inferred labels.
-- Safe aliases and explicit list splitting belong in comparison normalization; invented or omitted skills remain prompt/model errors.
+![Grouped technical skills](report_assets/evidence/gemma_devops_skills.png)
+
+- **Prediction:** `Application deployment: Terraform, Jenkins`
+- **Reference:** `Terraform`; `Jenkins`
+- **Finding:** the labelled group was retained instead of extracting its named tools.
+
+![Complete competency phrases](report_assets/evidence/gemma_architect_skills.png)
+
+- **Prediction:** `Architectural design`; `Architecture`
+- **Reference:** the complete visibly listed competency phrases.
+- **Finding:** source wording was replaced by broader inferred labels.
+- **Decision:** normalize safe aliases and explicit lists; retain invented or omitted skills as model errors.
 
 ### Projects
 
-- Evidence C showed nine visible patents omitted completely.
-- Evidence D showed project descriptions contaminating the `name` field.
-- Missing projects require extraction changes; name/description boundary errors require targeted field instructions.
+![Omitted patent projects](report_assets/evidence/gemma_designer_patents.png)
+
+- **Prediction:** no projects.
+- **Reference:** nine named patents.
+- **Finding:** a complete visible class of named work was omitted.
+
+![Project name and description boundary](report_assets/evidence/gemma_business_projects.png)
+
+- **Prediction:** `Act 4 Community: Web and Mobile Application Designed to Connect...`
+- **Reference:** `Act 4 Community`
+- **Finding:** project-description text contaminated the `name` field.
+- **Decision:** missing projects and incorrect field boundaries require targeted prompt instructions.
 
 ### Certifications
 
-- Evidence E showed a validation number included inside the credential name.
-- Other failures omitted completed training or confused awards and education with certifications.
-- The prompt must define credential boundaries; normalization may remove identifiers but cannot invent a missing credential.
+![Certification identifier evidence](report_assets/evidence/gemma_devops_certification.png)
+
+- **Prediction:** `AWS Cloud Practitioner Validation Number 246DCT7D1BIQRS`
+- **Reference:** `AWS Cloud Practitioner`
+- **Finding:** the validation number was retained inside the credential name.
+- **Decision:** remove identifiers deterministically and define certification, award and education boundaries in the prompt; normalization cannot recover missing credentials.
 
 ## 6. Deterministic Normalization Experiments
 
