@@ -137,19 +137,18 @@ Output JSON only. No prose, no markdown, no code fences.
 
 ### Dataset and gold-standard review
 
-- **Dataset:** 86 image-based resumes across 43 job categories.
+- **Dataset:** 86 human reviewed resumes across 43 job categories.
 - **Input:** production vision route at 150 DPI for every PDF.
 - **Usage:** evaluation and error analysis only; no training or fine-tuning.
-- **Gold review:** 43 fully source-reviewed resumes plus targeted field checks.
 - **Corrections:** versioned overlays preserve the original annotations.
 
 ### Metrics and acceptance criterion
 
-\[
-Precision = \frac{TP}{TP+FP}, \qquad
-Recall = \frac{TP}{TP+FN}, \qquad
-F1 = \frac{2TP}{2TP+FP+FN}
-\]
+| Metric | Formula |
+|---|---|
+| Precision | `TP / (TP + FP)` |
+| Recall | `TP / (TP + FN)` |
+| F1 | `2TP / (2TP + FP + FN)` |
 
 - TP, FP and FN were calculated for every extracted field value.
 - Section scores use micro-aggregation; the acceptance target is **F1 ≥ 0.75**.
