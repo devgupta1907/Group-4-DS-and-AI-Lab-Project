@@ -403,16 +403,94 @@ The rules changed comparison keys only. Saved model outputs remained untouched a
 
 ## 7. Prompt Experiments
 
-| Prompt change | Evidence | Decision and learning |
-|---|---|---|
-| Inspect every possible skill | Skills 0.2268 → 0.1830; FP 34 → 87 | Rejected: duties were mined as skills |
-| Add atomic-skill examples | Skills 0.6099 → 0.6115; precision decreased | Rejected: examples traded precision for recall |
-| Preserve visible source wording; exclude duties | Skills 0.8198; Projects 0.8814 | **Accepted** |
-| Preserve every complete line without splitting | Skills 0.8198 → 0.5607 | Rejected: overly strict grouping reduced recall |
-| Add visual project-title boundaries | Projects 0.1724 → 0.4550 | Retained, but missing projects still required a stronger model |
-| Expand certification/award boundaries | Certifications 0.7472 → 0.6503 | Rejected: a reasonable rule did not produce a measured gain |
+The table quotes the material instruction introduced by each experiment; unchanged schema and field rules are omitted. The accepted instruction was:
 
-**Overall learning:** prompts are probabilistic, not deterministic transformation rules. Safe aliases and list canonicalization therefore remained in scoring logic, and every prompt change required measured validation.
+```text
+Inspect every item under Skills, Technical Skills, Core Competencies,
+Professional Forte, Areas of Expertise, Technology Summary, Tools,
+Languages or an equivalent visibly labelled skill-like section.
+
+Preserve a competency phrase as one item when the document presents it as one
+competency. Split an explicit enumeration into its named tools or technologies.
+Outside those sections, include only explicitly named tools or competencies;
+never convert ordinary responsibilities, achievements or job titles into skills.
+```
+
+| Experiment | Instruction tested | Measured result | Decision |
+|---|---|---|---|
+| Broad skill search | Search the complete resume for competency-like wording, including summaries and work history | Skills F1 0.2268 → 0.1830; FP 34 → 87 | Rejected: duties were converted into skills |
+| Atomic-skill examples | “Split grouped tools and technologies into separate atomic items”; examples converted phrases such as software suites and combined competencies into individual entities | Skills F1 0.6099 → 0.6115; precision 0.5811 → 0.5333 | Rejected: negligible F1 gain and lower precision |
+| Source-faithful boundaries | The complete accepted instruction is reproduced above | Skills F1 0.8198; Projects F1 0.8814 | **Accepted** |
+| Strict complete-line skills | “Preserve each visibly listed skill line, bullet or grouped entry as one list value. Do not split, expand, canonicalize, summarize or paraphrase it” | Skills F1 0.8198 → 0.5607 | Rejected: valid reference entities were omitted |
+| Visual project boundaries | Use a visible heading/title as `name`; preserve text after a colon; reject labels such as `Member` or `Presenter`; copy remaining text into `description` | Projects F1 0.1724 → 0.4550 | Retained: boundaries improved, but named works were still missed |
+| Strict credential boundaries | Scan for named credentials, but exclude awards, honours, memberships, affiliations and education unless explicitly labelled as a certificate or licence | Certifications F1 0.7472 → 0.6503 | Rejected: the global extraction loss exceeded the boundary correction |
+
+**Overall learnings**
+
+- Search scope matters more than simply asking for completeness: searching summaries and duties raised skill false positives from 34 to 87.
+- Atomic splitting improved recall but lowered precision; grouped source phrases cannot always be converted safely by the model.
+- Keeping every printed line intact caused the opposite failure: tools embedded in grouped lines were omitted as separately scored reference entities.
+- Project-title instructions improved detected name boundaries, but did not recover projects the model failed to detect.
+- Certification exclusions fixed some award errors but reduced full-run F1; a locally correct rule was therefore rejected when its net dataset effect was negative.
+- Stable aliases and unambiguous list splitting were kept in deterministic normalization; uncertain omissions and inventions remained model errors.
+
+### Evidence behind the prompt decisions
+
+#### Skills: broad search, atomic examples and complete-line extraction
+
+![Text outside the skill section](report_assets/evidence/prompt_atomic_non_skill_source.png)
+
+![The actual Professional Forte section](report_assets/evidence/prompt_atomic_skill_source.png)
+
+The atomic prompt split visible phrases, but also mined the introductory template text above the candidate's **Professional Forte** section:
+
+```json
+{
+  "before_atomic_examples": [
+    "Knowledge of plant anatomy and various plant transplant methods",
+    "budgeting and negotiating skills",
+    "application of insecticide, fertilizers and fungicides"
+  ],
+  "after_atomic_examples": [
+    "plant anatomy", "plant transplant methods", "budgeting", "negotiating skills",
+    "application of insecticide", "fertilizers", "fungicides",
+    "modern day technology used in agriculture", "logistic requirements", "product placements"
+  ],
+  "accepted_source_faithful_output": [
+    "Knowledge of plant anatomy and various plant transplant methods",
+    "Excellent in budgeting and negotiating skills",
+    "Good knowledge of application of insecticide, fertilizers and fungicides"
+  ]
+}
+```
+
+This single source explains three measured outcomes: atomic examples raised recall, the extra template-derived values lowered precision, and preserving the visible lines restored the source boundary. The later absolute “do not split” rule was rejected because the full run showed that some grouped lines still needed controlled comparison-time splitting.
+
+#### Projects: title/description boundary
+
+![Project title and description on the source](report_assets/evidence/gemma_business_projects.png)
+
+```json
+{
+  "extracted_name": "Act 4 Community: Web and Mobile Application Designed to Connect OCP Collaborators and NGO to Perform Charitable Actions",
+  "reference_name": "Act 4 Community"
+}
+```
+
+The project was detected, but its description was appended to `name`. Visual-title instructions improved project F1 from 0.1724 to 0.4550; omissions such as the patent example above remained extraction failures.
+
+#### Certifications: credential-name boundary
+
+![Credential and validation-number source](report_assets/evidence/gemma_devops_certification.png)
+
+```json
+{
+  "extracted_name": "AWS Cloud Practitioner Validation Number 246DCT7D1BIQRS",
+  "reference_name": "AWS Cloud Practitioner"
+}
+```
+
+The identifier should be excluded from the credential name. However, the broader prompt that also excluded awards, affiliations and education reduced full-run certification F1 from 0.7472 to 0.6503, so only deterministic identifier cleanup was retained.
 
 ![Experiment progression against the current gold](report_assets/experiment_progression.png)
 
@@ -422,28 +500,118 @@ The rules changed comparison keys only. Saved model outputs remained untouched a
 
 ### Extraction quality
 
+![Gemma 4 and Gemini 3.5 Flash extraction quality](report_assets/model_quality_comparison.png)
+
+| Model | Contact | Skills | Education | Experience | Projects | Certifications |
+|---|---:|---:|---:|---:|---:|---:|
+| Gemma 4 | 0.79 | 0.53 | 0.77 | 0.79 | 0.45 | 0.51 |
+| Gemini 3.5 Flash | **0.98** | **0.82** | **0.92** | **0.98** | **0.88** | **0.75** |
+
+Gemini 3.5 Flash produced the higher F1 in every section. The largest gains were Projects (+0.43), Certifications (+0.24) and Skills (+0.29), the three weakest Gemma 4 sections. This is a comparison of the best completed evaluated configurations, so it measures the deployed model-and-prompt combinations rather than model architecture alone.
+
+**Same-source extraction evidence**
+
+![Source work-history entry showing Livongo Health](report_assets/evidence/model_comparison_livongo_source.png)
+
+```json
+{
+  "source": "Livongo Health, Inc.",
+  "gemma_4": "Livoho Health, Inc.",
+  "gemini_3_5_flash": "Livongo Health, Inc."
+}
+```
+
+Gemma 4 introduced an OCR error in the employer name on all three visible work-history entries. Gemini 3.5 Flash transcribed the same name correctly. This is one traceable example of the broader aggregate gain; the section chart above measures the effect across all evaluated fields rather than relying on this example alone.
+
 ### Latency and throughput
 
-### Token usage and estimated cost
+![Gemma 4 and Gemini 3.5 Flash latency](report_assets/model_latency_comparison.png)
 
-### Schema adherence and operational reliability
+| Model | Resumes | Median | Mean | Maximum |
+|---|---:|---:|---:|---:|
+| Gemma 4 | 83 | 17.21 s | 20.56 s | 126.51 s |
+| Gemini 3.5 Flash | 86 | 19.03 s | 21.79 s | 80.26 s |
+
+- Typical latency was similar: Gemini 3.5 Flash was 1.82 s slower at the median and 1.23 s slower on average.
+- Gemini 3.5 Flash had the lower worst case: 80.26 s versus 126.51 s.
+- The model choice was therefore justified by extraction quality, not by a claimed latency improvement.
 
 ## 9. Final Results Against the Acceptance Threshold
 
 ### Section-level precision, recall and F1
 
+| Section | TP | FP | FN | Precision | Recall | F1 | F1 ≥ 0.75 |
+|---|---:|---:|---:|---:|---:|---:|:---:|
+| Contact | 139 | 3 | 2 | 0.98 | 0.99 | **0.98** | ✓ |
+| Skills | 1,190 | 395 | 128 | 0.75 | 0.90 | **0.82** | ✓ |
+| Education | 353 | 31 | 28 | 0.92 | 0.93 | **0.92** | ✓ |
+| Experience | 996 | 27 | 17 | 0.97 | 0.98 | **0.98** | ✓ |
+| Projects | 52 | 9 | 5 | 0.85 | 0.91 | **0.88** | ✓ |
+| Certifications | 133 | 73 | 17 | 0.65 | 0.89 | **0.75** | ✓ |
+
+### Skills: entity score and text similarity
+
+![Skills strict score, coverage and supplementary similarity](report_assets/skills_similarity_summary.png)
+
+Manual review found cases where the skill content was extracted correctly but strict item matching penalized different list boundaries or surface forms:
+
+- `Microsoft Office Suite, Word, Excel, PowerPoint, Outlook` may be returned as one grouped entry or as five items.
+- `Microsoft Word` versus `Word`, and `Microsoft Excel` versus `Excel`, require controlled aliases rather than literal equality.
+- `Accounting & Bookkeeping Skills` versus `Accounting and Bookkeeping` differs in punctuation and framing although the competency is substantially the same.
+
+The official Skills result remains the item-level F1 of **0.82**. Deterministic normalization handles only safe aliases, punctuation, morphology and explicit enumerations. Whole-section TF-IDF similarity is also reported to expose substantial textual overlap when item boundaries differ, but its **0.53** mean is diagnostic rather than a replacement score: unrelated skill lists can share common words, and short product names may have little useful lexical context.
+
 ### Confusion examples
+
+| Error type | Example | Interpretation |
+|---|---|---|
+| Skill FP | A summary competency was returned in addition to the dedicated skill-section values | Source-boundary error; retained as FP |
+| Skill FN | A grouped source line and its individually annotated tools used different boundaries | Controlled aliases/splitting recover safe equivalence; unresolved items remain FN |
+| Project FP | Explanatory text was appended to a detected project title | Correct project, incorrect `name` boundary |
+| Project FN | A visibly named patent or publication was omitted | Genuine extraction omission |
+| Certification FP | An award or professional affiliation was returned as a credential | Certification-boundary error |
+| Certification FN | A visibly completed training entry was omitted | Genuine extraction omission |
 
 ### Experience-description analysis
 
-## 10. Validity and Limitations
+Descriptions were compared only between corresponding experience entries. Missing predicted positions scored zero; present text used TF-IDF cosine similarity because exact string equality would over-penalize punctuation and OCR spacing.
 
-### Gold-review status
+![Experience-description coverage and similarity](report_assets/description_similarity_summary.png)
 
-### Development-benchmark leakage
+| Measure | Score |
+|---|---:|
+| Corresponding descriptions present | 99.52% |
+| Mean TF-IDF cosine where present | 0.81 |
+| Overall description score, with missing positions = 0 | **0.80** |
 
-### Inference nondeterminism
+The 0.80 overall score exceeds the 0.75 acceptance target while still penalizing omitted descriptions. TF-IDF was used only for this long-text field; structured fields retained item-level precision, recall and F1.
 
-### Cost-estimation limitations
+## 10. Gold Dataset Corrections
 
-## 11. Conclusion and Production Recommendation
+**Human review coverage:** 58 of the 86 resumes were manually compared with their source PDFs.
+| Field | Source-verified correction | Example |
+|---|---|---|
+| Skills | Replaced empty or inferred lists with the entries visibly printed in skill-like sections; preserved complete competency phrases and removed duplicates | `devops_engineer__57` had empty gold skills despite visible `Kibana`, `Prometheus`, `Datadog`, `CI/CD`, `Jenkins`, `Terraform`, `AWS`, `Azure`, `GCP`, `Docker` and `Kubernetes` |
+| Education | Corrected degree/field boundaries, nested credentials, institutions and date direction | `Advanced Technical Certificate in Automotive Technology` had been shortened to `Advanced Technical Certificate`; the complete visible qualification was restored |
+| Experience descriptions | Replaced abbreviated AI summaries with text grounded in the corresponding source entry | An Architect description summarized as “expertise in data warehousing” was replaced with the complete ordered duties, beginning `Expertise in all areas of data warehousing (architecture, data sourcing/acquisition, integration, transformation, presentation)` |
+| Projects | Added visibly named patents, publications and projects; removed awards, generic duties and accomplishments incorrectly labelled as projects | The visible conference paper `Innovative Strategies in Change Management` was added as a project; `Presented a paper ...` remained its description |
+| Certifications | Added visible credentials missing from empty gold lists; separated credentials from awards, affiliations and academic degrees | The Data Science record was corrected to include `Artificial Intelligence Certificate`, `Data to Insights Professional Certificate`, `HIPAA & General Clinical Practices`, and `Lean & Six Sigma` |
+| Record identity | Corrected mismatched source/profile associations discovered during side-by-side review | `web_designing__42ea741f515ea544` was linked to the wrong reference profile; its gold record was replaced with the profile belonging to the same source PDF |
+
+### Source screenshots supporting the corrections
+
+![DevOps technical skills missing from the original gold](report_assets/evidence/gold_fix_devops_skills.png)
+
+*The source contains a dedicated Technical Skills section, while the original gold skills list was empty.*
+
+![Complete automotive education qualification](report_assets/evidence/gold_fix_automotive_education.png)
+
+*The complete visible qualification is `Advanced Technical Certificate in Automotive Technology`, not the truncated original annotation.*
+
+![Consultant conference paper and certificate](report_assets/evidence/gold_fix_consultant_project.png)
+
+*The conference paper supplied the corrected project title; the separately labelled CMC entry remained a certification.*
+
+![Data Science accomplishments and certifications](report_assets/evidence/gold_fix_data_science_certifications.png)
+
+*The source visually separates awards under Accomplishments from the four entries under Certifications.*
