@@ -233,7 +233,13 @@ Before running the paid evaluation on all 86 resumes, development began with a c
 }
 ```
 
-The response contained relevant resume information, but stored it under a different structure and different key names. For example, `work_history` was used instead of `experience`, `employer` instead of `company`, and `graduation_date` instead of `education.end_year`; the required nested `contact` structure was also absent. The JSON parser succeeded, but the response did not match the application's Pydantic contract.
+The response contained relevant information, but did not match the application's Pydantic contract:
+
+- `work_history` was used instead of `experience`.
+- `employer` was used instead of `company`.
+- `graduation_date` was used instead of `education.end_year`.
+- The required nested `contact` structure was absent.
+- JSON parsing succeeded, but schema validation failed.
 
 ### Root cause
 
@@ -246,7 +252,6 @@ The response contained relevant resume information, but stored it under a differ
 1. Route Gemma through Vertex AI's OpenAI-compatible structured-response interface.
 2. Parse the response against the Pydantic extraction model.
 3. Insert the complete JSON Schema into the user prompt as a second safeguard.
-4. Fingerprint the provider source so a stale Jupyter import cannot be mistaken for a new experiment.
 
 ### Before-and-after evidence
 
