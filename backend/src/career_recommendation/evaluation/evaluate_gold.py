@@ -21,7 +21,7 @@ MAP_PATH = HERE / "category_to_esco.json"
 RESULTS_PATH = HERE / "evaluation_results_gold.json"
 
 RETRIEVAL_KS = [1, 3, 5, 10, 20]
-RERANK_KS = [1, 3, 5]
+RERANK_KS = [1, 3, 5, 7]
 
 # Recall@K and Precision@K are always computed and stored; this only controls
 # whether the console report prints them. See the METRICS note above.
