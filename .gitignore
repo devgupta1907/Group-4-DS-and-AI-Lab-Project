@@ -9,6 +9,7 @@ backend/experiments/runs/
 backend/experiments/*.log
 backend/experiments/reports/*TEMP*.md
 backend/experiments/reports/*.docx
+huggingface_models_test/
 
 
 # =========================

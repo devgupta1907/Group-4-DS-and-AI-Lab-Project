@@ -5,8 +5,7 @@ import { toApiError } from '@shared/api/ApiError';
 import { generateReport } from './api';
 import type { CareerReport, SearchPreferences } from './types';
 
-export type AnalysisStatus = 'idle' | 'reporting' | 'complete' | 'failed';
-
+export type AnalysisStatus = 'idle' | 'reporting' | 'complete' | 'failed' | 'recommending';
 /**
  * Runs the full analysis and holds the result.
  *
