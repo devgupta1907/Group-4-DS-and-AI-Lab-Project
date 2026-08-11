@@ -1,7 +1,6 @@
 services:
   postgres:
     image: postgres:16-alpine
-    restart: unless-stopped
     environment:
       POSTGRES_USER: dsai
       POSTGRES_PASSWORD: dsai
@@ -13,7 +12,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 12
-    
 
   searxng:
     image: searxng/searxng:latest
@@ -30,8 +28,6 @@ services:
       retries: 12
 
   backend:
-    image: backend-decoupled-prod-cpu:latest
-    restart: unless-stopped
     build:
       context: ./backend
       args:
@@ -43,9 +39,6 @@ services:
       CRAWL4_AI_BASE_DIRECTORY: /tmp
       DEBUG: "false"
       RESUME_SCANNED_PDF_STRATEGY: ${RESUME_SCANNED_PDF_STRATEGY:-direct_vision}
-    volumes:
-      # THIS IS THE NEW LINE: Binds EC2 host folder to Docker container folder
-      - ./huggingface_models:/app/huggingface_cache
     depends_on:
       postgres:
         condition: service_healthy
@@ -65,8 +58,6 @@ services:
       start_period: 180s
 
   frontend:
-    image: frontend-decoupled-prod:latest
-    restart: unless-stopped
     build:
       context: ./frontend
     ports:
