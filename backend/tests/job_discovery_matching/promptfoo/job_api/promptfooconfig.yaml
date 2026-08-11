@@ -1,0 +1,33 @@
+description: Adzuna Job Search Evaluation - India
+
+# No LLM prompt is actually needed since we're hitting a raw HTTP API,
+# but promptfoo requires at least one prompt template — the provider
+# below ignores this and builds its request from queryParams instead.
+prompts:
+  - "{{query}}"
+
+providers:
+  - id: http://127.0.0.1:8000/search-jobs
+    label: Adzuna India Job Search
+    config:
+      method: GET
+      queryParams:
+        query: "{{query}}"
+        location: "{{location}}"
+        country: "{{country}}"
+        limit: "{{limit}}"
+
+defaultTest:
+  vars:
+    limit: "10"
+
+tests: queries.yaml
+
+# Rate-limit protection: Adzuna's API throttles fast/concurrent requests.
+# Run one test at a time, waiting 2s between each call.
+evaluateOptions:
+  maxConcurrency: 1
+  delay: 2000
+
+# Basic sanity checks applied on top of the per-test assertions in queries.yaml
+outputPath: ./results.json

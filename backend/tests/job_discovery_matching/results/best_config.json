@@ -1,0 +1,35 @@
+{
+  "ranking": {
+    "label": "balanced_50_50",
+    "composite_score": 0.8977,
+    "precision_at_5": 0.848648648648649,
+    "ndcg_at_10": 0.9795243243243245,
+    "spearman_correlation": 0.876672972972973,
+    "latency_ms": 226.45806451612904,
+    "pass_rate": 0.9459459459459459
+  },
+  "search_crawl": {
+    "label": "narrow_fast",
+    "composite_score": 0.45,
+    "coverage_score": 1.0,
+    "crawl_success_score": 0.0,
+    "latency_ms": 2703.2,
+    "pass_rate": 0.0
+  },
+  "query_generator_prompt": {
+    "label": "query_gen_boolean_operators.txt",
+    "composite_score": 0.5102,
+    "query_schema_score": 1.0,
+    "query_diversity_score": 0.801,
+    "latency_ms": 19.142857142857142,
+    "pass_rate": 1.0
+  },
+  "judge_prompt": {
+    "label": "judge_comparative.txt",
+    "composite_score": 0.275,
+    "judge_schema_score": 0.5,
+    "judge_calibration_score": 0.5,
+    "latency_ms": 21572.416666666668,
+    "pass_rate": 0.0
+  }
+}
