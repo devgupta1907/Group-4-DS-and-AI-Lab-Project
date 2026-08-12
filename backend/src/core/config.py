@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Literal
 
 from dotenv import load_dotenv
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -21,7 +22,10 @@ class Settings(BaseSettings):
 
     # --- app ---
     app_name: str = "DSAI Backend"
-    debug: bool = False
+    # `DEBUG` is commonly injected by shells, IDEs, and other tooling with
+    # non-boolean values such as "release". Use an application-specific name
+    # so unrelated process configuration cannot prevent the backend starting.
+    debug: bool = Field(default=False, validation_alias="APP_DEBUG")
     cors_origins: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
 
     # --- database ---
@@ -43,7 +47,7 @@ class Settings(BaseSettings):
     # --- Google AI Studio (resume parsing) ---
     google_api_key: str = ""
     google_ai_studio_api_key: str = ""
-    resume_primary_model: str = "gemma-3-27b-it"
+    resume_primary_model: str = "gemini-3.5-flash"
     resume_fallback_model: str = "gemini-2.5-flash"
     resume_request_timeout_seconds: float = 120.0
     # How scanned/image-only PDFs reach the LLM. `direct_vision` is the

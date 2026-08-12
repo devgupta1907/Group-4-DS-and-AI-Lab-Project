@@ -6,6 +6,7 @@ import {
   useCareerGuidance,
   type CvReview,
 } from '@features/career-guidance';
+import { FeedbackWidget } from '@features/feedback';
 import {
   ProfileView,
   ResultsPanel,
@@ -165,6 +166,11 @@ export function App() {
       {cvReview && (
         <CvReviewDialog review={cvReview} onClose={() => setCvReview(null)} />
       )}
+
+      {/* Rendered once, outside the step branches, so the same button is
+          available at every stage — including to someone who abandons the
+          flow before a report, whose feedback is the most worth having. */}
+      <FeedbackWidget profileId={upload.record?.id ?? null} />
     </main>
   );
 }
@@ -231,6 +237,7 @@ function ReportPage({ report }: {
     <main className={styles.reportPage}>
       <TopBar step={4} />
       <CareerReportView report={report} />
+      <FeedbackWidget profileId={null} />
     </main>
   );
 }

@@ -29,7 +29,7 @@ from src.resume_parsing.internal.prompts import (
     EXTRACTION_INSTRUCTION,
     SYSTEM_PROMPT,
     build_gemma_prompt,
-    load_schema,
+    load_extraction_schema,
 )
 from src.resume_parsing.internal.providers.base import ProviderError
 
@@ -202,7 +202,7 @@ class GoogleAiStudioProvider:
             candidate_count=1,
             system_instruction=self._system_prompt,
             response_mime_type="application/json",
-            response_schema=to_gemini_schema(load_schema()),
+            response_schema=to_gemini_schema(load_extraction_schema()),
         )
 
 

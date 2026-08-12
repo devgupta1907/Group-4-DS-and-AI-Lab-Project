@@ -1,0 +1,231 @@
+/* Fixed to the viewport so one button serves every step without each page
+   having to place it. */
+.launcher {
+  position: fixed;
+  right: clamp(1rem, 3vw, 2rem);
+  bottom: clamp(1rem, 3vw, 2rem);
+  z-index: 40;
+  padding: var(--s-3) var(--s-5);
+  border: 1px solid var(--c-teal);
+  border-radius: var(--r-pill);
+  background: var(--c-surface);
+  box-shadow: var(--e-2);
+  color: var(--c-teal);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background var(--m-fast), transform var(--m-fast);
+}
+
+.launcher:hover {
+  background: var(--c-aqua-soft);
+  transform: translateY(-2px);
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: var(--s-5);
+  overflow-y: auto;
+  background: rgb(15 42 51 / 55%);
+}
+
+.dialog {
+  width: min(100%, 620px);
+  max-height: 88vh;
+  padding: var(--s-6);
+  overflow-y: auto;
+  border-radius: var(--r-lg);
+  background: var(--c-surface);
+  box-shadow: var(--e-3);
+}
+
+.dialog h2 {
+  margin: var(--s-2) 0 var(--s-5);
+  font-size: clamp(1.4rem, 2.6vw, 1.8rem);
+  letter-spacing: -.03em;
+}
+
+.legend {
+  margin-bottom: var(--s-3);
+  color: var(--c-text-muted);
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.optional {
+  color: var(--c-text-subtle);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.scaleGroup,
+.reasonGroup {
+  margin: 0 0 var(--s-5);
+  padding: 0;
+  border: 0;
+}
+
+/* Ten discrete buttons rather than a slider: a slider invites a default
+   position the user never actually chose, and there is no way to tell that
+   apart from a deliberate 5. */
+.scale {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: var(--s-1);
+}
+
+.scoreBtn {
+  padding: var(--s-3) 0;
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-sm);
+  background: var(--c-surface-sunken);
+  color: var(--c-text);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background var(--m-fast), border-color var(--m-fast);
+}
+
+.scoreBtn:hover { border-color: var(--c-aqua-500); background: var(--c-aqua-soft); }
+
+.scoreOn {
+  border-color: var(--c-teal);
+  background: var(--c-teal);
+  color: var(--c-paper);
+}
+
+.scaleEnds {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--s-2);
+  color: var(--c-text-subtle);
+  font-size: var(--t-xs);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.chip {
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-pill);
+  background: var(--c-surface);
+  color: var(--c-text-muted);
+  font: inherit;
+  font-size: var(--t-sm);
+  cursor: pointer;
+  transition: background var(--m-fast), border-color var(--m-fast), color var(--m-fast);
+}
+
+.chip:hover { border-color: var(--c-aqua-500); }
+
+.chipOn {
+  border-color: var(--c-teal);
+  background: var(--c-aqua-soft);
+  color: var(--c-teal);
+  font-weight: 600;
+}
+
+.commentLabel {
+  display: block;
+  margin-bottom: var(--s-2);
+  color: var(--c-text-muted);
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.comment {
+  width: 100%;
+  padding: var(--s-3);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  background: var(--c-surface-sunken);
+  color: var(--c-text);
+  font: inherit;
+  resize: vertical;
+}
+
+.comment:focus {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 1px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--s-5);
+  padding-top: var(--s-5);
+  border-top: 1px solid var(--c-border);
+}
+
+.textButton {
+  padding: var(--s-3) 0;
+  border: 0;
+  background: none;
+  color: var(--c-teal);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.hint {
+  margin-top: var(--s-2);
+  color: var(--c-text-subtle);
+  font-size: var(--t-xs);
+  text-align: right;
+}
+
+.error {
+  margin-top: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-md);
+  background: var(--c-danger-soft);
+  color: var(--c-danger);
+  font-size: var(--t-sm);
+}
+
+.thanks {
+  padding: var(--s-5) 0;
+  text-align: center;
+}
+
+.thanksMark {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin: 0 auto var(--s-4);
+  border-radius: 50%;
+  background: var(--c-success-soft);
+  color: var(--c-success);
+  font-size: 1.6rem;
+}
+
+.thanks h2 { margin-bottom: var(--s-2); }
+.thanks p { color: var(--c-text-muted); }
+
+/* Shown so a user can quote it if they follow something up. */
+.refId {
+  margin: var(--s-3) 0 var(--s-5);
+  color: var(--c-text-subtle);
+  font-family: var(--f-mono);
+  font-size: var(--t-xs);
+}
+
+@media (width <= 560px) {
+  .scale { grid-template-columns: repeat(5, 1fr); }
+  .actions { display: grid; gap: var(--s-3); }
+}

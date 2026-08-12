@@ -34,22 +34,24 @@ def _job_text_for_embedding(job_json: dict, job_text: str) -> str:
 
 
 async def _fetch_one(url: str, semaphore: asyncio.Semaphore) -> dict | None:
-    session_factory = get_session_factory()
-
-    async with session_factory() as session:
-        repo = JobDiscoveryRepository(session)
-        cached = await repo.get_fresh_posting(url)
-        if cached is not None:
-            return {
-                "posting_id": cached.id,
-                "job_json": cached.job_json,
-                "job_text": cached.job_text,
-                "embedding": cached.embedding,
-                "source_url": url,
-            }
 
     async with semaphore:
+        session_factory = get_session_factory()
+
+        async with session_factory() as session:
+            repo = JobDiscoveryRepository(session)
+            cached = await repo.get_fresh_posting(url)
+            if cached is not None:
+                return {
+                    "posting_id": cached.id,
+                    "job_json": cached.job_json,
+                    "job_text": cached.job_text,
+                    "embedding": cached.embedding,
+                    "source_url": url,
+                }
+
         extracted = await crawler_service.crawl_and_extract(url)
+
     if extracted is None:
         return None
 
