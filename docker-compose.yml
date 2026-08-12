@@ -41,7 +41,7 @@ services:
     environment:
       SEARXNG_URL: http://searxng:8080
       CRAWL4_AI_BASE_DIRECTORY: /tmp
-      DEBUG: "false"
+      APP_DEBUG: "false"
       RESUME_SCANNED_PDF_STRATEGY: ${RESUME_SCANNED_PDF_STRATEGY:-direct_vision}
     volumes:
       # THIS IS THE NEW LINE: Binds EC2 host folder to Docker container folder

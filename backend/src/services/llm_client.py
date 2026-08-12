@@ -14,9 +14,9 @@ def _build_embeddings(task_type: str):
         )
     return HuggingFaceEmbeddings(model_name=GlobalConfig.HF_EMBEDDING_MODEL)
 
-
+_IS_GEMINI = GlobalConfig.EMBEDDING_PROVIDER == "gemini"
 document_embeddings = _build_embeddings("RETRIEVAL_DOCUMENT")
-query_embeddings = _build_embeddings("RETRIEVAL_QUERY")
+query_embeddings = _build_embeddings("RETRIEVAL_QUERY") if _IS_GEMINI else document_embeddings
 embeddings = query_embeddings
 
 llm = ChatGoogleGenerativeAI(

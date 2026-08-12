@@ -3,8 +3,8 @@ import { Card, EmptyState } from '@shared/ui';
 import type { ResumeUpload } from '../hooks/useResumeUpload';
 
 import { ProfileView } from './ProfileView';
-import { ResumeScanPreview } from './ResumeScanPreview';
 import styles from './ResultsPanel.module.css';
+import { ResumeScanPreview } from './ResumeScanPreview';
 
 type ResultsPanelProps = {
   upload: ResumeUpload;
