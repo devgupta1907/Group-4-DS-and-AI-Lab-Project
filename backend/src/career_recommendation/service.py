@@ -1,15 +1,4 @@
-"""
-Career Recommendation — service entry point.
 
-This is the ONE function other modules (and the API layer) should
-call. It's the merge surface referenced in the handoff notes: Resume
-Parsing produces a profile, this function turns it into ranked,
-explained career recommendations, and nothing outside this module
-should need to import retrieval.py / re_ranker.py internals directly.
-
-    from career_recommendation.service import recommend_for_profile
-    result = recommend_for_profile(profile_dict_or_model)
-"""
 
 from __future__ import annotations
 import logging

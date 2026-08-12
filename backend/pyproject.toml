@@ -80,6 +80,9 @@ packages = [
     "src/resume_parsing",
     "src/job_discovery_matching",
     "src/career_report",
+    "src/feedback",
+    "src/cv_review",
+    "src/experimentation"
 ]
 
 

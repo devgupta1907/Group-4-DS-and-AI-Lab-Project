@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 
-import { request } from '@shared/api/httpClient';
 import { toApiError } from '@shared/api/ApiError';
+import { request } from '@shared/api/httpClient';
 
 export type FeedbackReason = { value: string; label: string };
 

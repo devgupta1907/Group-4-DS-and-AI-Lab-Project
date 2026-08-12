@@ -31,8 +31,8 @@ class Settings(BaseSettings):
     # --- database ---
     database_url: str = "postgresql+asyncpg://dsai:dsai@localhost:5432/dsai"
     db_echo: bool = False
-    database_pool_size: int = 2
-    database_max_overflow: int = 1
+    database_pool_size: int = 5
+    database_max_overflow: int = 5
 
     # --- auth (dev resolver; Google SSO replaces this later) ---
     dev_user_id: str = "dev-user"

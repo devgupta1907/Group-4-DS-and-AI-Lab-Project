@@ -13,7 +13,7 @@ class CareerRecommendationModuleConfig:
     RETRIEVAL_TOP_K = 20
 
     # Number of occupations sent to LLM for explanation and display to user (Step 2)
-    FINAL_TOP_K = 5
+    FINAL_TOP_K = 7
 
     # Weights for skill type
     ESSENTIAL_SKILL_WEIGHT = 1.0

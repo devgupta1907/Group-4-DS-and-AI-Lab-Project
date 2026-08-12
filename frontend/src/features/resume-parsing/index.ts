@@ -7,4 +7,5 @@ export { ProfileView } from './components/ProfileView';
 export { ResumeUploadPanel } from './components/ResumeUploadPanel';
 export { useFileValidation } from './hooks/useFileValidation';
 export { useResumeUpload } from './hooks/useResumeUpload';
+export type { ResumeUpload } from './hooks/useResumeUpload';
 export type { CandidateProfile, ProfileRecord } from './types/parsedProfile';
