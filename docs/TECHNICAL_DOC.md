@@ -123,7 +123,7 @@ Resume file (PDF / DOCX / image)
 
 **Live URL:** http://13.235.73.185:8080/ — active for the viva window.
 
-Because the BGE embedding model plus the full application stack exceed what the AWS free tier provides, the instance runs on a paid **t3.medium**. If the hosted URL is unavailable, the local deployment produces identical output and is the intended fallback.
+ If the hosted URL is unavailable, the local deployment produces identical output and is the intended fallback.
 
 ---
 
@@ -582,9 +582,9 @@ curl http://localhost:8000/health          # → {"status":"ok"}
 
 ### 7.1 Platform
 
-**AWS EC2, t3.medium (paid tier).** Live at **http://13.235.73.185:8080/** for the duration of the viva.
+**AWS EC2, m7i-flex.large (free-tier eligible).** Live at **http://13.235.73.185:8080/** for the duration of the viva.
 
-The free tier is insufficient: the BGE embedding model (~450 MB resident) plus the full application stack exceed its memory allowance. The instance runs the stack via Docker Compose.
+ The instance runs the stack via Docker Compose.
 
 ### 7.2 How the models are hosted
 
