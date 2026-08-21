@@ -20,7 +20,7 @@ from fastapi.responses import StreamingResponse
 
 from src.core.security import CurrentUserDep
 from src.resume_parsing.dependencies import ServiceDep
-from src.resume_parsing.schemas import ParseEvent, ProfileRecord, ProfileSummary
+from src.resume_parsing.schemas import CandidateProfile, ParseEvent, ProfileRecord, ProfileSummary
 from src.resume_parsing.service import ResumeParsingService, UploadedResume
 
 router = APIRouter(prefix="/api/resume-parsing", tags=["resume-parsing"])
@@ -81,6 +81,22 @@ async def get_profile(
     profile_id: UUID, service: ServiceDep, user: CurrentUserDep
 ) -> ProfileRecord:
     return await service.get_profile(profile_id, user)
+
+
+@router.put("/profiles/{profile_id}", response_model=ProfileRecord)
+async def update_profile(
+    profile_id: UUID,
+    profile: CandidateProfile,
+    service: ServiceDep,
+    user: CurrentUserDep,
+) -> ProfileRecord:
+    """Save a user-corrected profile. Full replacement, not a patch.
+
+    Pydantic rejects anything off-schema before this handler ever runs
+    (`CandidateProfile` still has `extra="forbid"`), so a client cannot smuggle
+    an email or phone field back in through the edit path either.
+    """
+    return await service.update_profile(profile_id, profile, user)
 
 
 @router.delete("/profiles/{profile_id}", status_code=status.HTTP_204_NO_CONTENT)

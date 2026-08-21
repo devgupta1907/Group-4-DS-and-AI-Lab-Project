@@ -312,3 +312,34 @@ class ResumeParsingServiceImpl:
         )
         if not deleted:
             raise ProfileNotFound()
+
+    async def update_profile(
+        self, profile_id: UUID, profile: CandidateProfile, user: CurrentUser
+    ) -> ProfileRecord:
+        # Same gate the parse pipeline runs through — an edit that clears a
+        # flagged field should clear it from needs_review too, and one that
+        # (somehow) breaks schema shape should not silently ship. Coverage
+        # is computed but unused here: repair-vs-accept is a parse-time
+        # decision, there is no "fallback model" to repair a human edit.
+        report = validation.validate(profile.model_dump(mode="json"))
+
+        updated = await self._repository.update_profile(
+            profile_id,
+            user.id,
+            profile=profile,
+            needs_review=report.needs_review,
+            is_valid=report.schema_ok,
+        )
+        await self._repository.audit(
+            user_id=user.id,
+            action="resume.edit",
+            outcome="succeeded" if updated else "not_found",
+            subject_id=profile_id,
+        )
+        if not updated:
+            raise ProfileNotFound()
+
+        record = await self._repository.get_profile(profile_id, user.id)
+        if record is None:  # pragma: no cover - just written
+            raise ProfileNotFound()
+        return record

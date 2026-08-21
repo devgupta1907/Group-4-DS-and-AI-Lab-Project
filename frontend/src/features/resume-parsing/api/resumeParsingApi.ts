@@ -7,7 +7,12 @@
 import { postFileForStream, request } from '@shared/api/httpClient';
 import { readSseFrames } from '@shared/api/sseClient';
 
-import type { ParseEvent, ProfileRecord, ProfileSummary } from '../types/parsedProfile';
+import type {
+  CandidateProfile,
+  ParseEvent,
+  ProfileRecord,
+  ProfileSummary,
+} from '../types/parsedProfile';
 
 const BASE = '/resume-parsing';
 
@@ -44,4 +49,20 @@ export function fetchProfiles(): Promise<ProfileSummary[]> {
 
 export function deleteProfile(profileId: string): Promise<void> {
   return request<void>(`${BASE}/profiles/${profileId}`, { method: 'DELETE' });
+}
+
+/**
+ * Saves a user-corrected profile. Full replacement — the server has no
+ * partial-update semantics, so this always sends the whole `CandidateProfile`
+ * back, edited fields and all.
+ */
+export function updateProfile(
+  profileId: string,
+  profile: CandidateProfile,
+): Promise<ProfileRecord> {
+  return request<ProfileRecord>(`${BASE}/profiles/${profileId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(profile),
+  });
 }

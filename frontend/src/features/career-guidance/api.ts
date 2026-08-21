@@ -32,8 +32,12 @@ export type CvReview = {
   strengths: string[];
   findings: CvFinding[];
   missing_sections: string[];
-  score: number;
-  score_reason: string;
+  /** Deterministic 0-100 ATS-readiness score — computed from parsed-profile
+   *  content signals (sections, keywords, quantification), not by the model.
+   *  It can't see the original file's formatting, so treat it as a floor on
+   *  ATS risk, not a full prediction. */
+  ats_score: number;
+  ats_score_reason: string;
   status: string;
 };
 

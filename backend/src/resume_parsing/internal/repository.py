@@ -121,6 +121,37 @@ class ResumeParsingRepository:
         row = (await self._session.execute(stmt)).first()
         return None if row is None else self._to_record(row[0], row[1])
 
+    async def update_profile(
+        self,
+        profile_id: UUID,
+        user_id: str,
+        *,
+        profile: CandidateProfile,
+        needs_review: list[str],
+        is_valid: bool,
+    ) -> bool:
+        """Overwrite a profile's content with a user-edited version.
+
+        Re-seals the whole payload — there is no partial update at the
+        ciphertext level, the same as `save_profile`. Returns `False` if the
+        row does not exist or is owned by someone else, so the caller can
+        raise `ProfileNotFound` without a second query.
+        """
+        stmt = select(CandidateProfileRecord).where(
+            CandidateProfileRecord.id == profile_id,
+            CandidateProfileRecord.user_id == user_id,
+        )
+        record = (await self._session.execute(stmt)).scalar_one_or_none()
+        if record is None:
+            return False
+
+        record.profile_encrypted = self._cipher.seal(profile.model_dump(mode="json"))
+        record.needs_review = needs_review
+        record.is_valid = is_valid
+        record.edited_at = datetime.now(UTC)
+        await self._session.commit()
+        return True
+
     async def list_profiles(self, user_id: str) -> list[ProfileSummary]:
         stmt = (
             select(CandidateProfileRecord, ResumeParseJob)
@@ -195,6 +226,7 @@ class ResumeParsingRepository:
             model_used=job.model_used,
             fallback_used=job.fallback_used,
             created_at=record.created_at,
+            edited_at=record.edited_at,
             profile=CandidateProfile.model_validate(
                 self._cipher.open(record.profile_encrypted)
             ),

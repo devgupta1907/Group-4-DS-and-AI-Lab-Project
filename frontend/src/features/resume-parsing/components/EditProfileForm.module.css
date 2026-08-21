@@ -1,0 +1,37 @@
+.form {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+}
+
+.error {
+  margin: 0 var(--s-5) var(--s-4);
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-md);
+  background: var(--c-danger-soft);
+  color: var(--c-danger);
+  font-size: var(--t-sm);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s-4);
+  padding: var(--s-5);
+  border-top: 1px solid var(--c-border);
+}
+
+.textButton {
+  padding: var(--s-3) 0;
+  border: 0;
+  background: none;
+  color: var(--c-teal);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.textButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

@@ -93,16 +93,6 @@
 .contents a:last-child { border-right: 0; }
 .contents a:hover { background: var(--c-accent-soft); text-decoration: none; }
 
-.footer {
-  margin-top: var(--s-6);
-  padding: var(--s-5) 0 0;
-  border-top: 1px solid var(--c-border);
-  color: var(--c-text-muted);
-}
-
-.footer h2 { margin-bottom: var(--s-3); color: var(--c-text); font-size: var(--t-md); }
-.footer p + p { margin-top: var(--s-2); }
-
 @media (width <= 760px) {
   .hero { grid-template-columns: 1fr; padding: var(--s-5); }
   .heroActions { align-items: flex-start; }

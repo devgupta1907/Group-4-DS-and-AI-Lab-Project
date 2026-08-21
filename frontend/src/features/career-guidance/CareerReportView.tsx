@@ -39,12 +39,6 @@ export function CareerReportView({ report }: Props) {
       <CareerDirectionsSection report={report} />
       <MarketEvidenceSection report={report} />
       <WeeklyPlanSection report={report} />
-
-      <footer className={styles.footer}>
-        <h2>How to read this report</h2>
-        {content.methodology.map((item) => <p key={item}>{item}</p>)}
-        {content.narrative.limitations.map((item) => <p key={item}>{item}</p>)}
-      </footer>
     </article>
   );
 }

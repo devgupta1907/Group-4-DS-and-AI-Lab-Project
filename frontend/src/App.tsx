@@ -99,6 +99,7 @@ export function App() {
           onRunCvReview={runCvReview}
           onRunReport={runReport}
           onReset={upload.reset}
+          onProfileSaved={upload.setRecord}
         />
       )}
 

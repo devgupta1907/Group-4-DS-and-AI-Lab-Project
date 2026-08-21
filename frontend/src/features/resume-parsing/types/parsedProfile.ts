@@ -65,6 +65,8 @@ export type ProfileRecord = {
   model_used: string;
   fallback_used: boolean;
   created_at: string;
+  /** Set once a user edits the parsed profile; null if it's exactly what parsing produced. */
+  edited_at: string | null;
   profile: CandidateProfile;
 };
 

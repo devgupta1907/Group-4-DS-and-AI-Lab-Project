@@ -18,21 +18,12 @@ export function CareerDirectionsSection({ report }: { report: CareerReport }) {
         title="Career directions, examined properly"
         description="Each direction is assessed from several evidence signals, the remaining gap, and a concrete way to test the fit."
       />
-      <div className={styles.compass}>
-        <Direction index="01" label="Best current fit" value={narrative.strongest_direction} />
-        <Direction index="02" label="Best adjacent move" value={narrative.adjacent_direction} />
-        <Direction index="03" label="Highest-leverage improvement" value={narrative.development_priority} />
-      </div>
       <div className={styles.roles}>
         {narrative.roles.map((role, index) => <RoleCard role={role} rank={index + 1} key={role.title} />)}
       </div>
       <Pathways pathways={narrative.pathways} />
     </section>
   );
-}
-
-function Direction({ index, label, value }: { index: string; label: string; value: string }) {
-  return <article><i>{index}</i><span>{label}</span><strong>{value}</strong></article>;
 }
 
 function RoleCard({ role, rank }: { role: RoleGuidance; rank: number }) {

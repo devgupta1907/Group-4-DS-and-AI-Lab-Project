@@ -144,6 +144,7 @@ class ProfileRecord(_Strict):
     model_used: str
     fallback_used: bool
     created_at: datetime
+    edited_at: datetime | None = None
     profile: CandidateProfile
 
 

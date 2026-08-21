@@ -2,6 +2,8 @@ import type { CvReview } from '@features/career-guidance';
 
 import styles from './App.module.css';
 
+const SEVERITY_RANK: Record<string, number> = { critical: 0, important: 1, minor: 2 };
+
 /**
  * Critical findings only.
  *
@@ -12,26 +14,39 @@ import styles from './App.module.css';
 export function CvReviewDialog({ review, onClose }: { review: CvReview; onClose: () => void }) {
   const critical = review.findings.filter((f) => f.severity === 'critical');
 
+  // The ATS score box gets its own short list of the biggest issues — ranked
+  // across all severities, not just critical, so it still says something
+  // useful on a "nothing major found" result where the list below is empty.
+  const topMistakes = [...review.findings]
+    .sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity])
+    .slice(0, 3)
+    .map((f) => f.issue);
+
   return (
     <div className={styles.overlay} role="dialog" aria-modal="true" aria-labelledby="cv-title">
       <div className={styles.dialogWide}>
-        {/* No score. A bare number out of 100 carried no scale, no basis and
-            no comparison, so it invited a question the feature could not
-            answer. The findings are the substance. */}
         <header className={styles.cvHead}>
           <p className="eyebrow">Major mistakes in your CV</p>
           <h2 id="cv-title">{critical.length > 0
             ? `${critical.length} thing${critical.length === 1 ? '' : 's'} to fix first`
             : 'Nothing major found'}</h2>
           <p className={styles.cvOverall}>{review.overall}</p>
-        </header>
 
-        {critical.length === 0 && (
-          <p className={styles.dialogNote}>
-            Nothing here would get your resume rejected at screening. Smaller
-            improvements appear in the full report.
-          </p>
-        )}
+          <div className={styles.atsScore}>
+            <div className={styles.atsScoreValue}>
+              {review.ats_score}
+              <small>/100</small>
+            </div>
+            <div className={styles.atsScoreBody}>
+              <h3>ATS score</h3>
+              <p>
+                {topMistakes.length > 0
+                  ? topMistakes.join(' ')
+                  : 'No specific issues identified in your parsed profile.'}
+              </p>
+            </div>
+          </div>
+        </header>
 
         <ul className={styles.findings}>
           {critical.map((finding, index) => (
@@ -45,6 +60,11 @@ export function CvReviewDialog({ review, onClose }: { review: CvReview; onClose:
             </li>
           ))}
         </ul>
+
+        <p className={styles.dialogNote}>
+          This is a tentative ATS score computed from your parsed resume data. Actual ATS
+          scores vary from company to company depending on their specific system.
+        </p>
 
         <div className={styles.dialogActions}>
           <span />
