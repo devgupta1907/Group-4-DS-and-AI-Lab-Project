@@ -59,13 +59,42 @@ class _JudgeBatch(BaseModel):
     jobs: list[JudgedJob] = Field(description="One entry per job, in the same order given.")
 
 
-async def generate_search_queries(candidate_json: dict, num_queries: int) -> list[str]:
+async def generate_search_queries(
+    candidate_json: dict, num_queries: int, preferences: dict | None = None
+) -> list[str]:
     """candidate_json -> up to `num_queries` search query strings. Raises
     LLMError on failure; the caller (query_generator node) decides the
-    heuristic fallback, not this function."""
+    heuristic fallback, not this function.
+
+    `target_roles` and `skills` are pulled out and passed as their own
+    template variables, not left for the model to notice inside the raw
+    candidate_json dump — otherwise it anchors on whichever field is
+    loudest (usually candidate_json["current_role"]) and every "diverse"
+    query ends up being a rephrase of just that one role.
+
+    `preferences` (SearchPreferences.model_dump()) is optional so existing
+    callers that don't pass it still work; `target_location`/`remote_only`
+    get baked into the generated query text itself — not just applied as
+    a post-hoc filter in hard_filter.py — so the search engine is actually
+    asked for jobs in the right place instead of everywhere."""
+    target_roles = candidate_json.get("target_roles") or []
+    skills = candidate_json.get("skills") or []
+    prefs = preferences or {}
+    target_location = prefs.get("target_location") or "(none given)"
+    remote_only = bool(prefs.get("remote_only"))
+    min_salary_lpa = prefs.get("min_salary_lpa")
+    min_salary_text = f"{min_salary_lpa} LPA" if min_salary_lpa else "(none given)"
     prompt = (
         f"{QUERY_GENERATOR_SYSTEM}\n\n"
-        + QUERY_GENERATOR_USER.format(num_queries=num_queries, candidate_json=candidate_json)
+        + QUERY_GENERATOR_USER.format(
+            num_queries=num_queries,
+            candidate_target_roles=target_roles or ["(none listed — infer from candidate profile below)"],
+            candidate_skills=skills[:15] or ["(none listed — infer from candidate profile below)"],
+            target_location=target_location,
+            remote_only=remote_only,
+            min_salary_lpa=min_salary_text,
+            candidate_json=candidate_json,
+        )
     )
     try:
         structured = llm.with_structured_output(_SearchQueries)

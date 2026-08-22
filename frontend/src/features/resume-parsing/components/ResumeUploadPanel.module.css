@@ -37,6 +37,24 @@
 
 .privacyList li + li { margin-top: 2px; }
 
+/* --- manual entry fallback ---------------------------------------------- */
+
+.manualLink {
+  align-self: center;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--c-text-muted);
+  font-size: var(--t-xs);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.manualLink:hover {
+  color: var(--c-accent);
+}
+
 /* --- progress and actions ---------------------------------------------- */
 
 .progress {

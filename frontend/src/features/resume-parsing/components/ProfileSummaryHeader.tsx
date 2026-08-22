@@ -31,14 +31,20 @@ export function ProfileSummaryHeader({ record }: ProfileSummaryHeaderProps) {
       </dl>
 
       <div className={styles.provenance}>
-        <Badge tone="neutral">{record.route === 'vision' ? 'Vision path' : 'Text path'}</Badge>
-        <Badge tone="neutral">
-          {record.page_count} {record.page_count === 1 ? 'page' : 'pages'}
-        </Badge>
-        <Badge tone={record.fallback_used ? 'warning' : 'accent'}>
-          {record.model_used}
-        </Badge>
-        {record.fallback_used && <Badge tone="warning">Repaired</Badge>}
+        {record.route === 'manual' ? (
+          <Badge tone="neutral">Entered manually</Badge>
+        ) : (
+          <>
+            <Badge tone="neutral">{record.route === 'vision' ? 'Vision path' : 'Text path'}</Badge>
+            <Badge tone="neutral">
+              {record.page_count} {record.page_count === 1 ? 'page' : 'pages'}
+            </Badge>
+            <Badge tone={record.fallback_used ? 'warning' : 'accent'}>
+              {record.model_used}
+            </Badge>
+            {record.fallback_used && <Badge tone="warning">Repaired</Badge>}
+          </>
+        )}
       </div>
     </header>
   );

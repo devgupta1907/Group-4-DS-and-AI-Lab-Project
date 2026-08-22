@@ -47,6 +47,16 @@
   min-width: 0;
 }
 
+/* --- manual entry result ------------------------------------------------ */
+
+.manualResult {
+  max-width: 760px;
+}
+
+.manualResultBar {
+  margin-bottom: var(--s-3);
+}
+
 @media (width <= 940px) {
   .page {
     padding: var(--s-5) var(--s-4);

@@ -26,10 +26,14 @@ export type ResumeUpload = {
   upload: (file: File) => void;
   cancel: () => void;
   reset: () => void;
+  /** Replaces `record` in place — used after a successful profile edit
+      (see useProfileEditor), so the rest of the app sees the edited
+      version without a re-fetch or re-parse. */
+  setRecord: (record: ProfileRecord) => void;
 };
 
 /** Everything the hook tracks, minus the callbacks it returns alongside it. */
-type UploadState = Omit<ResumeUpload, 'upload' | 'cancel' | 'reset'>;
+type UploadState = Omit<ResumeUpload, 'upload' | 'cancel' | 'reset' | 'setRecord'>;
 
 const INITIAL: UploadState = {
   status: 'idle',
@@ -115,5 +119,9 @@ export function useResumeUpload(): ResumeUpload {
     })();
   }, []);
 
-  return { ...state, upload, cancel, reset };
+  const setRecord = useCallback((record: ProfileRecord) => {
+    setState((prev) => ({ ...prev, record }));
+  }, []);
+
+  return { ...state, upload, cancel, reset, setRecord };
 }

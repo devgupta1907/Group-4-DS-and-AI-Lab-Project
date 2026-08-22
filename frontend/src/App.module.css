@@ -78,6 +78,15 @@
 
 .resultsWrap { min-width: 0; }
 
+/* Sits right under the upload card, only while nothing is in flight yet —
+   the manual-entry escape hatch out of waiting on parsing. */
+.manualEntryPrompt {
+  margin: var(--s-3) 0 0;
+  color: var(--c-muted);
+  font-size: var(--t-sm);
+  text-align: center;
+}
+
 .promise {
   display: grid;
   gap: var(--s-4);

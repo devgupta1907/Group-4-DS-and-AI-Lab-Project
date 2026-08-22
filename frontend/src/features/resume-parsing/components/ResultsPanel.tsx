@@ -18,7 +18,7 @@ export function ResultsPanel({ upload }: ResultsPanelProps) {
   if (upload.record) {
     return (
       <Card title="Extracted profile" description={upload.record.filename} flush>
-        <ProfileView record={upload.record} />
+        <ProfileView record={upload.record} onSaved={upload.setRecord} />
       </Card>
     );
   }

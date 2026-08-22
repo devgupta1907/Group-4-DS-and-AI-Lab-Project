@@ -1,0 +1,23 @@
+.view {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.section {
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.title {
+  font: 700 13px/1.3 var(--f-sans);
+  color: var(--c-text);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin: 0 0 12px;
+}

@@ -60,7 +60,8 @@ class JobDiscoveryRun(Base):
     )
     user_id: Mapped[str] = mapped_column(String(128), index=True)
 
-    # running | ok | degraded_no_llm | no_jobs | no_candidates | error
+    # running | ok | degraded_no_llm | hybrid_only | no_jobs | no_candidates
+    # | error | awaiting_query_selection | awaiting_judge_confirmation
     status: Mapped[str] = mapped_column(String(32), default="running")
     message: Mapped[str] = mapped_column(String(1024), default="")
 

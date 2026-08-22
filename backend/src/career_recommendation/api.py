@@ -3,6 +3,8 @@ Career Recommendation — API layer.
 
     POST /career/recommend                       run against a stored profile
     GET  /career/recommendations/{profile_id}    read the latest saved run
+    POST /career/recommendations/{run_id}/select  record which recommended
+                                                   occupation the user picked
     POST /career/index/rebuild                   re-embed the ESCO taxonomy
     GET  /career/health                          vector index reachable?
 
@@ -25,7 +27,7 @@ import logging
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 from src.career_recommendation import ingestion, store
 from src.career_recommendation.models import CandidateProfile
@@ -59,6 +61,15 @@ class RecommendRequest(BaseModel):
         if (self.profile_id is None) == (self.profile is None):
             raise ValueError("Provide exactly one of profile_id or profile.")
         return self
+
+
+class SelectOccupationRequest(BaseModel):
+    """Body for POST /career/recommendations/{run_id}/select — which
+    recommended occupation(s) the user picked to carry into the next steps
+    (Job Discovery / Career Report). Zero or more; an empty list clears a
+    previous selection."""
+
+    occupation_uris: list[str] = Field(default_factory=list)
 
 
 @router.get("/health")
@@ -140,6 +151,34 @@ def get_recommendations(
             "Runs are only saved when POST /career/recommend is called with a profile_id.",
         )
     return run
+
+
+@router.post("/recommendations/{run_id}/select")
+def select_occupation(
+    run_id: UUID,
+    request: SelectOccupationRequest,
+    user: CurrentUser = Depends(get_current_user),
+) -> dict:
+    """
+    Records which recommended occupation(s) the user picked from a completed
+    run, so downstream steps (Job Discovery, Career Report) can act on the
+    candidate's actual choice instead of guessing from the top of the
+    ranked list.
+
+    Every `occupation_uri` in the list must be exactly one of the
+    `occupation_uri` values in that run's own `recommendations` — anything
+    else is rejected as 404, since accepting an unrecognized choice would
+    silently corrupt what downstream modules trust. An empty list clears
+    the selection.
+    """
+    try:
+        return store.select_occupation(
+            run_id, user_id=user.id, occupation_uris=request.occupation_uris
+        )
+    except store.RunNotFound as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except store.OccupationNotFound as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.post("/index/rebuild")

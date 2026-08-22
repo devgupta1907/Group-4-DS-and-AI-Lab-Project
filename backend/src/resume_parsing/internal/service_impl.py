@@ -23,6 +23,7 @@ from uuid import UUID
 from src.core.config import get_settings
 from src.core.security import CurrentUser
 from src.resume_parsing.errors import (
+    EmptyManualProfile,
     ExtractionFailed,
     ProfileNotFound,
     ResumeParsingError,
@@ -295,6 +296,41 @@ class ResumeParsingServiceImpl:
 
     async def get_profile(self, profile_id: UUID, user: CurrentUser) -> ProfileRecord:
         record = await self._repository.get_profile(profile_id, user.id)
+        if record is None:
+            raise ProfileNotFound()
+        return record
+
+    async def submit_manual_profile(
+        self, profile: CandidateProfile, user: CurrentUser
+    ) -> ProfileRecord:
+        if not profile.has_usable_signal():
+            raise EmptyManualProfile()
+
+        profile_id = await self._repository.save_manual_profile(
+            user_id=user.id, profile=profile
+        )
+        await self._repository.audit(
+            user_id=user.id,
+            action="resume.manual_submit",
+            outcome="succeeded",
+            subject_id=profile_id,
+        )
+
+        record = await self._repository.get_profile(profile_id, user.id)
+        if record is None:  # pragma: no cover - the row was just written
+            raise ProfileNotFound()
+        return record
+
+    async def update_profile(
+        self, profile_id: UUID, user: CurrentUser, profile: CandidateProfile
+    ) -> ProfileRecord:
+        record = await self._repository.update_profile(profile_id, user.id, profile)
+        await self._repository.audit(
+            user_id=user.id,
+            action="resume.edit",
+            outcome="succeeded" if record is not None else "not_found",
+            subject_id=profile_id,
+        )
         if record is None:
             raise ProfileNotFound()
         return record

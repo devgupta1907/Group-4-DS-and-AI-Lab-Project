@@ -38,7 +38,21 @@ class PipelineState(TypedDict, total=False):
 
     ranked_jobs: list[dict[str, Any]]
 
+    # Set by judge_confirmation_gate from the user's confirm-judge request:
+    # True -> route_after_judge_confirmation sends the graph to
+    # judge_module; False (or absent) -> hybrid_finalize_module instead.
+    # Must be declared here or LangGraph drops it when merging node output
+    # back into state -- it isn't a real channel otherwise, and the router
+    # always reads it back as None regardless of what the user picked.
+    proceed_to_judge: Optional[bool]
+
+    # Set by judge_confirmation_gate from the user's confirm-judge request.
+    # Non-empty -> judge_module restricts to these source_urls; None/empty
+    # -> judge everything up to Cfg.TOP_N_JUDGED (original behaviour).
+    selected_job_urls: Optional[list[str]]
+
     final_jobs: list[dict[str, Any]]
 
     error: Optional[str]
     progress: list[str]
+    node_timings: list[dict[str, Any]]

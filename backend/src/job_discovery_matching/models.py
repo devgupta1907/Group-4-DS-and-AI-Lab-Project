@@ -62,17 +62,65 @@ class JobDiscoveryResult(BaseModel):
     Full result of one job discovery run.
 
     `status` is one of:
-        ok               - normal path, LLM judge succeeded
-        degraded_no_llm  - judge LLM call failed; hybrid-score-only ranking
-        no_jobs          - search/crawl produced nothing after filtering
-        no_candidates    - profile had no usable signal to search from
-        error            - the pipeline itself raised
+        ok                        - normal path, LLM judge ran and succeeded
+        degraded_no_llm           - LLM judge ran but its call failed; hybrid-score-only ranking
+        hybrid_only                - user DECLINED the LLM judge stage at
+                                     judge_confirmation_gate — ranked by hybrid
+                                     score only, deliberately, not as a fallback
+        no_jobs                   - search/crawl produced nothing after filtering
+        no_candidates              - profile had no usable signal to search from
+        error                      - the pipeline itself raised
+        awaiting_query_selection  - paused after query_generator; call
+                                     POST /api/jobs/search/{run_id}/select-queries
+                                     with the queries to actually search (see
+                                     `generated_queries` for what to show the user)
+        awaiting_judge_confirmation - paused after hybrid ranking; call
+                                     POST /api/jobs/search/{run_id}/confirm-judge
+                                     with {"proceed": true|false} — `top_jobs` is
+                                     already populated with the hybrid-ranked
+                                     jobs (judge=None) so the frontend can show
+                                     them WHILE asking the question
     """
 
     run_id: UUID | None = None
-    status: Literal["ok", "degraded_no_llm", "no_jobs", "no_candidates", "error"]
+    status: Literal[
+        "ok",
+        "degraded_no_llm",
+        "hybrid_only",
+        "no_jobs",
+        "no_candidates",
+        "error",
+        "awaiting_query_selection",
+        "awaiting_judge_confirmation",
+    ]
     message: str = ""
     search_queries: list[str] = Field(default_factory=list)
+    generated_queries: list[str] | None = None
     jobs_discovered: int = 0
     jobs_after_filter: int = 0
     top_jobs: list[RankedJob] = Field(default_factory=list)
+
+
+class QuerySelectionRequest(BaseModel):
+    """Body for POST /api/jobs/search/{run_id}/select-queries — the queries
+    the user actually picked/edited from `generated_queries`. Empty list is
+    rejected by the endpoint (falls back to ALL generated queries instead,
+    at the query_selection_gate node level, if this is ever sent empty)."""
+
+    selected_queries: list[str] = Field(min_length=1)
+
+
+class JudgeConfirmationRequest(BaseModel):
+    """Body for POST /api/jobs/search/{run_id}/confirm-judge. `proceed=True`
+    runs the LLM judge (judge_module.py) over the hybrid-ranked jobs already
+    shown in the preceding "awaiting_judge_confirmation" response's
+    `top_jobs`; `proceed=False` finalizes the run with those same jobs,
+    hybrid-ranked only, no LLM call spent.
+
+    `selected_job_urls` lets the user judge only the jobs they actually
+    picked from `top_jobs` (matched by `JobPostingView.source_url`).
+    Omitted or empty means "judge all of them" — the original behaviour —
+    so existing callers that don't send it are unaffected."""
+
+    proceed: bool
+    selected_job_urls: list[str] | None = None

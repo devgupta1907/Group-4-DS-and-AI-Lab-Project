@@ -23,6 +23,15 @@ QUERY_GENERATOR_SYSTEM = (
 # explicitly, is what moves the result set from reference material to
 # postings. Query generation is one LLM call per run, so this costs nothing
 # extra; the saving is in crawls that no longer happen.
+#
+# candidate_target_roles / candidate_skills are passed in as their OWN
+# template variables (not just buried inside the candidate_json dump) and
+# each gets its own numbered mandatory slot below. Left to notice
+# target_roles/skills on its own inside a raw dict dump, the model
+# anchors on whichever field is loudest — usually current_role — and
+# every "diverse" query ends up being a rephrase of that one title. Naming
+# each role/skill explicitly and requiring 1:1 coverage is what actually
+# produces variety instead of relying on the model to bother looking.
 QUERY_GENERATOR_USER = """\
 Given this candidate profile, generate exactly {num_queries} diverse search queries
 to find relevant jobs across LinkedIn, Naukri, Wellfound, Indeed and company career pages.
@@ -31,19 +40,40 @@ Every query MUST target live vacancy listings, not career-information pages.
 To do that, every query must contain at least one hiring word:
 "jobs", "hiring", "vacancy", "careers", or "openings".
 
-Include:
-- Role title variants (e.g. 'Data Analyst jobs', 'Business Analyst hiring', 'Analytics Engineer openings')
-- Skill-based queries (e.g. 'SQL Python analyst jobs')
-- Domain-specific queries, if a domain is present
-- Seniority variants for the candidate's level
+The candidate's target roles are: {candidate_target_roles}
+The candidate's top skills are: {candidate_skills}
+The candidate's target location for this search is: {target_location}
+Remote-only: {remote_only}
+Minimum acceptable salary: {min_salary_lpa}
+
+You MUST cover EVERY role in target roles at least once — do not write all
+{num_queries} queries about only one of them, even if one role sounds like
+the candidate's primary background. Spread queries across ALL listed roles
+before repeating any role.
+
+Include a mix of:
+- One role-title query PER target role listed above (e.g. 'Data Analyst jobs', 'Business Analyst hiring')
+- At least one skill-based query combining 2-3 of the listed skills (e.g. 'SQL Python analyst jobs')
+- A domain-specific query, if a domain is present
+- A seniority variant for the candidate's level
 - At least one query restricted to a job board, using a site: operator
-  (e.g. 'site:linkedin.com/jobs data analyst')
+  (e.g. 'site:linkedin.com/jobs data analyst'). NOTE: this query is only
+  ever sent to a general web search engine, never to a structured job-board
+  API — skip the site: operator restriction on all your other queries.
+
+If a target location is given above (not empty), append it to MOST of your
+role-title and skill-based queries (e.g. 'Data Analyst jobs in Bengaluru'),
+so search results are actually scoped to where the candidate wants to work
+rather than searched separately after the fact. If "Remote-only" is true,
+use "remote" instead of (or alongside) the location in those same queries.
+If no target location is given, do not invent one.
 
 Do NOT generate queries that would return definitions, salary guides, course
 listings, "how to become" articles, or professional-association pages.
 
 Return ONLY a JSON array of {num_queries} strings. No markdown. No explanation.
-Candidate profile:
+Full candidate profile (for context only — role/skill coverage rules above
+take priority over anything you infer from this):
 {candidate_json}
 """
 

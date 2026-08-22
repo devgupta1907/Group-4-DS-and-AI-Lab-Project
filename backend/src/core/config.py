@@ -47,7 +47,7 @@ class Settings(BaseSettings):
     # --- Google AI Studio (resume parsing) ---
     google_api_key: str = ""
     google_ai_studio_api_key: str = ""
-    resume_primary_model: str = "gemini-3.5-flash"
+    resume_primary_model: str = "gemini-3.5-flash-lite"
     resume_fallback_model: str = "gemini-2.5-flash"
     resume_request_timeout_seconds: float = 120.0
     # How scanned/image-only PDFs reach the LLM. `direct_vision` is the

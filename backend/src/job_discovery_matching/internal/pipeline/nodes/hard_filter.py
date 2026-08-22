@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import logging
 import re
-
 from src.job_discovery_matching.internal.pipeline.state import PipelineState
 
 logger = logging.getLogger(__name__)

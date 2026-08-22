@@ -14,6 +14,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import sys
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,12 +23,33 @@ from src.career_recommendation.api import router as career_recommendation_router
 from src.career_report import register_career_report
 from src.core.config import get_settings
 from src.job_discovery_matching import register_job_discovery
+from src.job_discovery_matching.internal.pipeline.checkpointer import ensure_checkpointer_tables
 from src.resume_parsing import register_resume_parsing
 from src.cv_review import register_cv_review
 from src.feedback import register_feedback
 
+logger = logging.getLogger(__name__)
+
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+
+
+@asynccontextmanager
+async def _lifespan(app: FastAPI):
+    # Idempotent — safe on every startup, not just the first. Creates the
+    # LangGraph checkpoint tables (checkpoints/checkpoint_writes/checkpoint_blobs)
+    # that query_selection_gate.py / judge_confirmation_gate.py's interrupt()
+    # calls need to survive across separate HTTP requests. Must happen
+    # before any request can hit POST /api/jobs/search.
+    try:
+        await ensure_checkpointer_tables()
+    except Exception:
+        logger.exception(
+            "Failed to set up LangGraph checkpoint tables — job discovery's "
+            "query/judge confirmation steps will fail until this is fixed."
+        )
+        raise
+    yield
 
 
 def create_app() -> FastAPI:
@@ -42,6 +64,7 @@ def create_app() -> FastAPI:
         title="AI-Powered Intelligent Job Search and Career System — API",
         version="1.0.0",
         debug=settings.debug,
+        lifespan=_lifespan,
     )
 
     app.add_middleware(

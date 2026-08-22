@@ -1,3 +1,7 @@
+import { Button } from '@shared/ui';
+
+import { EditableProfileView } from './edit/EditableProfileView';
+import { useProfileEditor } from '../hooks/useProfileEditor';
 import type { ProfileRecord } from '../types/parsedProfile';
 
 import { NeedsReviewNotice } from './NeedsReviewNotice';
@@ -14,18 +18,58 @@ import { SkillsSection } from './sections/SkillsSection';
 
 type ProfileViewProps = {
   record: ProfileRecord;
+  /** Called with the updated record once an edit is saved — typically
+      `useResumeUpload`'s `setRecord`, so the rest of the page (and
+      whatever runs career recommendation / job discovery next) sees the
+      edited profile without a re-fetch. */
+  onSaved: (record: ProfileRecord) => void;
 };
 
 /**
- * Composition only. Each section owns its own rendering and its own empty
- * state, so this stays a readable list of what a profile contains.
+ * Read-only display by default; "Edit" swaps every section for its
+ * editable counterpart (see ./edit/) using a working copy, and "Save"
+ * PATCHes the whole profile back. Edit-mode orchestration lives here via
+ * `useProfileEditor` rather than in `App.tsx`, so anywhere this component
+ * is rendered gets editing for free.
  */
-export function ProfileView({ record }: ProfileViewProps) {
+export function ProfileView({ record, onSaved }: ProfileViewProps) {
+  const editor = useProfileEditor(record, onSaved);
   const { profile } = record;
+
+  if (editor.isEditing && editor.draft) {
+    return (
+      <div className={styles.view}>
+        <ProfileSummaryHeader record={record} />
+
+        <div className={styles.editBar}>
+          <p className={styles.editHint}>Editing — changes apply once you save.</p>
+          <div className={styles.editActions}>
+            <Button variant="ghost" size="sm" onClick={editor.cancelEditing} disabled={editor.isSaving}>
+              Cancel
+            </Button>
+            <Button variant="primary" size="sm" onClick={() => void editor.save()} disabled={editor.isSaving}>
+              {editor.isSaving ? 'Saving…' : 'Save changes'}
+            </Button>
+          </div>
+        </div>
+
+        {editor.error && <div className={styles.editError}>{editor.error}</div>}
+
+        <EditableProfileView draft={editor.draft} onChange={editor.updateDraft} />
+      </div>
+    );
+  }
 
   return (
     <div className={styles.view}>
       <ProfileSummaryHeader record={record} />
+
+      <div className={styles.editBar}>
+        <span />
+        <Button variant="secondary" size="sm" onClick={editor.startEditing}>
+          Edit profile
+        </Button>
+      </div>
 
       {(record.needs_review.length > 0 || !record.is_valid) && (
         <div className={styles.notice}>

@@ -1,18 +1,24 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
+  CareerRecommendationPage,
   CareerReportView,
   reviewCv,
   useCareerGuidance,
+  useCareerRecommendation,
   type CvReview,
 } from '@features/career-guidance';
 import { FeedbackWidget } from '@features/feedback';
+// import { JobDiscoveryPage, useJobDiscovery } from '@features/job-discovery';
+import { JobDiscoveryChat, useJobDiscovery } from '@features/job-discovery';
 import {
+  ManualProfileForm,
   ProfileView,
   ResultsPanel,
   ResumeUploadPanel,
   useFileValidation,
   useResumeUpload,
+  type ProfileRecord,
 } from '@features/resume-parsing';
 
 import styles from './App.module.css';
@@ -23,14 +29,27 @@ const DEFAULT_PREFERENCES = {
   min_salary_lpa: null,
 };
 
+/** Which standalone flow (if any) the profile-review step has handed off
+    to. `null` means "still on the review step itself" — including while
+    the combined report flow (`guidance`) runs, which is driven by
+    `step`/`guidance.status` instead, not this. */
+type ActiveView = 'career-recommendation' | 'job-discovery' | null;
+
 export function App() {
   const upload = useResumeUpload();
   const validate = useFileValidation();
   const guidance = useCareerGuidance();
+  const careerRecommendation = useCareerRecommendation();
+  const jobDiscovery = useJobDiscovery();
+  const [activeView, setActiveView] = useState<ActiveView>(null);
   const [rejection, setRejection] = useState<string | null>(null);
   const [cvReview, setCvReview] = useState<CvReview | null>(null);
   const [cvLoading, setCvLoading] = useState(false);
   const [cvError, setCvError] = useState<string | null>(null);
+  // Step-1 alternative to uploading and waiting on parsing — see
+  // `handleManualSubmit`. Only ever relevant before `upload.record` exists;
+  // reset alongside everything else on `handleSelect`.
+  const [manualEntry, setManualEntry] = useState(false);
 
   const step = useMemo(() => {
     if (guidance.report) return 4;
@@ -45,12 +64,33 @@ export function App() {
       setRejection(problem?.message ?? null);
       if (!problem) {
         guidance.reset();
+        careerRecommendation.reset();
+        jobDiscovery.reset();
+        setActiveView(null);
         setCvReview(null);
         setCvError(null);
+        setManualEntry(false);
         upload.upload(file);
       }
     },
-    [guidance, upload, validate],
+    [careerRecommendation, guidance, jobDiscovery, upload, validate],
+  );
+
+  const openManualEntry = useCallback(() => setManualEntry(true), []);
+  const closeManualEntry = useCallback(() => setManualEntry(false), []);
+
+  // `ManualProfileForm` now POSTs to /resume-parsing/profiles/manual itself
+  // (via useManualProfileSubmit) and hands back the real, persisted
+  // `ProfileRecord` — same shape a completed parse produces, saved and
+  // encrypted the same way. This just drops it into the same `record` slot
+  // a parsed resume would occupy, so review / career recommendation / job
+  // discovery all work against it unmodified.
+  const handleManualSubmit = useCallback(
+    (record: ProfileRecord) => {
+      upload.setRecord(record);
+      setManualEntry(false);
+    },
+    [upload],
   );
 
   // Straight to the report. The intermediate careers dialog was removed: once
@@ -61,6 +101,27 @@ export function App() {
   const runReport = useCallback(() => {
     if (upload.record) void guidance.buildReport(upload.record.id, DEFAULT_PREFERENCES);
   }, [guidance, upload.record]);
+
+  const openCareerRecommendation = useCallback(() => {
+    setActiveView('career-recommendation');
+  }, []);
+
+  const openJobDiscovery = useCallback(() => {
+    setActiveView('job-discovery');
+  }, []);
+
+  const closeActiveView = useCallback(() => {
+    setActiveView(null);
+  }, []);
+
+  // Auto-runs once on entering the career-recommendation view — unlike job
+  // discovery, there's no preferences step first (career recommendation
+  // takes none), so there's nothing to wait on the user for.
+  useEffect(() => {
+    if (activeView === 'career-recommendation' && upload.record && careerRecommendation.status === 'idle') {
+      void careerRecommendation.run(upload.record.id);
+    }
+  }, [activeView, careerRecommendation, upload.record]);
 
   const runCvReview = useCallback(async () => {
     if (!upload.record) return;
@@ -81,6 +142,38 @@ export function App() {
     return <ReportPage report={guidance.report} />;
   }
 
+  if (activeView === 'career-recommendation' && upload.record) {
+    return (
+      <CareerRecommendationPage
+        status={careerRecommendation.status}
+        result={careerRecommendation.result}
+        error={careerRecommendation.error}
+        selectedUris={careerRecommendation.selectedUris}
+        onRetry={() => void careerRecommendation.run(upload.record!.id)}
+        onBack={closeActiveView}
+        onToggleOccupation={(uri) => void careerRecommendation.toggleOccupation(uri)}
+        onFindJobs={openJobDiscovery}
+      />
+    );
+  }
+
+    if (activeView === 'job-discovery' && upload.record) {
+    return (
+      <JobDiscoveryChat
+        phase={jobDiscovery.phase}
+        result={jobDiscovery.result}
+        error={jobDiscovery.error}
+        onStart={(preferences) => void jobDiscovery.start(upload.record!.id, preferences)}
+        onSubmitQueries={(queries) => void jobDiscovery.submitQueries(queries)}
+        onSubmitJudgeConfirmation={(proceed, selectedJobUrls) =>
+          void jobDiscovery.submitJudgeConfirmation(proceed, selectedJobUrls)
+        }
+        onRetry={jobDiscovery.reset}
+        onBack={closeActiveView}
+      />
+    );
+  }
+
   const stageIsBusy = upload.status !== 'idle' || Boolean(upload.file);
 
   return (
@@ -93,27 +186,43 @@ export function App() {
             Your resume knows where you&rsquo;ve been &mdash; let&rsquo;s map what&rsquo;s next.
           </p>
 
-          <div className={stageIsBusy ? styles.stageSplit : styles.stageSolo}>
-            <div className={styles.uploadWrap}>
-              <ResumeUploadPanel
-                upload={upload}
-                rejection={rejection}
-                onSelect={handleSelect}
-              />
+          {manualEntry ? (
+            <div className={styles.stageSolo}>
+              <ManualProfileForm onSubmit={handleManualSubmit} onCancel={closeManualEntry} />
             </div>
-            {stageIsBusy && (
-              <div className={styles.resultsWrap}>
-                <ResultsPanel upload={upload} />
+          ) : (
+            <>
+              <div className={stageIsBusy ? styles.stageSplit : styles.stageSolo}>
+                <div className={styles.uploadWrap}>
+                  <ResumeUploadPanel
+                    upload={upload}
+                    rejection={rejection}
+                    onSelect={handleSelect}
+                  />
+                  {!stageIsBusy && (
+                    <p className={styles.manualEntryPrompt}>
+                      Don&rsquo;t want to wait on parsing?{' '}
+                      <button className={styles.textButton} type="button" onClick={openManualEntry}>
+                        Enter your details manually instead
+                      </button>
+                    </p>
+                  )}
+                </div>
+                {stageIsBusy && (
+                  <div className={styles.resultsWrap}>
+                    <ResultsPanel upload={upload} />
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          {!stageIsBusy && (
-            <ul className={styles.promise}>
-              <li><b>Career directions</b><span>Matched against relevant occupations.</span></li>
-              <li><b>Live opportunities</b><span>Real postings, ranked and explained.</span></li>
-              <li><b>A 90-day plan</b><span>Concrete weekly steps, not generic advice.</span></li>
-            </ul>
+              {!stageIsBusy && (
+                <ul className={styles.promise}>
+                  <li><b>Career directions</b><span>Matched against relevant occupations.</span></li>
+                  <li><b>Live opportunities</b><span>Real postings, ranked and explained.</span></li>
+                  <li><b>A 90-day plan</b><span>Concrete weekly steps, not generic advice.</span></li>
+                </ul>
+              )}
+            </>
           )}
         </section>
       )}
@@ -138,6 +247,12 @@ export function App() {
               >
                 {cvLoading ? 'Checking…' : 'Major Mistakes in CV'}
               </button>
+              <button className={styles.secondaryAction} type="button" onClick={openCareerRecommendation}>
+                Get Career Recommendations
+              </button>
+              <button className={styles.secondaryAction} type="button" onClick={openJobDiscovery}>
+                Find Jobs
+              </button>
               <button className="primary-action" type="button" onClick={runReport}>
                 Get Analysis <span aria-hidden="true">→</span>
               </button>
@@ -146,11 +261,17 @@ export function App() {
 
           {cvError && <div className={styles.error}>{cvError}</div>}
 
-          <ProfileView record={upload.record} />
+          <ProfileView record={upload.record} onSaved={upload.setRecord} />
 
           <footer>
             <button className={styles.textButton} type="button" onClick={upload.reset}>
               Use another resume
+            </button>
+            <button className={styles.secondaryAction} type="button" onClick={openCareerRecommendation}>
+              Get Career Recommendations
+            </button>
+            <button className={styles.secondaryAction} type="button" onClick={openJobDiscovery}>
+              Find Jobs
             </button>
             <button className="primary-action" type="button" onClick={runReport}>
               Get Analysis <span aria-hidden="true">→</span>

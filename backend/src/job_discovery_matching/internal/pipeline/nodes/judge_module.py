@@ -15,12 +15,25 @@ is the "ranking" record), and the top `TOP_N_JUDGED` additionally get a
 from __future__ import annotations
 
 import logging
+import re
 
 from src.core.db import get_session_factory
 from src.job_discovery_matching.config import JobDiscoveryModuleConfig as Cfg
 from src.job_discovery_matching.internal.pipeline.state import PipelineState
 from src.job_discovery_matching.internal.repository import JobDiscoveryRepository
 from src.job_discovery_matching.internal.services.llm_client import JudgedJob, LLMError, judge_batch
+
+# Defensive net, not the primary fix: crawler_service.py's _clean_text is
+# where job_text should already be cleaned before it ever reaches this
+# node. This second pass exists so that a future extraction path (a new
+# source module, a cache row written before the crawler_service fix, a
+# manually-inserted posting, ...) can never smuggle raw HTML into the
+# judge LLM prompt just because it skipped that upstream cleaning step.
+_TAG_RE = re.compile(r"<[^<]+?>")
+
+
+def _strip_residual_html(text: str) -> str:
+    return _TAG_RE.sub(" ", text or "").strip()
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +61,11 @@ def _fallback_judged(entry: dict) -> JudgedJob:
 def _build_jobs_block(entries: list[dict]) -> str:
     parts = []
     for i, entry in enumerate(entries):
-        text = entry["job_text"][: Cfg.JUDGE_TEXT_CHAR_LIMIT]
+        # Strip BEFORE truncating to Cfg.JUDGE_TEXT_CHAR_LIMIT, not after —
+        # truncating first then stripping can cut mid-tag and leave a
+        # dangling '<' or an unterminated tag in the prompt, and it also
+        # wastes budget on markup that would've been removed anyway.
+        text = _strip_residual_html(entry["job_text"])[: Cfg.JUDGE_TEXT_CHAR_LIMIT]
         parts.append(f"--- JOB {i} ---\n{text}")
     return "\n\n".join(parts)
 
@@ -87,29 +104,20 @@ def _merge_entry(entry: dict, judged: JudgedJob, *, used_llm_judge: bool) -> dic
     }
 
 
-async def _persist(
-    run_id, ranked_jobs: list[dict], judged_by_index: dict[int, JudgedJob], used_llm_judge: bool
+async def _persist_judge_results(
+    to_judge: list[dict], judged_by_index: dict[int, JudgedJob], used_llm_judge: bool
 ) -> None:
+    """Rankings are already persisted by rank_persist_module.py (this node
+    runs after it) — each entry in `to_judge` already carries a
+    `ranking_id`. This only adds the judge_result row for the top
+    `Cfg.TOP_N_JUDGED` entries, not a second copy of the ranking itself."""
     session_factory = get_session_factory()
     async with session_factory() as session:
         repo = JobDiscoveryRepository(session)
-        rankings = await repo.save_rankings(
-            run_id,
-            [
-                {
-                    "posting_id": entry["posting_id"],
-                    "bm25_score": entry["bm25_score"],
-                    "embedding_score": entry["embedding_score"],
-                    "hybrid_score": entry["hybrid_score"],
-                }
-                for entry in ranked_jobs
-            ],
-        )
-        for index, ranking in enumerate(rankings):
+        for index, entry in enumerate(to_judge):
             judged = judged_by_index.get(index)
             if judged is None:
                 continue
-            entry = ranked_jobs[index]
             fallback_probability = int(round(entry["hybrid_score"] * 100))
             prob = (
                 judged.interview_probability
@@ -118,7 +126,7 @@ async def _persist(
             )
             final_score = Cfg.HYBRID_WEIGHT * entry["hybrid_score"] + Cfg.JUDGE_WEIGHT * (prob / 100.0)
             await repo.save_judge_result(
-                ranking.id,
+                entry["ranking_id"],
                 interview_probability=prob,
                 strengths=judged.strengths or [],
                 gaps=judged.gaps or [],
@@ -131,7 +139,30 @@ async def _persist(
 
 async def run(state: PipelineState) -> PipelineState:
     ranked_jobs = state.get("ranked_jobs", [])
-    to_judge = ranked_jobs[: Cfg.TOP_N_JUDGED]
+
+    # If the user picked specific jobs at judge_confirmation_gate, judge
+    # only those (matched on source_url) instead of the default top-N —
+    # this is what makes "judge only what I selected" actually true.
+    # Falls back to the original top-N-by-hybrid-score behaviour when no
+    # selection was made, so a client that never sends selected_job_urls
+    # sees no change.
+    selected_urls = state.get("selected_job_urls")
+    if selected_urls:
+        selected_set = set(selected_urls)
+        candidates = [entry for entry in ranked_jobs if entry.get("source_url") in selected_set]
+        if not candidates:
+            logger.warning(
+                "selected_job_urls matched none of %d ranked jobs; falling back to top-N",
+                len(ranked_jobs),
+            )
+            to_judge = ranked_jobs[: Cfg.TOP_N_JUDGED]
+        else:
+            # An explicit selection is honoured in full, not truncated to
+            # TOP_N_JUDGED — that cap exists to bound the automatic "judge
+            # the top N by hybrid score" case, not a user's deliberate pick.
+            to_judge = candidates
+    else:
+        to_judge = ranked_jobs[: Cfg.TOP_N_JUDGED]
 
     if not ranked_jobs:
         state["final_jobs"] = []
@@ -158,7 +189,7 @@ async def run(state: PipelineState) -> PipelineState:
     ]
     final_jobs.sort(key=lambda r: r["final_score"], reverse=True)
 
-    await _persist(state["run_id"], ranked_jobs, judged_by_index, used_llm_judge)
+    await _persist_judge_results(to_judge, judged_by_index, used_llm_judge)
 
     state["final_jobs"] = final_jobs
     state.setdefault("progress", []).append("judging_complete")

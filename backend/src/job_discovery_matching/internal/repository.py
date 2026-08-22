@@ -73,6 +73,31 @@ class JobDiscoveryRepository:
         run.completed_at = datetime.now(UTC)
         await self._session.commit()
 
+    async def set_awaiting_query_selection(self, run_id: UUID, *, generated_queries: list[str]) -> None:
+        """Marks a run paused at query_selection_gate. Deliberately does NOT
+        set completed_at — this run isn't done, it's waiting on the user.
+        `generated_queries` is stashed in `search_queries` for now; it's
+        overwritten with the queries actually used once the run resumes and
+        finish_run() is called for real."""
+        run = await self._session.get(JobDiscoveryRun, run_id)
+        if run is None:
+            return
+        run.status = "awaiting_query_selection"
+        run.search_queries = generated_queries
+        await self._session.commit()
+
+    async def set_awaiting_judge_confirmation(self, run_id: UUID) -> None:
+        """Marks a run paused at judge_confirmation_gate. No extra payload
+        to stash here (unlike set_awaiting_query_selection) — the hybrid
+        rankings are already persisted by rank_persist_module.py by the
+        time this is called, so the paused state is fully reconstructable
+        from job_discovery_rankings alone if this row is ever re-read."""
+        run = await self._session.get(JobDiscoveryRun, run_id)
+        if run is None:
+            return
+        run.status = "awaiting_judge_confirmation"
+        await self._session.commit()
+
     async def get_profile_id(self, run_id: UUID, user_id: str) -> UUID | None:
         stmt = select(JobDiscoveryRun.profile_id).where(
             JobDiscoveryRun.id == run_id, JobDiscoveryRun.user_id == user_id
@@ -229,6 +254,22 @@ class JobDiscoveryRepository:
         stmt = (
             select(JobPosting)
             .order_by(JobPosting.first_seen_at.desc())
+            .limit(limit)
+        )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def find_fresh_postings(self, *, max_age_hours: int, limit: int) -> list[JobPosting]:
+        """Postings confirmed (last_seen_at) within `max_age_hours`, most
+        recent first. Used by `db_cache_module` to build a candidate pool
+        for in-memory similarity scoring against `candidate_embedding` —
+        the DB check the pipeline runs BEFORE Adzuna / SearXNG+crawl4ai.
+        Unlike `get_fresh_posting`, this isn't keyed by a single URL."""
+        cutoff = datetime.now(UTC) - timedelta(hours=max_age_hours)
+        stmt = (
+            select(JobPosting)
+            .where(JobPosting.last_seen_at >= cutoff)
+            .order_by(JobPosting.last_seen_at.desc())
             .limit(limit)
         )
         result = await self._session.execute(stmt)

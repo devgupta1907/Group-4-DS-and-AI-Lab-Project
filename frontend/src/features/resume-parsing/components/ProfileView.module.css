@@ -6,3 +6,31 @@
 .notice {
   padding: var(--s-4) var(--s-5) 0;
 }
+
+.editBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: var(--s-4) var(--s-5) 0;
+}
+
+.editHint {
+  font: 400 13px/1.4 var(--f-sans);
+  color: var(--c-text-subtle);
+  margin: 0;
+}
+
+.editActions {
+  display: flex;
+  gap: 8px;
+}
+
+.editError {
+  margin: var(--s-4) var(--s-5) 0;
+  font: 500 13px/1.4 var(--f-sans);
+  color: var(--c-danger);
+  background: var(--c-danger-soft);
+  border-radius: 8px;
+  padding: 8px 12px;
+}

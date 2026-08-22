@@ -13,12 +13,16 @@ type ResumeUploadPanelProps = {
   /** Client-side rejection, before anything is sent. */
   rejection: string | null;
   onSelect: (file: File) => void;
+  /** Switches to filling in the profile by hand instead of uploading a
+      file. Omit to hide the option entirely. */
+  onManualEntry?: () => void;
 };
 
 export function ResumeUploadPanel({
   upload,
   rejection,
   onSelect,
+  onManualEntry,
 }: ResumeUploadPanelProps) {
   const isParsing = upload.status === 'parsing';
   const isIdle = upload.status === 'idle';
@@ -53,6 +57,12 @@ export function ResumeUploadPanel({
               disabled={isParsing}
               onSelect={onSelect}
             />
+
+            {onManualEntry && (
+              <button type="button" className={styles.manualLink} onClick={onManualEntry}>
+                Prefer not to upload a file? Enter your details manually instead.
+              </button>
+            )}
           </>
         )}
 

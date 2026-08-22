@@ -1,12 +1,22 @@
-import type { SearchPreferences } from './types';
+import type { SearchPreferences } from '../types';
 
 type Props = {
   value: SearchPreferences;
   onChange: (value: SearchPreferences) => void;
   onRun: () => void;
+  actionLabel?: string;
 };
 
-export function PreferencesPanel({ value, onChange, onRun }: Props) {
+/**
+ * Location / salary / remote-only — inputs that shape a JOB SEARCH, not a
+ * career recommendation (career recommendation takes no preferences at
+ * all, see career-guidance/careerRecommendationApi.ts). Lives here, not
+ * in career-guidance, for that reason; the combined report flow
+ * (career-guidance/useCareerGuidance.ts) still needs the same shape for
+ * its own `generateReport()` call and keeps its own copy of the
+ * `SearchPreferences` type rather than importing this feature's.
+ */
+export function PreferencesPanel({ value, onChange, onRun, actionLabel }: Props) {
   return (
     <section className="preference-panel" aria-labelledby="preferences-title">
       <div>
@@ -50,7 +60,7 @@ export function PreferencesPanel({ value, onChange, onRun }: Props) {
         </label>
       </div>
       <button className="primary-action" type="button" onClick={onRun}>
-        Build my career report <span aria-hidden="true">↗</span>
+        {actionLabel ?? 'Search for jobs'} <span aria-hidden="true">↗</span>
       </button>
     </section>
   );

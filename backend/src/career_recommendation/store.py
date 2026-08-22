@@ -142,6 +142,76 @@ def get_runs(profile_id: UUID, user_id: str | None = None, limit: int = 10) -> l
     return [_to_dict(r) for r in runs]
 
 
+class RunNotFound(Exception):
+    """No recommendation run exists for the given id (and owner, if checked)."""
+
+
+class OccupationNotFound(Exception):
+    """The occupation_uri does not appear among this run's recommendations."""
+
+
+def select_occupation(run_id: UUID, *, user_id: str, occupation_uris: list[str]) -> dict:
+    """
+    Records which recommended occupation(s) the user picked to carry into
+    the next steps (Job Discovery / Career Report). Accepts zero or more:
+    a candidate open to several directions can carry all of them into the
+    job search rather than being forced to whittle down to one, and an
+    empty list clears the pick entirely (falls back to the top 2
+    recommendations, same as never having selected anything).
+
+    Stored inside the run's own `result` JSONB blob as
+    `selected_occupation_uris` / `selected_occupation_titles` (both lists,
+    order preserved from what was picked) rather than as new columns —
+    same reasoning as the rest of this table: the result shape should be
+    free to evolve without a migration.
+
+    Raises:
+        RunNotFound: no run with this id owned by this user.
+        OccupationNotFound: one of `occupation_uris` isn't among this
+            run's recommendations — selecting something that was never
+            offered would silently corrupt downstream modules that trust it.
+    """
+    with _get_session_factory()() as session:
+        stmt = select(CareerRecommendationRun).where(
+            CareerRecommendationRun.id == run_id,
+            CareerRecommendationRun.user_id == user_id,
+        )
+        run = session.execute(stmt).scalar_one_or_none()
+        if run is None:
+            raise RunNotFound(f"No recommendation run {run_id} for this user.")
+
+        recommendations = (run.result or {}).get("recommendations", [])
+        by_uri = {r.get("occupation_uri"): r for r in recommendations}
+
+        missing = [uri for uri in occupation_uris if uri not in by_uri]
+        if missing:
+            raise OccupationNotFound(
+                f"{missing!r} are not among the occupations recommended in run {run_id}."
+            )
+
+        # Reassign the whole dict (rather than mutating run.result in
+        # place) so SQLAlchemy's change tracking picks it up regardless of
+        # whether the JSONB column is wrapped in MutableDict.
+        updated_result = dict(run.result)
+        updated_result["selected_occupation_uris"] = list(occupation_uris)
+        updated_result["selected_occupation_titles"] = [
+            by_uri[uri].get("occupation_title") for uri in occupation_uris
+        ]
+        # Drop the old singular keys so nothing downstream reads a stale
+        # pre-multi-select value alongside the new lists.
+        updated_result.pop("selected_occupation_uri", None)
+        updated_result.pop("selected_occupation_title", None)
+        run.result = updated_result
+
+        session.add(run)
+        session.commit()
+        session.refresh(run)
+        logger.info(
+            "Recorded occupation selection %r for run %s", occupation_uris, run_id
+        )
+        return _to_dict(run)
+
+
 def _to_dict(run: CareerRecommendationRun) -> dict:
     return {
         "id": str(run.id),

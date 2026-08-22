@@ -23,6 +23,7 @@ from src.resume_parsing.internal.models import (
 from src.resume_parsing.schemas import (
     CandidateProfile,
     ParseRoute,
+    ParseStage,
     ProfileRecord,
     ProfileSummary,
 )
@@ -120,6 +121,74 @@ class ResumeParsingRepository:
         )
         row = (await self._session.execute(stmt)).first()
         return None if row is None else self._to_record(row[0], row[1])
+
+    async def update_profile(
+        self, profile_id: UUID, user_id: str, profile: CandidateProfile
+    ) -> ProfileRecord | None:
+        """Overwrites the sealed profile payload in place — same row, same
+        id, same job/provenance. Used when the candidate edits what was
+        parsed (e.g. adding/correcting `contact.location`) before running
+        career recommendation or job discovery against it. `needs_review`
+        and `is_valid` are left as they were from parsing: an edit doesn't
+        retroactively mean the ORIGINAL extraction was clean, and clearing
+        them here would hide that history from the UI."""
+        stmt = (
+            select(CandidateProfileRecord, ResumeParseJob)
+            .join(ResumeParseJob, CandidateProfileRecord.job_id == ResumeParseJob.id)
+            .where(
+                CandidateProfileRecord.id == profile_id,
+                CandidateProfileRecord.user_id == user_id,
+            )
+        )
+        row = (await self._session.execute(stmt)).first()
+        if row is None:
+            return None
+        record, job = row
+        record.profile_encrypted = self._cipher.seal(profile.model_dump(mode="json"))
+        await self._session.commit()
+        return self._to_record(record, job)
+
+    async def save_manual_profile(
+        self,
+        *,
+        user_id: str,
+        profile: CandidateProfile,
+    ) -> UUID:
+        """Persists a profile typed in directly — no upload, no parse job
+        inputs, no model. `CandidateProfileRecord.job_id` is NOT NULL and
+        `_to_record`/listing both join through `ResumeParseJob` for
+        filename/route/page_count, so a minimal job row is still created;
+        every field on it takes an explicit sentinel that marks the row as
+        having skipped extraction entirely rather than having failed it.
+        """
+        job = ResumeParseJob(
+            id=uuid4(),
+            user_id=user_id,
+            filename="Manually entered",
+            media_type="application/x-manual-entry",
+            size_bytes=0,
+            page_count=0,
+            route=ParseRoute.MANUAL.value,
+            status="succeeded",
+            stage=ParseStage.READY.value,
+            model_used="manual",
+            fallback_used=False,
+            completed_at=datetime.now(UTC),
+        )
+        self._session.add(job)
+
+        record = CandidateProfileRecord(
+            id=uuid4(),
+            job_id=job.id,
+            user_id=user_id,
+            content_hash=content_hash(profile.model_dump_json().encode("utf-8")),
+            profile_encrypted=self._cipher.seal(profile.model_dump(mode="json")),
+            needs_review=[],
+            is_valid=True,
+        )
+        self._session.add(record)
+        await self._session.commit()
+        return record.id
 
     async def list_profiles(self, user_id: str) -> list[ProfileSummary]:
         stmt = (

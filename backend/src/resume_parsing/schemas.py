@@ -88,6 +88,24 @@ class CandidateProfile(_Strict):
     certifications: list[Certification] = Field(default_factory=list)
     job_titles: list[str] = Field(default_factory=list)
 
+    def has_usable_signal(self) -> bool:
+        """True if there's enough content here for career recommendation or
+        job discovery to run against.
+
+        Mirrors `career_recommendation.models.CandidateProfile.has_usable_signal`
+        by duplication, not import: this module does not import from
+        `career_recommendation` (see AGENTS.md § "No module may import
+        another module"), and the frontend's `ManualProfileForm` keeps its
+        own copy of this same check for the same reason.
+        """
+        return bool(
+            self.job_titles
+            or self.skills
+            or any(entry.job_title for entry in self.experience)
+            or any(entry.description for entry in self.projects)
+            or any(entry.degree or entry.field for entry in self.education)
+        )
+
 
 # --------------------------------------------------------------------------- #
 # Parse lifecycle
@@ -118,6 +136,13 @@ STAGE_LABELS: dict[ParseStage, str] = {
 class ParseRoute(StrEnum):
     TEXT = "text"
     VISION = "vision"
+    MANUAL = "manual"
+    """Not a parse route at all — the profile was typed in directly and never
+    went through routing, preprocessing or extraction. Kept in this enum
+    rather than a separate flag because every consumer of `ProfileRecord`
+    already branches on `route`; giving manual entry its own value means
+    they don't need a second thing to check.
+    """
 
 
 class ProfileSummary(_Strict):

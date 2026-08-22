@@ -7,7 +7,7 @@
 import { postFileForStream, request } from '@shared/api/httpClient';
 import { readSseFrames } from '@shared/api/sseClient';
 
-import type { ParseEvent, ProfileRecord, ProfileSummary } from '../types/parsedProfile';
+import type { CandidateProfile, ParseEvent, ProfileRecord, ProfileSummary } from '../types/parsedProfile';
 
 const BASE = '/resume-parsing';
 
@@ -36,6 +36,37 @@ export async function* parseResume(
 
 export function fetchProfile(profileId: string): Promise<ProfileRecord> {
   return request<ProfileRecord>(`${BASE}/profiles/${profileId}`);
+}
+
+/**
+ * Saves a profile typed in directly — no upload, no parsing. Sends the FULL
+ * `CandidateProfile` shape `ManualProfileForm` builds and gets back a normal
+ * `ProfileRecord` (route `"manual"`), the same shape a completed parse
+ * returns.
+ */
+export function submitManualProfile(profile: CandidateProfile): Promise<ProfileRecord> {
+  return request<ProfileRecord>(`${BASE}/profiles/manual`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(profile),
+  });
+}
+
+/**
+ * Overwrites the stored profile with candidate-edited content. Sends the
+ * FULL `CandidateProfile` shape, not a partial patch — the caller edits a
+ * copy of what `fetchProfile`/the upload stream returned and sends the
+ * whole thing back.
+ */
+export function updateProfile(
+  profileId: string,
+  profile: CandidateProfile,
+): Promise<ProfileRecord> {
+  return request<ProfileRecord>(`${BASE}/profiles/${profileId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(profile),
+  });
 }
 
 export function fetchProfiles(): Promise<ProfileSummary[]> {

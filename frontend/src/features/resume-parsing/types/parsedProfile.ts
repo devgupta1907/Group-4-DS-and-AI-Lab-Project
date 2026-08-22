@@ -53,7 +53,7 @@ export type CandidateProfile = {
   job_titles: string[];
 };
 
-export type ParseRoute = 'text' | 'vision';
+export type ParseRoute = 'text' | 'vision' | 'manual';
 
 export type ProfileRecord = {
   id: string;

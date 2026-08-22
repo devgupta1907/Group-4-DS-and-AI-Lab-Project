@@ -1,6 +1,7 @@
 export { CareerReportView } from './CareerReportView';
-export { PreferencesPanel } from './PreferencesPanel';
+export { CareerRecommendationPage } from './CareerRecommendationPage';
 export { useCareerGuidance } from './useCareerGuidance';
+export { useCareerRecommendation } from './useCareerRecommendation';
 export { reviewCv } from './api';
 export type { CvFinding, CvReview } from './api';
-export type { SearchPreferences } from './types';
+export type { SearchPreferences, CareerRecommendation, CareerResult } from './types';

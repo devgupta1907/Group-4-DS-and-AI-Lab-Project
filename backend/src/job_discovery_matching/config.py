@@ -16,9 +16,17 @@ from src.core.config import GlobalConfig
 class JobDiscoveryModuleConfig:
     """Constants and env-backed settings specific to this module."""
 
-    # --- search (SearXNG) ---
+    # --- search (SearXNG) — fallback source, used only when Adzuna misses ---
     SEARXNG_URL = os.getenv("SEARXNG_URL", "http://localhost:8080")
     SEARXNG_TIMEOUT_SECONDS = 100000
+
+    # --- search (Adzuna) — primary source, see internal/services/adzuna_client.py ---
+    ADZUNA_APP_ID = os.getenv("ADZUNA_APP_ID", "")
+    ADZUNA_APP_KEY = os.getenv("ADZUNA_APP_KEY", "")
+    ADZUNA_BASE_URL = os.getenv("ADZUNA_BASE_URL", "https://api.adzuna.com/v1/api")
+    ADZUNA_COUNTRY = os.getenv("ADZUNA_COUNTRY", "gb")
+    ADZUNA_TIMEOUT_SECONDS = float(os.getenv("ADZUNA_TIMEOUT_SECONDS", "30"))
+    ADZUNA_RESULTS_PER_QUERY = int(os.getenv("ADZUNA_RESULTS_PER_QUERY", "10"))
 
     # --- crawling (crawl4ai) — zero LLM calls, see internal/services/crawler_service.py ---
     CRAWL_CONCURRENCY = int(os.getenv("JOB_DISCOVERY_CRAWL_CONCURRENCY", "3"))
@@ -27,6 +35,21 @@ class JobDiscoveryModuleConfig:
     # A cached posting (job_discovery_postings row) is reused rather than
     # re-crawled within this window, shared across ALL users/runs.
     POSTING_CACHE_TTL_HOURS = int(os.getenv("JOB_DISCOVERY_CACHE_TTL_HOURS", "24"))
+
+    # --- DB cache — checked FIRST, before Adzuna and before SearXNG+crawl4ai ---
+    # A posting counts as "fresh" if it was last confirmed by ANY previous
+    # run (any user) within this many hours ("created dated is less than a
+    # day" -> default 24). Deliberately the same clock as
+    # POSTING_CACHE_TTL_HOURS (one cache, one TTL) but kept as its own knob
+    # in case the two ever need to diverge.
+    DB_CACHE_MAX_AGE_HOURS = int(os.getenv("JOB_DISCOVERY_DB_CACHE_MAX_AGE_HOURS", "24"))
+    # Cosine similarity (0-1, after the same [-1,1]->[0,1] clip matching_module
+    # uses) a cached posting must clear against candidate_embedding to count
+    # as a "similar match" and be served straight from the DB.
+    DB_CACHE_SIMILARITY_THRESHOLD = float(os.getenv("JOB_DISCOVERY_DB_CACHE_SIMILARITY_THRESHOLD", "0.55"))
+    # How many fresh rows to pull from Postgres before scoring in Python
+    # (kept separate from MAX_JOB_URLS so this can be tuned independently).
+    DB_CACHE_POOL_SIZE = int(os.getenv("JOB_DISCOVERY_DB_CACHE_POOL_SIZE", "200"))
 
     # --- pipeline limits ---
     NUM_SEARCH_QUERIES = 6      # candidate profile -> N queries, 1 LLM call

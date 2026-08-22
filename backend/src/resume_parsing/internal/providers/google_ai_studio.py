@@ -159,7 +159,7 @@ class GoogleAiStudioProvider:
                 model=model, contents=contents, config=config
             )
         except Exception as exc:  # SDK raises a wide family of transport errors
-            logger.warning("Extraction call failed on %s: %s", model, type(exc).__name__)
+            logger.warning("Extraction call failed on %s: %s: %s", model, type(exc).__name__, exc)
             raise ProviderError(f"Model call to {model} failed.") from exc
 
         return extract_json_object(response.text or "")

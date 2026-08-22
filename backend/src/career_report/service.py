@@ -27,12 +27,84 @@ from src.career_report.schemas import (
 from src.core.db import get_session_factory
 from src.core.security import CurrentUser
 from src.job_discovery_matching import service as jobs_service
-from src.job_discovery_matching.models import SearchPreferences
+from src.job_discovery_matching.models import JobDiscoveryResult, SearchPreferences
 from src.resume_parsing.service import ResumeParsingService
 
 
 class ReportSourceNotFound(Exception):
     pass
+
+
+# Statuses discover_jobs_for_profile() can return mid-pipeline rather than
+# terminal, each corresponding to one of the pipeline's two interrupts
+# (query_selection_gate, judge_confirmation_gate).
+_AWAITING_STATUSES = {"awaiting_query_selection", "awaiting_judge_confirmation"}
+
+
+async def _run_job_discovery_to_completion(
+    profile,
+    *,
+    profile_id: UUID,
+    user_id: str,
+    preferences: SearchPreferences,
+) -> JobDiscoveryResult:
+    """
+    discover_jobs_for_profile() now pauses mid-pipeline at two gates —
+    query_selection_gate and judge_confirmation_gate — added for the
+    standalone Job Discovery page, which has UI to answer both (see
+    JobDiscoveryPage's onSubmitQueries / onSubmitJudgeConfirmation).
+
+    The combined report flow ("Get Analysis") has no such UI and is meant
+    to complete in one click, so it auto-resumes through whichever gates
+    it hits — narrowed to keep it cheap:
+
+      - query_selection_gate: runs only the first 2 of the (usually 6)
+        LLM-generated queries, not all of them. Fewer queries means fewer
+        Adzuna/SearXNG searches and fewer crawl4ai fetches — this is
+        where the real cost and breadth live, not the judge call.
+      - judge_confirmation_gate: judges only the top 2 ranked jobs
+        (`ranked_jobs` is already hybrid-score-sorted before this gate,
+        per rank_persist_module.py, so `top_jobs[:2]` are genuinely the
+        best 2) instead of the default top 5
+        (`JobDiscoveryModuleConfig.TOP_N_JUDGED`). Still one batched LLM
+        call either way — this shrinks it rather than skipping it — so
+        the report keeps real interview-probability/strengths/gaps data,
+        just for fewer jobs.
+
+    generate_report() only ever displays `top_jobs[:5]` regardless, so
+    narrowing to 2 here does trade off breadth in the report itself, not
+    just discovery cost.
+
+    Bounded to a few rounds as a defensive measure only; the pipeline has
+    exactly two gates today, so three resumes is already more than a
+    correctly-behaving run should ever need.
+    """
+    result = await jobs_service.discover_jobs_for_profile(
+        profile, profile_id=profile_id, user_id=user_id, preferences=preferences
+    )
+
+    rounds = 0
+    while result.status in _AWAITING_STATUSES and result.run_id is not None and rounds < 5:
+        rounds += 1
+        if result.status == "awaiting_query_selection":
+            narrowed_queries = (result.generated_queries or [])[:2]
+            result = await jobs_service.resume_query_selection(
+                result.run_id,
+                user_id=user_id,
+                selected_queries=narrowed_queries or (result.generated_queries or []),
+            )
+        else:  # awaiting_judge_confirmation
+            top_urls = [
+                job.job.source_url for job in result.top_jobs[:2] if job.job.source_url
+            ]
+            result = await jobs_service.resume_judge_confirmation(
+                result.run_id,
+                user_id=user_id,
+                proceed=True,
+                selected_job_urls=top_urls or None,
+            )
+
+    return result
 
 
 def _period(start: str | None, end: str | None, current: bool = False) -> str:
@@ -111,7 +183,7 @@ async def run_guidance_pipeline(
     if career_run_id is None:
         raise ReportSourceNotFound
 
-    jobs_result = await jobs_service.discover_jobs_for_profile(
+    jobs_result = await _run_job_discovery_to_completion(
         record.profile,
         profile_id=profile_id,
         user_id=user.id,

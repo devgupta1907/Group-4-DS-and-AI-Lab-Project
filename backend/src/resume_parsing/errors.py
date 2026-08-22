@@ -65,6 +65,15 @@ class ProfileNotFound(ResumeParsingError):
     message = "No such profile."
 
 
+class EmptyManualProfile(ResumeParsingError):
+    code = "empty_manual_profile"
+    http_status = status.HTTP_422_UNPROCESSABLE_ENTITY
+    message = (
+        "Add at least one skill, job title, piece of experience, education "
+        "or project before saving."
+    )
+
+
 def register_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(ResumeParsingError)
     async def _handle(_: Request, exc: ResumeParsingError) -> JSONResponse:
