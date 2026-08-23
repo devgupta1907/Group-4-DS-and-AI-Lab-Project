@@ -24,7 +24,12 @@ class JobDiscoveryModuleConfig:
     ADZUNA_APP_ID = os.getenv("ADZUNA_APP_ID", "")
     ADZUNA_APP_KEY = os.getenv("ADZUNA_APP_KEY", "")
     ADZUNA_BASE_URL = os.getenv("ADZUNA_BASE_URL", "https://api.adzuna.com/v1/api")
-    ADZUNA_COUNTRY = os.getenv("ADZUNA_COUNTRY", "gb")
+    # Was "gb" (United Kingdom) — every request went to
+    # /jobs/gb/search/... while passing Indian cities as `where`, so
+    # Adzuna returned 0 results on literally every query and the pipeline
+    # always fell through to SearXNG. Adzuna is country-scoped by URL
+    # path, not inferred from the location string.
+    ADZUNA_COUNTRY = os.getenv("ADZUNA_COUNTRY", "in")
     ADZUNA_TIMEOUT_SECONDS = float(os.getenv("ADZUNA_TIMEOUT_SECONDS", "30"))
     ADZUNA_RESULTS_PER_QUERY = int(os.getenv("ADZUNA_RESULTS_PER_QUERY", "10"))
 
@@ -34,7 +39,7 @@ class JobDiscoveryModuleConfig:
 
     # A cached posting (job_discovery_postings row) is reused rather than
     # re-crawled within this window, shared across ALL users/runs.
-    POSTING_CACHE_TTL_HOURS = int(os.getenv("JOB_DISCOVERY_CACHE_TTL_HOURS", "0"))
+    POSTING_CACHE_TTL_HOURS = int(os.getenv("JOB_DISCOVERY_CACHE_TTL_HOURS", "1"))
 
     # --- DB cache — checked FIRST, before Adzuna and before SearXNG+crawl4ai ---
     # A posting counts as "fresh" if it was last confirmed by ANY previous
@@ -42,7 +47,7 @@ class JobDiscoveryModuleConfig:
     # day" -> default 24). Deliberately the same clock as
     # POSTING_CACHE_TTL_HOURS (one cache, one TTL) but kept as its own knob
     # in case the two ever need to diverge.
-    DB_CACHE_MAX_AGE_HOURS = int(os.getenv("JOB_DISCOVERY_DB_CACHE_MAX_AGE_HOURS", "0"))
+    DB_CACHE_MAX_AGE_HOURS = int(os.getenv("JOB_DISCOVERY_DB_CACHE_MAX_AGE_HOURS", "1"))
     # Cosine similarity (0-1, after the same [-1,1]->[0,1] clip matching_module
     # uses) a cached posting must clear against candidate_embedding to count
     # as a "similar match" and be served straight from the DB.

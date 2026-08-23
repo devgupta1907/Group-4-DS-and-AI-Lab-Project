@@ -108,26 +108,32 @@ def _guarded(name: str, fn):
 
 def route_after_db_cache(state: PipelineState) -> str:
     """DB cache produced jobs (or errored) -> skip straight to hard_filter.
-    Nothing in the DB cache cleared the similarity/freshness bar -> try
-    Adzuna next."""
-    if state.get("error"):
-        return "hard_filter"
-    if state.get("raw_jobs"):
-        return "hard_filter"
-    return "adzuna_module"
+    Nothing in the DB cache cleared the similarity/freshness bar -> run the
+    SearXNG + crawl4ai path next.
 
-
-def route_after_adzuna(state: PipelineState) -> str:
-    """Adzuna produced jobs (or the node errored) -> skip straight to
-    hard_filter. Adzuna came back empty -> fall back to the SearXNG +
-    crawl4ai path (search_module -> extraction_module)."""
+    Order changed: SearXNG now comes BEFORE Adzuna. Adzuna is a structured
+    aggregator whose Indian coverage is thin — in practice it returned zero
+    results for essentially every query — whereas SearXNG queries the job
+    boards Indian postings actually live on (Naukri, Shine, Instahyre,
+    LinkedIn). Adzuna is still worth keeping as a top-up when SearXNG comes
+    back empty, but it should not be the first thing consulted."""
     if state.get("error"):
-        # Let the already-set error short-circuit the fallback nodes too,
-        # rather than re-entering a path that will also just no-op.
         return "hard_filter"
     if state.get("raw_jobs"):
         return "hard_filter"
     return "search_module"
+
+
+def route_after_extraction(state: PipelineState) -> str:
+    """SearXNG + crawl produced jobs (or errored) -> hard_filter. Came back
+    with nothing -> try Adzuna as a last top-up before giving up."""
+    if state.get("error"):
+        # Let the already-set error short-circuit the fallback node too,
+        # rather than re-entering a path that will also just no-op.
+        return "hard_filter"
+    if state.get("raw_jobs"):
+        return "hard_filter"
+    return "adzuna_module"
 
 
 def route_after_judge_confirmation(state: PipelineState) -> str:
@@ -178,15 +184,15 @@ def build_pipeline(checkpointer=None):
     graph.add_conditional_edges(
         "db_cache_module",
         route_after_db_cache,
-        {"hard_filter": "hard_filter", "adzuna_module": "adzuna_module"},
-    )
-    graph.add_conditional_edges(
-        "adzuna_module",
-        route_after_adzuna,
         {"hard_filter": "hard_filter", "search_module": "search_module"},
     )
     graph.add_edge("search_module", "extraction_module")
-    graph.add_edge("extraction_module", "hard_filter")
+    graph.add_conditional_edges(
+        "extraction_module",
+        route_after_extraction,
+        {"hard_filter": "hard_filter", "adzuna_module": "adzuna_module"},
+    )
+    graph.add_edge("adzuna_module", "hard_filter")
     graph.add_edge("hard_filter", "matching_module")
     graph.add_edge("matching_module", "rank_persist_module")
     graph.add_edge("rank_persist_module", "judge_confirmation_gate")

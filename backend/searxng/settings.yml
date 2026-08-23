@@ -12,6 +12,20 @@ search:
 
   max_request_timeout: 10.0
 
+  # WHY THIS MATTERS MORE THAN ANYTHING ELSE HERE:
+  # Without a region, queries resolve against a generic (largely US/UK
+  # weighted) index. That is why a query whose text literally read
+  # "accountant jobs in Mumbai" came back with Gorakhpur job-board pages —
+  # the engines were not wrong about the words, they simply had no Indian
+  # relevance signal to rank on. Job search in this project is
+  # India-focused, so say so at the engine level rather than hoping the
+  # query string carries it.
+  default_lang: "en-IN"
+
+  # Autocomplete is unused by the JSON API this project calls; off by
+  # default, stated explicitly so it is not accidentally enabled later.
+  autocomplete: ""
+
 server:
   secret_key: "career-agent-local-development-secret"
 
@@ -33,27 +47,36 @@ outgoing:
 
 engines:
 
-  # Primary
-  - name: mojeek
+  # --- Primary: broad, India-capable general indexes ---------------------
+  #
+  # Previously only mojeek + bing were enabled. Mojeek runs its own small
+  # independent crawl with thin Indian coverage, so it was effectively
+  # steering results for half of every search. It is kept, but no longer
+  # carries the load alone.
+
+  - name: duckduckgo
     disabled: false
     timeout: 6.0
 
-  # Secondary
   - name: bing
     disabled: false
     timeout: 6.0
 
-  # Disable engines that commonly CAPTCHA/rate-limit automated requests
-  - name: duckduckgo
-    disabled: true
-
   - name: brave
-    disabled: true
+    disabled: false
+    timeout: 6.0
 
   - name: startpage
-    disabled: true
+    disabled: false
+    timeout: 6.0
 
-  # Unnecessary for job searching
+  # Small independent index. Useful for diversity, poor on Indian job
+  # boards — demoted from "primary" to one voice among several.
+  - name: mojeek
+    disabled: false
+    timeout: 6.0
+
+  # --- Unnecessary for job searching -------------------------------------
   - name: wikipedia
     disabled: true
 
@@ -63,5 +86,5 @@ engines:
   - name: currency
     disabled: true
 
-  # Do NOT add:
-  # duckduckgo definitionsdocker stop searxng-core
+  - name: duckduckgo definitions
+    disabled: true

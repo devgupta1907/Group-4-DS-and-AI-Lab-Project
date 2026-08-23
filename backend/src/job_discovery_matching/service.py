@@ -87,6 +87,28 @@ async def discover_jobs_for_profile(
             error            - the pipeline itself raised
     """
     prefs = (preferences or SearchPreferences()).model_dump()
+
+    # Resolve the location fallback HERE, at the pipeline's own entry point,
+    # so every caller behaves identically.
+    #
+    # career_report/service.py already did this before calling us, but the
+    # standalone job-search API (api.py -> here, which is what Rapid Search
+    # uses) did not — so a search started with an empty preferences panel
+    # arrived with target_locations == [], and hard_filter's
+    # `if not target_locations: return True` let through jobs in ANY city.
+    # That is how a candidate whose resume says Jalore got results in
+    # Gorakhpur: not a filter that matched wrongly, a filter that was never
+    # given anything to match against.
+    #
+    # An empty list past this point now genuinely means "no location signal
+    # exists anywhere", not merely "the user did not type one".
+    if not prefs.get("target_locations") and profile.contact.location:
+        prefs["target_locations"] = [profile.contact.location]
+        logger.info(
+            "No target locations supplied — defaulting to the resume's own "
+            "location: %r", profile.contact.location,
+        )
+
     candidate_json = from_parsed_resume(profile, preferences=prefs)
 
     # Chain the modules: search on the ESCO occupations Career Recommendation

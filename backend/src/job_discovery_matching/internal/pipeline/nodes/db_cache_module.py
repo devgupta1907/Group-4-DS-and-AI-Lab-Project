@@ -29,6 +29,10 @@ import logging
 
 from src.core.db import get_session_factory
 from src.job_discovery_matching.config import JobDiscoveryModuleConfig as Cfg
+from src.job_discovery_matching.internal.pipeline.nodes.hard_filter import (
+    _passes_location,
+    _passes_salary,
+)
 from src.job_discovery_matching.internal.pipeline.state import PipelineState
 from src.job_discovery_matching.internal.repository import JobDiscoveryRepository
 from src.job_discovery_matching.internal.services.embedding_client import cosine_similarity
@@ -44,7 +48,9 @@ def _similarity(candidate_embedding: list[float], posting_embedding: list[float]
 
 
 async def run(state: PipelineState) -> PipelineState:
+    candidate = state["candidate_json"]
     candidate_embedding = state["candidate_embedding"]
+    preferences = state.get("preferences") or {}
 
     session_factory = get_session_factory()
     async with session_factory() as session:
@@ -55,10 +61,25 @@ async def run(state: PipelineState) -> PipelineState:
         )
 
     scored = []
+    similarity_hits = 0
     for posting in pool:
         score = _similarity(candidate_embedding, posting.embedding)
-        if score >= Cfg.DB_CACHE_SIMILARITY_THRESHOLD:
-            scored.append((score, posting))
+        if score < Cfg.DB_CACHE_SIMILARITY_THRESHOLD:
+            continue
+        similarity_hits += 1
+        # Embedding similarity says "this job suits this profile", NOT
+        # "this job is where the user wants to work" — a Bengaluru role can
+        # be highly similar to a candidate searching only in Jalore. This
+        # cache is shared across ALL users and searches, so without the
+        # same location/salary checks hard_filter applies, the very first
+        # source in the pipeline could satisfy the run entirely with
+        # postings in the wrong city, and Adzuna/SearXNG would never even
+        # be consulted.
+        if not _passes_location(candidate, posting.job_json, posting.job_text, preferences):
+            continue
+        if not _passes_salary(posting.job_json, posting.job_text, preferences):
+            continue
+        scored.append((score, posting))
 
     scored.sort(key=lambda pair: pair[0], reverse=True)
     top = scored[: Cfg.MAX_JOB_URLS]
@@ -79,9 +100,10 @@ async def run(state: PipelineState) -> PipelineState:
 
     logger.info(
         "DB cache check: %d fresh postings in pool (<= %dh old), %d cleared "
-        "similarity >= %.2f -> %d used",
-        len(pool), Cfg.DB_CACHE_MAX_AGE_HOURS, len(scored),
-        Cfg.DB_CACHE_SIMILARITY_THRESHOLD, len(raw_jobs),
+        "similarity >= %.2f, %d of those also matched location/salary "
+        "preferences -> %d used",
+        len(pool), Cfg.DB_CACHE_MAX_AGE_HOURS, similarity_hits,
+        Cfg.DB_CACHE_SIMILARITY_THRESHOLD, len(scored), len(raw_jobs),
     )
     if not raw_jobs:
         logger.info("No DB cache match — falling through to adzuna_module.")
