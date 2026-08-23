@@ -24,7 +24,7 @@ async def create_report(
             profile_id=request.profile_id,
             career_run_id=request.career_run_id,
             preferences=SearchPreferences(
-                target_location=request.target_location,
+                target_locations=request.target_locations,
                 remote_only=request.remote_only,
                 min_salary_lpa=request.min_salary_lpa,
             ),

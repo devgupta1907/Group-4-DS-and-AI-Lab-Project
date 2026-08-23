@@ -49,20 +49,34 @@ def _current_role(parsed: ParsedProfile) -> str:
     return ""
 
 
-def from_parsed_resume(parsed: ParsedProfile) -> dict[str, Any]:
+def from_parsed_resume(
+    parsed: ParsedProfile, preferences: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """Translates a Resume Parsing profile into the internal candidate dict
     the ported job-discovery pipeline (query_generator, hard_filter,
     matching_module, judge_module) reads out of `state["candidate_json"]`.
-    """
+
+    `preferences` (a `SearchPreferences.model_dump()`) overlays the
+    candidate's SEARCH-TIME choices on top of what the resume says about
+    them: `target_location` overrides the resume's `contact.location` for
+    `location` (a candidate may live in Delhi but be searching for
+    Bengaluru roles), `remote_only` sets `remote_ok`, and `min_salary_lpa`
+    is no longer left at a hardcoded 0.0 -- it now reflects what the
+    candidate actually asked for, since these three fields are exactly
+    what query_generator/hard_filter/judge_module read `candidate_json`
+    for. Falling back to the resume's own location keeps this backward
+    compatible with any caller that doesn't pass preferences."""
+    prefs = preferences or {}
+    target_location = prefs.get("target_location") or (parsed.contact.location or "")
     return {
         "current_role": _current_role(parsed),
         "target_roles": list(parsed.job_titles),
         "skills": list(parsed.skills),
         "domain": "",
-        "location": parsed.contact.location or "",
-        "remote_ok": False,
+        "location": target_location,
+        "remote_ok": bool(prefs.get("remote_only", False)),
         "experience_years": None,
-        "min_salary_lpa": 0.0,
+        "min_salary_lpa": float(prefs.get("min_salary_lpa") or 0.0),
         "education": (parsed.education[0].degree or "") if parsed.education else "",
     }
 

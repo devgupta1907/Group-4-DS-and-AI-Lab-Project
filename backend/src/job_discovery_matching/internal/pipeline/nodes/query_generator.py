@@ -17,24 +17,33 @@ from src.job_discovery_matching.internal.services.llm_client import LLMError, ge
 logger = logging.getLogger(__name__)
 
 
-def _heuristic_query(candidate: dict) -> str:
+def _heuristic_query(candidate: dict, preferences: dict | None = None) -> str:
     role = candidate.get("current_role") or (candidate.get("target_roles") or [None])[0]
-    if role:
-        return f"{role} jobs"
-    skills = candidate.get("skills") or []
-    if skills:
-        return " ".join(skills[:3]) + " jobs"
-    return "jobs"
+    base = f"{role} jobs" if role else None
+    if base is None:
+        skills = candidate.get("skills") or []
+        base = " ".join(skills[:3]) + " jobs" if skills else "jobs"
+
+    prefs = preferences or {}
+    if prefs.get("remote_only"):
+        return f"{base} remote"
+    target_location = prefs.get("target_location")
+    if target_location:
+        return f"{base} in {target_location}"
+    return base
 
 
 async def run(state: PipelineState) -> PipelineState:
     candidate_json = state["candidate_json"]
+    preferences = state.get("preferences") or {}
 
     try:
-        queries = await generate_search_queries(candidate_json, Cfg.NUM_SEARCH_QUERIES)
+        queries = await generate_search_queries(
+            candidate_json, Cfg.NUM_SEARCH_QUERIES, preferences=preferences
+        )
     except LLMError as exc:
         logger.warning("Query generator LLM call failed, falling back to a heuristic query: %s", exc)
-        queries = [_heuristic_query(candidate_json)]
+        queries = [_heuristic_query(candidate_json, preferences)]
 
     state["search_queries"] = queries
     state.setdefault("progress", []).append("queries_generated")

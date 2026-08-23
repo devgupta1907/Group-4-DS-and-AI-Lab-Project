@@ -1,6 +1,4 @@
-# Minimal SearXNG settings for the Autonomous AI Career Agent.
-# SearXNG disables the JSON API by default; we enable it here so the
-# backend's searxng_client can request format=json.
+# SearXNG configuration for Autonomous AI Career Agent
 
 use_default_settings: true
 
@@ -11,13 +9,21 @@ search:
   formats:
     - html
     - json
-  # SearXNG waits only 3s by default. A slow engine that would have
-  # answered is dropped, and from the client's side that is
-  # indistinguishable from "no results".
+
   max_request_timeout: 10.0
 
 server:
-  secret_key: "change-this-secret-key-in-production"
+  secret_key: "career-agent-local-development-secret"
+
+  # Listen on all interfaces inside Docker
+  bind_address: "0.0.0.0"
+  port: 8080
+
+  # IMPORTANT:
+  # Disable limiter/bot protection for local development.
+  limiter: false
+
+  image_proxy: false
 
 outgoing:
   request_timeout: 8.0
@@ -25,54 +31,37 @@ outgoing:
   pool_connections: 100
   pool_maxsize: 20
 
-# Engine selection.
-#
-# The defaults lean on Google, DuckDuckGo, Startpage and Brave, all of
-# which throttle or CAPTCHA a self-hosted instance once it has issued a
-# few hundred queries from one IP. Observed after roughly two hours of
-# testing:
-#     brave        -> too many requests
-#     duckduckgo   -> CAPTCHA
-#     google cse   -> too many requests
-#     startpage    -> CAPTCHA
-# With all four blocked every query returns zero results while SearXNG
-# still answers HTTP 200, so the failure is silent.
-#
-# Mojeek runs its own crawler and does not challenge automated clients,
-# so it keeps returning results when the others have shut the door. Bing
-# is more tolerant than Google and is kept as a second source. The
-# blocked engines stay enabled deliberately: they are the better sources
-# when they are available, and SearXNG merges whatever responds rather
-# than failing on the ones that do not.
 engines:
+
+  # Primary
   - name: mojeek
     disabled: false
     timeout: 6.0
 
+  # Secondary
   - name: bing
     disabled: false
     timeout: 6.0
 
+  # Disable engines that commonly CAPTCHA/rate-limit automated requests
   - name: duckduckgo
-    disabled: false
-    timeout: 5.0
+    disabled: true
 
   - name: brave
-    disabled: false
-    timeout: 5.0
+    disabled: true
 
   - name: startpage
-    disabled: false
-    timeout: 5.0
+    disabled: true
 
-  # Reference sources return encyclopedia articles for a job-title query,
-  # which the crawler then fetches and the judge discards. Turning them
-  # off removes that work rather than filtering it later.
+  # Unnecessary for job searching
   - name: wikipedia
     disabled: true
+
   - name: wikidata
     disabled: true
+
   - name: currency
     disabled: true
-  - name: duckduckgo definitions
-    disabled: true
+
+  # Do NOT add:
+  # duckduckgo definitionsdocker stop searxng-core

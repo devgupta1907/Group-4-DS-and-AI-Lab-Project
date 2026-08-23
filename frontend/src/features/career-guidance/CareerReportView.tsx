@@ -21,7 +21,6 @@ export function CareerReportView({ report }: Props) {
               || content.job_titles.join(' · ')
               || 'Professional profile'}
           </p>
-          <p className={styles.intro}>{content.narrative.headline}</p>
         </div>
         <div className={styles.heroActions}>
           <span>Generated {new Date(report.created_at).toLocaleDateString()}</span>

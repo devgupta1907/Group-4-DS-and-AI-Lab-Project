@@ -49,10 +49,24 @@ def _do_run_migrations(connection) -> None:
 
 
 async def _run_async_migrations() -> None:
+    # Same fix as src/core/db.py:get_engine() — Supabase's transaction-mode
+    # pooler (PgBouncer) doesn't support asyncpg's prepared statements, and
+    # this function builds its own separate engine via async_engine_from_config
+    # rather than reusing get_engine(), so it never inherited that fix.
+    # Without it: asyncpg.exceptions.DuplicatePreparedStatementError on the
+    # very first query (SELECT pg_catalog.version()) that SQLAlchemy issues
+    # to identify the server.
+    url = config.get_main_option("sqlalchemy.url", "")
+    is_asyncpg = url.startswith("postgresql+asyncpg")
+    connect_args = (
+        {"statement_cache_size": 0, "prepared_statement_cache_size": 0} if is_asyncpg else {}
+    )
+
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=NullPool,
+        connect_args=connect_args,
     )
     async with connectable.connect() as connection:
         await connection.run_sync(_do_run_migrations)

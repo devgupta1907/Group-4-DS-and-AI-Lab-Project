@@ -35,7 +35,7 @@ export function ReviewStage({
       <header>
         <div>
           <p className="eyebrow">Step 02 · Review parsed resume</p>
-          <h1>Check what we extracted before analysis.</h1>
+          <h1>Extracted Profile</h1>
           <p>
             {editing.isEditing
               ? 'Fix anything the parser missed or got wrong — this is what the rest of the pipeline will see.'

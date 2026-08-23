@@ -3,8 +3,10 @@ import { useCallback, useMemo, useState } from 'react';
 import {
   CareerReportView,
   reviewCv,
+  SearchPreferencesDialog,
   useCareerGuidance,
   type CvReview,
+  type SearchPreferences,
 } from '@features/career-guidance';
 import { FeedbackWidget } from '@features/feedback';
 import {
@@ -17,8 +19,8 @@ import { CvReviewDialog } from './CvReviewDialog';
 import { ReviewStage } from './ReviewStage';
 import { UploadStage } from './UploadStage';
 
-const DEFAULT_PREFERENCES = {
-  target_location: null,
+const DEFAULT_PREFERENCES: SearchPreferences = {
+  target_locations: [],
   remote_only: false,
   min_salary_lpa: null,
 };
@@ -31,6 +33,11 @@ export function App() {
   const [cvReview, setCvReview] = useState<CvReview | null>(null);
   const [cvLoading, setCvLoading] = useState(false);
   const [cvError, setCvError] = useState<string | null>(null);
+  const [showPreferences, setShowPreferences] = useState(false);
+  // Held so a retry after failure (AnalysisStage's onRetry) repeats with the
+  // same search preferences instead of silently re-asking or silently
+  // dropping back to defaults.
+  const [lastPreferences, setLastPreferences] = useState<SearchPreferences>(DEFAULT_PREFERENCES);
 
   const step = useMemo(() => {
     if (guidance.report) return 4;
@@ -58,9 +65,34 @@ export function App() {
   // bare occupation titles, which is not enough for the user to decide
   // anything on. The occupations still appear in the report, where they carry
   // their evidence.
-  const runReport = useCallback(() => {
+  //
+  // A short preferences dialog (location/remote/salary) now sits in front of
+  // that instead — "Get Analysis" opens it rather than building the report
+  // directly; the dialog's own Submit/Skip is what actually triggers
+  // guidance.buildReport.
+  const openPreferences = useCallback(() => setShowPreferences(true), []);
+
+  const submitPreferences = useCallback(
+    (preferences: SearchPreferences) => {
+      setShowPreferences(false);
+      setLastPreferences(preferences);
+      if (upload.record) void guidance.buildReport(upload.record.id, preferences);
+    },
+    [guidance, upload.record],
+  );
+
+  const skipPreferences = useCallback(() => {
+    setShowPreferences(false);
+    setLastPreferences(DEFAULT_PREFERENCES);
     if (upload.record) void guidance.buildReport(upload.record.id, DEFAULT_PREFERENCES);
   }, [guidance, upload.record]);
+
+  // Retry after a failed report: repeat with whatever preferences were used
+  // last time, not re-ask — the dialog is a one-time input step, not
+  // something to interrupt a retry with.
+  const retryReport = useCallback(() => {
+    if (upload.record) void guidance.buildReport(upload.record.id, lastPreferences);
+  }, [guidance, upload.record, lastPreferences]);
 
   const runCvReview = useCallback(async () => {
     if (!upload.record) return;
@@ -97,17 +129,20 @@ export function App() {
           cvLoading={cvLoading}
           cvError={cvError}
           onRunCvReview={runCvReview}
-          onRunReport={runReport}
+          onRunReport={openPreferences}
           onReset={upload.reset}
           onProfileSaved={upload.setRecord}
         />
       )}
 
       {step === 3 && (
-        <AnalysisStage error={guidance.error} onRetry={runReport} />
+        <AnalysisStage error={guidance.error} onRetry={retryReport} />
       )}
 
       {cvReview && <CvReviewDialog review={cvReview} onClose={closeCvReview} />}
+      {showPreferences && (
+        <SearchPreferencesDialog onSubmit={submitPreferences} onSkip={skipPreferences} />
+      )}
 
       {/* Rendered once, outside the step branches, so the same button is
           available at every stage — including to someone who abandons the

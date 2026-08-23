@@ -27,12 +27,92 @@ from src.career_report.schemas import (
 from src.core.db import get_session_factory
 from src.core.security import CurrentUser
 from src.job_discovery_matching import service as jobs_service
-from src.job_discovery_matching.models import SearchPreferences
+from src.job_discovery_matching.models import JobDiscoveryResult, SearchPreferences
 from src.resume_parsing.service import ResumeParsingService
 
 
 class ReportSourceNotFound(Exception):
     pass
+
+
+# Statuses discover_jobs_for_profile() can return mid-pipeline rather than
+# terminal, each corresponding to one of the pipeline's two interrupts
+# (query_selection_gate, judge_confirmation_gate).
+_AWAITING_STATUSES = {"awaiting_query_selection", "awaiting_judge_confirmation"}
+
+
+async def _run_job_discovery_to_completion(
+    profile,
+    *,
+    profile_id: UUID,
+    user_id: str,
+    preferences: SearchPreferences,
+) -> JobDiscoveryResult:
+    """
+    discover_jobs_for_profile() now pauses mid-pipeline at two gates —
+    query_selection_gate and judge_confirmation_gate. The combined report
+    flow ("Get Analysis") has no UI for either, so it auto-resumes through
+    whichever gates it hits — currently WITHOUT narrowing either one:
+
+      - query_selection_gate: passes ALL of the LLM-generated queries
+        (usually 6), not a subset. Used to narrow to [:2] as a cost
+        tradeoff (fewer external Adzuna/SearXNG calls) — but once
+        location/salary/is_real_vacancy started genuinely filtering
+        (rather than being nominally present with little actually
+        rejected), 2 queries -> too few raw candidates -> real attrition
+        downstream could leave nothing left standing. Measured ~10.5s
+        total (SearXNG + extraction combined) for 2 queries in testing,
+        so 6 should still land comfortably inside a 1-minute budget on a
+        cold run — revisit if that stops being true.
+      - judge_confirmation_gate: passes selected_job_urls=None, i.e. NO
+        narrowing — judge_module then uses its own default (top
+        TOP_N_JUDGED by hybrid score). This used to pass only the top 2
+        job URLs, on the assumption that narrowing here was a similar
+        cost/breadth tradeoff to the query one above. It is NOT: the judge
+        call is a single batched LLM request regardless of how many jobs
+        are in it, so narrowing bought no savings — it just meant
+        judge_module's `state["final_jobs"]` (which becomes the entire
+        report's job list) only ever contained those 2 jobs, instead of
+        judging a real top-N and keeping a real list. If either of the 2
+        happened to score a 0/100 fit, the frontend correctly hid it,
+        leaving ONE visible job in the report. Fixed by not selecting at
+        all — same one LLM call, actually judges a proper top-N.
+
+    Bounded to a few rounds as a defensive measure; the pipeline has
+    exactly two gates today.
+    """
+    result = await jobs_service.discover_jobs_for_profile(
+        profile, profile_id=profile_id, user_id=user_id, preferences=preferences
+    )
+
+    rounds = 0
+    while result.status in _AWAITING_STATUSES and result.run_id is not None and rounds < 5:
+        rounds += 1
+        if result.status == "awaiting_query_selection":
+            # Was [:2]. With location/salary/is_real_vacancy now genuinely
+            # filtering (not just nominally present), 2 queries -> too few
+            # raw candidates -> real attrition (hard_filter, the judge
+            # correctly zeroing listing pages) can leave nothing left, as
+            # opposed to before, when a thin candidate pool didn't matter
+            # much because downstream filtering barely rejected anything.
+            # Not narrowing at all here, matching judge_confirmation_gate's
+            # fix below — this node measured ~10.5s total for 2 queries in
+            # testing (SearXNG + extraction combined), so all 6 should
+            # still land comfortably inside a 1-minute budget on a cold run.
+            result = await jobs_service.resume_query_selection(
+                result.run_id,
+                user_id=user_id,
+                selected_queries=result.generated_queries or [],
+            )
+        else:  # awaiting_judge_confirmation
+            result = await jobs_service.resume_judge_confirmation(
+                result.run_id,
+                user_id=user_id,
+                proceed=True,
+                selected_job_urls=None,
+            )
+
+    return result
 
 
 def _period(start: str | None, end: str | None, current: bool = False) -> str:
@@ -111,7 +191,18 @@ async def run_guidance_pipeline(
     if career_run_id is None:
         raise ReportSourceNotFound
 
-    jobs_result = await jobs_service.discover_jobs_for_profile(
+    # Resolve the location fallback ONCE, here, rather than in every node
+    # that reads preferences.target_locations downstream (query-generation
+    # prompt, Adzuna's own query param, hard_filter's location match) —
+    # by the time the pipeline runs, "no locations given" and "candidate
+    # has no resume location either" are the only ways target_locations
+    # stays empty; everything past this point can just read the list.
+    if not preferences.target_locations and record.profile.contact.location:
+        preferences = preferences.model_copy(
+            update={"target_locations": [record.profile.contact.location]}
+        )
+
+    jobs_result = await _run_job_discovery_to_completion(
         record.profile,
         profile_id=profile_id,
         user_id=user.id,

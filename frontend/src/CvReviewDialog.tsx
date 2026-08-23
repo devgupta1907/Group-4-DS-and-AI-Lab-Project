@@ -2,35 +2,36 @@ import type { CvReview } from '@features/career-guidance';
 
 import styles from './App.module.css';
 
-const SEVERITY_RANK: Record<string, number> = { critical: 0, important: 1, minor: 2 };
-
-/**
- * Critical findings only.
- *
- * The full review carries important and minor items too, but a list of a dozen
- * things to fix is not actionable. What gets a resume rejected at screening is
- * the useful subset, so that is what is shown.
- */
 export function CvReviewDialog({ review, onClose }: { review: CvReview; onClose: () => void }) {
   const critical = review.findings.filter((f) => f.severity === 'critical');
 
-  // The ATS score box gets its own short list of the biggest issues — ranked
-  // across all severities, not just critical, so it still says something
-  // useful on a "nothing major found" result where the list below is empty.
-  const topMistakes = [...review.findings]
-    .sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity])
+  // Restored per request, but deliberately still excludes critical findings
+  // from this summary — those get their own full card below (issue +
+  // evidence + fix). Including them here again is what caused the same
+  // sentence to appear twice on screen; excluding them keeps the summary
+  // useful without reintroducing that.
+  const nonCriticalMistakes = [...review.findings]
+    .filter((f) => f.severity !== 'critical')
     .slice(0, 3)
     .map((f) => f.issue);
+
+  const atsSummaryText =
+    nonCriticalMistakes.length > 0
+      ? nonCriticalMistakes.join(' ')
+      : critical.length > 0
+        ? `See the ${critical.length} critical issue${critical.length === 1 ? '' : 's'} below for details.`
+        : 'No specific issues identified in your parsed profile.';
+
+  const fixCountLabel =
+    critical.length > 0
+      ? `${critical.length} thing${critical.length === 1 ? '' : 's'} to fix first`
+      : 'Nothing major found';
 
   return (
     <div className={styles.overlay} role="dialog" aria-modal="true" aria-labelledby="cv-title">
       <div className={styles.dialogWide}>
         <header className={styles.cvHead}>
-          <p className="eyebrow">Major mistakes in your CV</p>
-          <h2 id="cv-title">{critical.length > 0
-            ? `${critical.length} thing${critical.length === 1 ? '' : 's'} to fix first`
-            : 'Nothing major found'}</h2>
-          <p className={styles.cvOverall}>{review.overall}</p>
+          <h2 id="cv-title">Major mistakes &amp; ATS score</h2>
 
           <div className={styles.atsScore}>
             <div className={styles.atsScoreValue}>
@@ -39,14 +40,17 @@ export function CvReviewDialog({ review, onClose }: { review: CvReview; onClose:
             </div>
             <div className={styles.atsScoreBody}>
               <h3>ATS score</h3>
-              <p>
-                {topMistakes.length > 0
-                  ? topMistakes.join(' ')
-                  : 'No specific issues identified in your parsed profile.'}
-              </p>
+              <p>{atsSummaryText}</p>
             </div>
           </div>
         </header>
+
+        {/* Outside .cvHead deliberately — .cvHead has the border-bottom that
+            visually closes the score section. Sitting after that border,
+            sized as a real heading rather than a caption, is what makes
+            this read as "the mistakes section starts here" instead of
+            blending into the score box above it. */}
+        <p className={styles.fixCountLabel}>{fixCountLabel}</p>
 
         <ul className={styles.findings}>
           {critical.map((finding, index) => (

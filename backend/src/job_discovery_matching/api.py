@@ -22,7 +22,12 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from src.core.security import CurrentUser, get_current_user
 from src.job_discovery_matching import service
-from src.job_discovery_matching.models import JobDiscoveryResult, SearchPreferences
+from src.job_discovery_matching.models import (
+    JobDiscoveryResult,
+    JudgeConfirmationRequest,
+    QuerySelectionRequest,
+    SearchPreferences,
+)
 from src.resume_parsing.dependencies import get_resume_parsing_service
 from src.resume_parsing.errors import ProfileNotFound
 from src.resume_parsing.service import ResumeParsingService
@@ -50,14 +55,16 @@ async def search(
     resume_service: ResumeParsingService = Depends(get_resume_parsing_service),
 ) -> JobDiscoveryResult:
     """
-    Runs query-generate -> search -> crawl -> filter -> rank -> judge for
-    one candidate profile, persists it, and returns the result.
+    Runs query-generate, then PAUSES — see `models.JobDiscoveryResult`'s
+    "awaiting_query_selection" status. The response for a healthy run
+    always looks like:
 
-    This runs inline (like /career/recommend) rather than as a background
-    task. Crawling several job pages can take tens of seconds — if that
-    becomes a problem in practice, this is the natural place to switch to
-    `BackgroundTasks` + polling `GET /jobs/status/{run_id}`, the same
-    pattern career_recommendation's `/index/rebuild` already uses.
+        {"run_id": "...", "status": "awaiting_query_selection",
+         "generated_queries": ["Data Analyst jobs", "SQL Python analyst jobs", ...]}
+
+    Show `generated_queries` to the user, then call
+    POST /api/jobs/search/{run_id}/select-queries with whichever they pick
+    (edited or not) to continue: search -> crawl -> filter -> rank -> judge.
     """
     try:
         record = await resume_service.get_profile(request.profile_id, user)
@@ -82,6 +89,55 @@ async def search(
         )
     except Exception as exc:  # noqa: BLE001
         logger.exception("Job discovery pipeline failed for profile %s", request.profile_id)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.post("/search/{run_id}/select-queries", response_model=JobDiscoveryResult)
+async def select_queries(
+    run_id: UUID,
+    request: QuerySelectionRequest,
+    user: CurrentUser = Depends(get_current_user),
+) -> JobDiscoveryResult:
+    """Resumes a run paused at status="awaiting_query_selection" with the
+    queries the user picked (a subset, all of them, or edited text — the
+    pipeline doesn't distinguish). Runs through hybrid ranking and PAUSES
+    AGAIN at status="awaiting_judge_confirmation" — see `confirm_judge`
+    below — rather than running the LLM judge automatically."""
+    try:
+        return await service.resume_query_selection(
+            run_id,
+            user_id=user.id,
+            selected_queries=request.selected_queries,
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("Job discovery pipeline failed resuming run %s", run_id)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.post("/search/{run_id}/confirm-judge", response_model=JobDiscoveryResult)
+async def confirm_judge(
+    run_id: UUID,
+    request: JudgeConfirmationRequest,
+    user: CurrentUser = Depends(get_current_user),
+) -> JobDiscoveryResult:
+    """Resumes a run paused at status="awaiting_judge_confirmation" (whose
+    `top_jobs` already show the hybrid-ranked jobs — judge=None on each).
+    `proceed=True` spends the LLM judge call and returns status "ok" or
+    "degraded_no_llm"; `proceed=False` returns status "hybrid_only" with
+    the SAME jobs, unmodified, no LLM call made."""
+    try:
+        logger.info(
+            "confirm_judge received: run_id=%s proceed=%r selected_job_urls=%r",
+            run_id, request.proceed, request.selected_job_urls,
+        )
+        return await service.resume_judge_confirmation(
+            run_id,
+            user_id=user.id,
+            proceed=request.proceed,
+            selected_job_urls=request.selected_job_urls,
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("Job discovery pipeline failed resuming run %s", run_id)
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 

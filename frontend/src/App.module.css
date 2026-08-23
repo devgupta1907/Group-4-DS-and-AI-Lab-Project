@@ -285,6 +285,15 @@
   line-height: 1.5;
 }
 
+.fixCountLabel {
+  margin: var(--s-5) 0 0;
+  padding-bottom: var(--s-4);
+  border-bottom: 1px solid var(--c-border);
+  font-size: var(--t-md);
+  font-weight: 700;
+  color: var(--c-text);
+}
+
 .dialogActions {
   display: flex;
   align-items: center;
@@ -298,7 +307,6 @@
 
 .cvHead {
   padding-bottom: var(--s-4);
-  border-bottom: 1px solid var(--c-border);
 }
 
 .cvOverall {
