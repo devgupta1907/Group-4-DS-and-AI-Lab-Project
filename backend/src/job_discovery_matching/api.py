@@ -75,7 +75,7 @@ async def search(
         ) from exc
 
     preferences = SearchPreferences(
-        target_location=request.target_location,
+        target_locations=request.target_locations,
         remote_only=request.remote_only,
         min_salary_lpa=request.min_salary_lpa,
     )

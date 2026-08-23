@@ -115,6 +115,67 @@ def get_latest_run(profile_id: UUID, user_id: str | None = None) -> dict | None:
     return None if run is None else _to_dict(run)
 
 
+def save_occupation_selection(
+    run_id: UUID,
+    *,
+    user_id: str,
+    selected_uris: list[str],
+) -> dict | None:
+    """Record which recommended occupations the user actually wants job
+    discovery to search for. Returns the updated run, or None if no run
+    matched (wrong id, or not this user's).
+
+    Writes `selected_occupation_uris` / `selected_occupation_titles` into
+    the run's existing `result` JSON rather than adding columns — job
+    discovery already reads exactly those two keys (see
+    `job_discovery_matching/service.py`), and `result` is a plain JSON
+    blob, so no migration is needed.
+
+    Titles are resolved here from the run's own recommendations rather
+    than trusted from the caller: the frontend sends URIs (stable ids),
+    and the title that job discovery searches with must match what this
+    run actually recommended, not whatever string a client sends.
+
+    An empty `selected_uris` clears the selection, which puts job
+    discovery back on its default "top 2 recommendations" path.
+    """
+    stmt = select(CareerRecommendationRun).where(CareerRecommendationRun.id == run_id)
+    if user_id is not None:
+        stmt = stmt.where(CareerRecommendationRun.user_id == user_id)
+
+    with _get_session_factory()() as session:
+        run = session.execute(stmt).scalar_one_or_none()
+        if run is None:
+            return None
+
+        result = dict(run.result or {})
+        recommendations = result.get("recommendations") or []
+        by_uri = {
+            r.get("occupation_uri"): r.get("occupation_title")
+            for r in recommendations
+            if r.get("occupation_uri")
+        }
+
+        # Preserve the order the recommendations were ranked in, not the
+        # order the client happened to send them.
+        chosen = [uri for uri in by_uri if uri in set(selected_uris)]
+        result["selected_occupation_uris"] = chosen
+        result["selected_occupation_titles"] = [by_uri[uri] for uri in chosen if by_uri.get(uri)]
+
+        # Reassigned wholesale because SQLAlchemy does not track in-place
+        # mutation of a JSON column.
+        run.result = result
+        session.add(run)
+        session.commit()
+        session.refresh(run)
+        logger.info(
+            "Run %s: user selected %d/%d occupations: %s",
+            run_id, len(chosen), len(recommendations),
+            result["selected_occupation_titles"],
+        )
+        return _to_dict(run)
+
+
 def get_run(run_id: UUID, user_id: str | None = None) -> dict | None:
     """One exact recommendation run, optionally constrained to its owner."""
     stmt = select(CareerRecommendationRun).where(CareerRecommendationRun.id == run_id)

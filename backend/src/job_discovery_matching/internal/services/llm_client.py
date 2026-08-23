@@ -53,16 +53,6 @@ class JudgedJob(BaseModel):
     gaps: list[str] = Field(default_factory=list)
     recommendation: str = "Skip"
     one_line_reason: str = ""
-    # True for a real, distinct, currently-open posting — even a poor fit
-    # for THIS candidate. False only for pages that describe a profession/
-    # career path in general rather than one specific opening (a search
-    # results page, a "browse jobs" category page, a career-guide
-    # article). judge_module forces interview_probability to 0 when this
-    # is False, REGARDLESS of what number came back here — deliberately
-    # not trusting the model to reliably self-report 0 for this case (it
-    # doesn't always), the same way the report generator doesn't trust the
-    # model to reliably obey a word cap on its own.
-    is_real_vacancy: bool = True
 
 
 class _JudgeBatch(BaseModel):
@@ -86,17 +76,12 @@ async def generate_search_queries(
     callers that don't pass it still work; `target_locations`/`remote_only`
     get baked into the generated query text itself — not just applied as
     a post-hoc filter in hard_filter.py — so the search engine is actually
-    asked for jobs in the right place instead of everywhere.
-
-    `target_locations` is a list (career_report.service resolves it to at
-    least the candidate's resume location before the pipeline ever runs,
-    so by the time it reaches here "empty" genuinely means no location
-    signal exists anywhere, not just "user didn't type one")."""
+    asked for jobs in the right place instead of everywhere."""
     target_roles = candidate_json.get("target_roles") or []
     skills = candidate_json.get("skills") or []
     prefs = preferences or {}
     target_locations = prefs.get("target_locations") or []
-    target_locations_text = ", ".join(target_locations) if target_locations else "(none given)"
+    target_location = ", ".join(target_locations) if target_locations else "(none given)"
     remote_only = bool(prefs.get("remote_only"))
     min_salary_lpa = prefs.get("min_salary_lpa")
     min_salary_text = f"{min_salary_lpa} LPA" if min_salary_lpa else "(none given)"
@@ -106,7 +91,7 @@ async def generate_search_queries(
             num_queries=num_queries,
             candidate_target_roles=target_roles or ["(none listed — infer from candidate profile below)"],
             candidate_skills=skills[:15] or ["(none listed — infer from candidate profile below)"],
-            target_locations=target_locations_text,
+            target_location=target_location,
             remote_only=remote_only,
             min_salary_lpa=min_salary_text,
             candidate_json=candidate_json,
@@ -124,28 +109,10 @@ async def generate_search_queries(
     return queries
 
 
-async def judge_batch(
-    candidate_json: dict, jobs_block: str, num_jobs: int, preferences: dict | None = None
-) -> list[JudgedJob]:
+async def judge_batch(candidate_json: dict, jobs_block: str, num_jobs: int) -> list[JudgedJob]:
     """candidate_json + rendered job texts -> one JudgedJob per job, in
     the same order. Raises LLMError on failure; the caller (judge_module
-    node) falls back to hybrid-score-only ranking, not this function.
-
-    `preferences` (SearchPreferences.model_dump()) is optional for the
-    same reason it is in generate_search_queries — but here it matters for
-    a different, more visible reason: without it, the judge's only
-    location signal is the candidate's resume/home location, so a
-    candidate who explicitly searched for a DIFFERENT city (relocating,
-    open to a specific market, whatever the reason) gets that search
-    correctly narrowed by hard_filter, then penalized by the judge for
-    "location mismatch" against a location they never asked to be
-    evaluated against. Passing target_locations here is what lets the
-    prompt tell the model which baseline to actually use."""
-    prefs = preferences or {}
-    target_locations = prefs.get("target_locations") or []
-    target_locations_text = ", ".join(target_locations) if target_locations else "(none given)"
-    remote_only = bool(prefs.get("remote_only"))
-
+    node) falls back to hybrid-score-only ranking, not this function."""
     prompt = (
         f"{JUDGE_BATCH_SYSTEM}\n\n"
         + JUDGE_BATCH_USER.format(
@@ -153,8 +120,6 @@ async def judge_batch(
             num_jobs=num_jobs,
             last_index=num_jobs - 1,
             jobs_block=jobs_block,
-            target_locations=target_locations_text,
-            remote_only=remote_only,
         )
     )
     try:

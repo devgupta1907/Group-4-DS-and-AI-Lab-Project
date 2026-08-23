@@ -142,6 +142,41 @@ def get_recommendations(
     return run
 
 
+class OccupationSelectionRequest(BaseModel):
+    """Which recommended occupations the user wants job discovery to
+    actually search for. Sends URIs (stable ids), not titles — the server
+    resolves titles from the run itself so what gets searched always
+    matches what was recommended.
+
+    An empty list clears the selection and returns job discovery to its
+    default behaviour (top 2 recommendations).
+    """
+
+    selected_occupation_uris: list[str]
+
+
+@router.post("/recommendations/{run_id}/select")
+def select_occupations(
+    run_id: UUID,
+    request: OccupationSelectionRequest,
+    user: CurrentUser = Depends(get_current_user),
+) -> dict:
+    """Record the user's chosen directions before job discovery runs.
+
+    Job discovery reads these back on its next run for this profile (see
+    `job_discovery_matching/service.py`), so this must be called before
+    POST /api/career-reports for the choice to take effect.
+    """
+    run = store.save_occupation_selection(
+        run_id,
+        user_id=user.id,
+        selected_uris=request.selected_occupation_uris,
+    )
+    if run is None:
+        raise HTTPException(status_code=404, detail=f"No recommendation run {run_id}.")
+    return run
+
+
 @router.post("/index/rebuild")
 def rebuild_index(background_tasks: BackgroundTasks) -> dict:
     """

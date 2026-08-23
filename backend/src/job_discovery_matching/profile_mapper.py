@@ -58,7 +58,7 @@ def from_parsed_resume(
 
     `preferences` (a `SearchPreferences.model_dump()`) overlays the
     candidate's SEARCH-TIME choices on top of what the resume says about
-    them: `target_location` overrides the resume's `contact.location` for
+    them: `target_locations` overrides the resume's `contact.location` for
     `location` (a candidate may live in Delhi but be searching for
     Bengaluru roles), `remote_only` sets `remote_ok`, and `min_salary_lpa`
     is no longer left at a hardcoded 0.0 -- it now reflects what the
@@ -67,7 +67,12 @@ def from_parsed_resume(
     for. Falling back to the resume's own location keeps this backward
     compatible with any caller that doesn't pass preferences."""
     prefs = preferences or {}
-    target_location = prefs.get("target_location") or (parsed.contact.location or "")
+    # First of up to MAX_TARGET_LOCATIONS — this single field feeds the
+    # candidate_json "location" used for matching; hard_filter still
+    # evaluates against the full list.
+    _target_locations = prefs.get("target_locations") or []
+    target_location = (_target_locations[0] if _target_locations
+                       else (parsed.contact.location or ""))
     return {
         "current_role": _current_role(parsed),
         "target_roles": list(parsed.job_titles),

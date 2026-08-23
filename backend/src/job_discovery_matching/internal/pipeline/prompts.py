@@ -42,7 +42,7 @@ To do that, every query must contain at least one hiring word:
 
 The candidate's target roles are: {candidate_target_roles}
 The candidate's top skills are: {candidate_skills}
-The candidate's target location(s) for this search are: {target_locations}
+The candidate's target location(s) for this search are: {target_location}
 Remote-only: {remote_only}
 Minimum acceptable salary: {min_salary_lpa}
 
@@ -50,13 +50,6 @@ You MUST cover EVERY role in target roles at least once — do not write all
 {num_queries} queries about only one of them, even if one role sounds like
 the candidate's primary background. Spread queries across ALL listed roles
 before repeating any role.
-
-If more than one target location is given, spread your location-qualified
-queries across ALL of them too — do not write every query for only the
-first location listed. With a small, fixed query budget, exact 1:1
-role×location coverage is not always possible; when you have to choose,
-prioritize covering every ROLE at least once over covering every location
-for every role.
 
 Include a mix of:
 - One role-title query PER target role listed above (e.g. 'Data Analyst jobs', 'Business Analyst hiring')
@@ -68,13 +61,16 @@ Include a mix of:
   ever sent to a general web search engine, never to a structured job-board
   API — skip the site: operator restriction on all your other queries.
 
-If target location(s) are given above (not empty), append one of them to
-MOST of your role-title and skill-based queries (e.g. 'Data Analyst jobs
-in Bengaluru'), so search results are actually scoped to where the
-candidate wants to work rather than searched separately after the fact.
-If "Remote-only" is true, use "remote" instead of (or alongside) a
-location in those same queries. If no target location is given, do not
-invent one.
+If more than one target location is given above, spread your
+location-qualified queries across ALL of them rather than writing every
+query for only the first one listed.
+
+If a target location is given above (not empty), append one of them to MOST of your
+role-title and skill-based queries (e.g. 'Data Analyst jobs in Bengaluru'),
+so search results are actually scoped to where the candidate wants to work
+rather than searched separately after the fact. If "Remote-only" is true,
+use "remote" instead of (or alongside) the location in those same queries.
+If no target location is given, do not invent one.
 
 Do NOT generate queries that would return definitions, salary guides, course
 listings, "how to become" articles, or professional-association pages.

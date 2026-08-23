@@ -10,16 +10,11 @@ directly, using the same `job_discovery_postings` cache (keyed by
 URL) so a listing already seen by the SearXNG path is reused, not
 re-embedded.
 
-`graph.py` routes on this node's output: once db_cache_module +
-adzuna_module together have MIN_JOBS_BEFORE_ACCEPTING matching jobs,
-`search_module` + `extraction_module` (SearXNG + crawl4ai) are skipped;
-below that, the graph falls through to that path too. See
-`route_after_adzuna` in `graph.py`.
-
-This node MERGES with whatever db_cache_module already put in
-`state["raw_jobs"]` rather than overwriting it — a thin cache hit still
-counts, Adzuna just tops it up to (at most) Cfg.MAX_JOB_URLS total,
-deduped by URL against what's already there.
+`graph.py` routes on this node's output: if it produced at least one
+job, `search_module` + `extraction_module` (SearXNG + crawl4ai) are
+skipped entirely; if Adzuna returned nothing (no credentials, no
+matches, API error), the graph falls back to that path instead. See
+the `route_after_adzuna` function in `graph.py`.
 """
 
 from __future__ import annotations
@@ -56,21 +51,10 @@ def _is_adzuna_compatible(query: str) -> bool:
 
 
 def _search_location(state: PipelineState) -> str:
-    """Adzuna's `where` param takes exactly one location, unlike SearXNG's
-    query text or hard_filter's match-any-of-N. `target_locations` is
-    already resolved to at least the candidate's own location by
-    career_report.service before the pipeline runs (see that module), so
-    the `state["candidate_json"].get("location")` fallback below is a
-    second safety net for callers that build state directly rather than
-    through that path — not the primary fallback anymore.
-
-    Only the FIRST of up to 3 preferred locations is used here; the other
-    two (if given) still apply downstream in hard_filter's location match
-    and in the SearXNG query-generation prompt, which do consider all of
-    them. A candidate who lists 3 cities gets Adzuna results biased to the
-    first, and full multi-city coverage from whichever of Adzuna/SearXNG
-    actually produces results after that."""
     preferences = state.get("preferences") or {}
+    # Adzuna's `where` param takes exactly ONE location, unlike the query
+    # prompt and hard_filter which consider all of them. Uses the first of
+    # up to MAX_TARGET_LOCATIONS; the rest still apply downstream.
     target_locations = preferences.get("target_locations") or []
     if target_locations:
         return target_locations[0]
@@ -160,19 +144,11 @@ async def run(state: PipelineState) -> PipelineState:
     queries = state["search_queries"]
     location = _search_location(state)
 
-    # Merge with db_cache_module's contribution rather than starting from
-    # scratch — a thin cache hit still counts, this just tops it up.
-    existing_jobs: list[dict] = list(state.get("raw_jobs") or [])
-    seen_urls: set[str] = {
-        job["source_url"] for job in existing_jobs if job.get("source_url")
-    }
-    new_jobs: list[dict] = []
-
-    def _total() -> int:
-        return len(existing_jobs) + len(new_jobs)
+    seen_urls: set[str] = set()
+    raw_jobs: list[dict] = []
 
     for query in queries:
-        if _total() >= Cfg.MAX_JOB_URLS:
+        if len(raw_jobs) >= Cfg.MAX_JOB_URLS:
             break
         if not _is_adzuna_compatible(query):
             logger.info("Skipping site-restricted query on Adzuna (SearXNG-fallback-only): %r", query)
@@ -190,25 +166,23 @@ async def run(state: PipelineState) -> PipelineState:
 
             entry = await _upsert_job(job)
             if entry is not None:
-                new_jobs.append(entry)
-            if _total() >= Cfg.MAX_JOB_URLS:
+                raw_jobs.append(entry)
+            if len(raw_jobs) >= Cfg.MAX_JOB_URLS:
                 break
 
-    raw_jobs = existing_jobs + new_jobs
     state["raw_jobs"] = raw_jobs
     state["job_urls"] = list(seen_urls)
-    state["used_adzuna"] = bool(new_jobs)
+    state["used_adzuna"] = bool(raw_jobs)
 
     logger.info(
-        "Adzuna search complete: %d queries -> %d new jobs (%d carried over from DB "
-        "cache, %d total)",
-        len(queries), len(new_jobs), len(existing_jobs), len(raw_jobs),
+        "Adzuna search complete: %d queries -> %d jobs",
+        len(queries), len(raw_jobs),
     )
-    if len(raw_jobs) < Cfg.MIN_JOBS_BEFORE_ACCEPTING:
-        logger.info(
-            "Still only %d/%d minimum after Adzuna — falling back to SearXNG + "
-            "crawl4ai search_module/extraction_module to top up further.",
-            len(raw_jobs), Cfg.MIN_JOBS_BEFORE_ACCEPTING,
+    if not raw_jobs:
+        logger.warning(
+            "Adzuna returned 0 jobs across %d queries: %s. Falling back to "
+            "SearXNG + crawl4ai search_module/extraction_module.",
+            len(queries), queries,
         )
 
     state.setdefault("progress", []).append("adzuna_search_complete")

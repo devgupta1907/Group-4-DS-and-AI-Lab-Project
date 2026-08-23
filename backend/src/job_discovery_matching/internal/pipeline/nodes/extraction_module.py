@@ -6,13 +6,6 @@ crawl it (crawl4ai + JSON-LD, see `internal.services.crawler_service`),
 embed the extracted text, and upsert the cache row. The cache is shared
 across ALL users/runs — the same job posting is never re-crawled or
 re-embedded twice within `Cfg.POSTING_CACHE_TTL_HOURS`.
-
-Last resort in the source cascade (db_cache -> adzuna -> this), so
-unlike those two there's no further fallback to route to afterward —
-whatever comes out of here is final, `graph.py` sends it straight to
-`hard_filter` unconditionally. Still MERGES with whatever db_cache_module
-/ adzuna_search_module already contributed rather than overwriting it,
-for the same reason those two merge with each other.
 """
 
 from __future__ import annotations
@@ -84,21 +77,11 @@ async def _fetch_one(url: str, semaphore: asyncio.Semaphore) -> dict | None:
 
 
 async def run(state: PipelineState) -> PipelineState:
-    existing_jobs: list[dict] = list(state.get("raw_jobs") or [])
-    existing_urls = {job["source_url"] for job in existing_jobs if job.get("source_url")}
-
-    urls = [u for u in state["job_urls"] if u not in existing_urls]
+    urls = state["job_urls"]
     semaphore = asyncio.Semaphore(Cfg.CRAWL_CONCURRENCY)
 
     results = await asyncio.gather(*(_fetch_one(url, semaphore) for url in urls))
-    new_jobs = [r for r in results if r is not None]
 
-    raw_jobs = (existing_jobs + new_jobs)[: Cfg.MAX_JOB_URLS]
-    state["raw_jobs"] = raw_jobs
-    logger.info(
-        "Extraction complete: %d URLs crawled -> %d new jobs (%d carried over from "
-        "DB cache/Adzuna, %d total)",
-        len(urls), len(new_jobs), len(existing_jobs), len(raw_jobs),
-    )
+    state["raw_jobs"] = [r for r in results if r is not None]
     state.setdefault("progress", []).append("extraction_complete")
     return state

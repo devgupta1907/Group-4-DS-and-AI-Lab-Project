@@ -31,29 +31,6 @@ from src.job_discovery_matching.internal.services.llm_client import JudgedJob, L
 # judge LLM prompt just because it skipped that upstream cleaning step.
 _TAG_RE = re.compile(r"<[^<]+?>")
 
-# Same intent as search_module.py's _is_direct_vacancy title check, but
-# broadened after finding a real miss: the original only matched "N+ ...
-# jobs" (count BEFORE the word). "Information Technology Jobs in Chennai
-# (1,000+ Open Roles)" puts the count in a trailing parenthetical instead
-# — same listing page, missed by the narrower pattern. Reused here as a
-# SECOND, code-level check on top of judged.is_real_vacancy — the prompt
-# explicitly asks the model to set that field false for exactly this
-# case, but in practice it doesn't always: a listing page can still get a
-# real fit score in the 0-39 "Skip" band without is_real_vacancy ever
-# being set false, which fools the deterministic backstop below into
-# thinking it's a genuine posting that just scored low. A title match
-# here is unambiguous regardless of what the model reported.
-_LISTING_TITLE_RE = re.compile(
-    r"\b\d[\d,]*\+?\s+.*\bjobs?\b"
-    r"|\(\s*\d[\d,]*\+?\s*(?:open\s+)?(?:roles?|jobs?|positions?|openings?)\s*\)",
-    re.IGNORECASE,
-)
-
-
-def _title_looks_like_listing(title: str) -> bool:
-    title = title or ""
-    return bool(_LISTING_TITLE_RE.search(title)) or "job vacancies" in title.lower()
-
 
 def _strip_residual_html(text: str) -> str:
     return _TAG_RE.sub(" ", text or "").strip()
@@ -99,23 +76,6 @@ def _merge_entry(entry: dict, judged: JudgedJob, *, used_llm_judge: bool) -> dic
     if not isinstance(prob, int) or not (0 <= prob <= 100):
         prob = fallback_probability
 
-    # Deterministic backstop, not trusting the model to reliably self-report
-    # 0 here (it doesn't always — see JudgedJob.is_real_vacancy's docstring,
-    # and _title_looks_like_listing above for the case where it also
-    # doesn't reliably set is_real_vacancy itself). Only forces 0 for "not
-    # a real posting at all"; a real posting that's simply a poor fit
-    # keeps whatever score the rubric actually gave it. Checks the
-    # ORIGINAL crawled title (entry["job_json"]), not judged.title — the
-    # LLM's "cleaned" title could plausibly strip the "6,000+" prefix that
-    # makes the pattern match in the first place.
-    is_real_vacancy = judged.is_real_vacancy and not _title_looks_like_listing(
-        entry["job_json"].get("title")
-    )
-    recommendation = judged.recommendation or "Apply"
-    if not is_real_vacancy:
-        prob = 0
-        recommendation = "Skip"
-
     merged_job_json = {
         **entry["job_json"],
         "title": judged.title or entry["job_json"].get("title") or "Untitled role",
@@ -136,7 +96,7 @@ def _merge_entry(entry: dict, judged: JudgedJob, *, used_llm_judge: bool) -> dic
             "interview_probability": int(prob),
             "strengths": judged.strengths or [],
             "gaps": judged.gaps or [],
-            "recommendation": recommendation,
+            "recommendation": judged.recommendation or "Apply",
             "one_line_reason": judged.one_line_reason or "",
             "used_llm_judge": used_llm_judge,
         },
@@ -164,23 +124,13 @@ async def _persist_judge_results(
                 if isinstance(judged.interview_probability, int)
                 else fallback_probability
             )
-            # Same deterministic backstop as _merge_entry — the persisted
-            # row must match what the user is actually shown, not
-            # whatever raw number the model returned before the backstop.
-            is_real_vacancy = judged.is_real_vacancy and not _title_looks_like_listing(
-                entry["job_json"].get("title")
-            )
-            recommendation = judged.recommendation or "Apply"
-            if not is_real_vacancy:
-                prob = 0
-                recommendation = "Skip"
             final_score = Cfg.HYBRID_WEIGHT * entry["hybrid_score"] + Cfg.JUDGE_WEIGHT * (prob / 100.0)
             await repo.save_judge_result(
                 entry["ranking_id"],
                 interview_probability=prob,
                 strengths=judged.strengths or [],
                 gaps=judged.gaps or [],
-                recommendation=recommendation,
+                recommendation=judged.recommendation or "Apply",
                 one_line_reason=judged.one_line_reason or "",
                 final_score=round(final_score, 4),
                 used_llm_judge=used_llm_judge,
@@ -225,7 +175,6 @@ async def run(state: PipelineState) -> PipelineState:
             state["candidate_json"],
             jobs_block=_build_jobs_block(to_judge),
             num_jobs=len(to_judge),
-            preferences=state.get("preferences"),
         )
     except LLMError as exc:
         logger.warning("Batched LLM judge failed for %d jobs: %s", len(to_judge), exc)
@@ -241,67 +190,6 @@ async def run(state: PipelineState) -> PipelineState:
     final_jobs.sort(key=lambda r: r["final_score"], reverse=True)
 
     await _persist_judge_results(to_judge, judged_by_index, used_llm_judge)
-
-    # Never leave the report thinner than it needs to be when a wider
-    # ranked pool exists to draw from. Two tiers, both deliberately NOT
-    # touching a real, correctly-scored result — this only ever ADDS
-    # ranked-but-unjudged (judge=None) entries, never removes or re-scores
-    # a real one:
-    #
-    #  - every judged candidate was fake (is_real_vacancy=False, i.e. a
-    #    listing/category page, not an individual posting) -> show the
-    #    full ranked pool instead of an empty report.
-    #  - SOME real postings survived, but fewer than MINIMUM_DISPLAY_TARGET
-    #    -> pad up to that target from whatever's left in ranked_jobs
-    #    beyond what got judged (search_module now crawls up to
-    #    MAX_JOB_URLS, TOP_N_JUDGED only judges the top 8 of those, so
-    #    there is usually more available to draw from).
-    #
-    # This can't manufacture real postings that don't exist — if
-    # ranked_jobs itself is thin, the backfill is thin too. It only
-    # guarantees nothing gets left on the table that was already found.
-    MINIMUM_DISPLAY_TARGET = 3
-    real_count = sum(
-        1 for job in final_jobs
-        if job.get("judge") and job["judge"]["interview_probability"] > 0
-    )
-
-    if to_judge and real_count == 0:
-        logger.warning(
-            "All %d judged candidates were listing/category pages, not real "
-            "postings — showing the full ranked pool (%d jobs) instead of "
-            "an empty report.",
-            len(to_judge), len(ranked_jobs),
-        )
-        # Distinguishes this from hybrid_finalize_module's judge=None,
-        # which means "user declined the judge stage" — service.py's
-        # status/message logic checks final_jobs[0]["judge"] is None to
-        # detect that case, and without this flag can't tell it apart
-        # from "the judge ran and correctly found nothing real," which
-        # produces the identical judge=None shape for a completely
-        # different reason.
-        state["all_candidates_fake"] = True
-        final_jobs = [
-            {**entry, "judge": None, "final_score": entry["hybrid_score"]}
-            for entry in ranked_jobs
-        ]
-    elif 0 < real_count < MINIMUM_DISPLAY_TARGET:
-        judged_urls = {entry.get("source_url") for entry in to_judge}
-        backfill = [
-            {**entry, "judge": None, "final_score": entry["hybrid_score"]}
-            for entry in ranked_jobs
-            if entry.get("source_url") not in judged_urls
-        ]
-        needed = MINIMUM_DISPLAY_TARGET - real_count
-        if backfill:
-            logger.info(
-                "Only %d real posting(s) among %d judged — backfilling %d "
-                "unscored candidate(s) from the wider ranked pool.",
-                real_count, len(to_judge), min(needed, len(backfill)),
-            )
-        final_jobs = final_jobs + backfill[:needed]
-
-    final_jobs.sort(key=lambda r: r["final_score"], reverse=True)
 
     state["final_jobs"] = final_jobs
     state.setdefault("progress", []).append("judging_complete")

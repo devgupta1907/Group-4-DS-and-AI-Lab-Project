@@ -390,22 +390,9 @@ async def _finalize_run(run_id: UUID, result_state: PipelineState, session_facto
     elif not final_jobs:
         status, message = "no_jobs", "No jobs survived search, crawling and filtering for this run."
     elif final_jobs[0].get("judge") is None:
-        if result_state.get("all_candidates_fake"):
-            # judge_module ran the LLM judge, and it correctly determined
-            # every crawled candidate was a listing/category page, not an
-            # individual posting — not the same as declining to judge at
-            # all. See JudgedJob.is_real_vacancy and the all_candidates_fake
-            # flag in judge_module.py.
-            status, message = (
-                "hybrid_only",
-                "No individually-verified job postings were found this "
-                "search — showing the closest ranked matches from what "
-                "was crawled instead, without an individual fit score.",
-            )
-        else:
-            # hybrid_finalize_module ran — the user deliberately declined the
-            # judge stage at judge_confirmation_gate, not a failure.
-            status, message = "hybrid_only", "Ranked by hybrid score only — LLM judge stage was skipped."
+        # hybrid_finalize_module ran — the user deliberately declined the
+        # judge stage at judge_confirmation_gate, not a failure.
+        status, message = "hybrid_only", "Ranked by hybrid score only — LLM judge stage was skipped."
     elif not final_jobs[0]["judge"]["used_llm_judge"]:
         status, message = (
             "degraded_no_llm",

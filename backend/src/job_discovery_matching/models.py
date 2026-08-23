@@ -14,9 +14,10 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-# Kept in sync with career-guidance's own dialog copy on the frontend and
-# with the query-generation prompt's coverage instruction (prompts.py) —
-# all three need to agree on the same number.
+
+# Kept in sync with the preferences dialog on the frontend and with the
+# query-generation prompt's coverage instruction (prompts.py) — all three
+# need to agree on the same number.
 MAX_TARGET_LOCATIONS = 3
 
 
@@ -25,11 +26,9 @@ class SearchPreferences(BaseModel):
 
     `target_locations` is user-typed locations, in priority order, capped
     at MAX_TARGET_LOCATIONS. Left empty by the frontend when the user adds
-    none — `career_report.service.run_guidance_pipeline` is what resolves
-    that down to the candidate's own resume location as a single-item
-    fallback, once, before the pipeline runs; nothing downstream of that
-    point should treat an empty list as "no location signal" without
-    checking whether that resolution already happened.
+    none — `career_report.service.run_guidance_pipeline` resolves that down
+    to the candidate's own resume location as a single-item fallback, once,
+    before the pipeline runs.
     """
 
     target_locations: list[str] = Field(default_factory=list, max_length=MAX_TARGET_LOCATIONS)

@@ -29,34 +29,20 @@ class JobDiscoveryModuleConfig:
     ADZUNA_RESULTS_PER_QUERY = int(os.getenv("ADZUNA_RESULTS_PER_QUERY", "10"))
 
     # --- crawling (crawl4ai) — zero LLM calls, see internal/services/crawler_service.py ---
-    # Was 3. Bumped to 5 (matches the common fallback batch size — see
-    # search_module.py's TOP_N_JUDGED-based fallback count) so a typical
-    # small batch runs in one parallel wave instead of two — the slowest
-    # site in the batch becomes the ceiling instead of the sum across
-    # waves. All targets are different hosts per run (never the same site
-    # 5x), so this doesn't risk hitting any single site's rate limit.
-    CRAWL_CONCURRENCY = int(os.getenv("JOB_DISCOVERY_CRAWL_CONCURRENCY", "5"))
+    CRAWL_CONCURRENCY = int(os.getenv("JOB_DISCOVERY_CRAWL_CONCURRENCY", "3"))
     CRAWL_TIMEOUT_MS = int(os.getenv("JOB_DISCOVERY_CRAWL_TIMEOUT_MS", "15000"))
 
     # A cached posting (job_discovery_postings row) is reused rather than
     # re-crawled within this window, shared across ALL users/runs.
-    #
-    # Set to 1h rather than the original 24h: accuracy was explicitly
-    # prioritized over latency for now. Nothing currently refreshes a
-    # posting's last_seen_at except an actual crawl or Adzuna hit —
-    # db_cache_module only READS the pool — so at 24h the same postings
-    # from one crawl could keep answering every search all day with no
-    # live re-check at all. At 1h the pool self-cycles: falls through to
-    # Adzuna/SearXNG once an hour to refresh, cached the rest of the time.
-    POSTING_CACHE_TTL_HOURS = int(os.getenv("JOB_DISCOVERY_CACHE_TTL_HOURS", "1"))
+    POSTING_CACHE_TTL_HOURS = int(os.getenv("JOB_DISCOVERY_CACHE_TTL_HOURS", "0"))
 
     # --- DB cache — checked FIRST, before Adzuna and before SearXNG+crawl4ai ---
     # A posting counts as "fresh" if it was last confirmed by ANY previous
-    # run (any user) within this many hours. Deliberately the same clock as
+    # run (any user) within this many hours ("created dated is less than a
+    # day" -> default 24). Deliberately the same clock as
     # POSTING_CACHE_TTL_HOURS (one cache, one TTL) but kept as its own knob
-    # in case the two ever need to diverge. See that constant's comment for
-    # why this moved from 24h to 1h.
-    DB_CACHE_MAX_AGE_HOURS = int(os.getenv("JOB_DISCOVERY_DB_CACHE_MAX_AGE_HOURS", "1"))
+    # in case the two ever need to diverge.
+    DB_CACHE_MAX_AGE_HOURS = int(os.getenv("JOB_DISCOVERY_DB_CACHE_MAX_AGE_HOURS", "0"))
     # Cosine similarity (0-1, after the same [-1,1]->[0,1] clip matching_module
     # uses) a cached posting must clear against candidate_embedding to count
     # as a "similar match" and be served straight from the DB.
@@ -69,23 +55,7 @@ class JobDiscoveryModuleConfig:
     NUM_SEARCH_QUERIES = 6      # candidate profile -> N queries, 1 LLM call
     MAX_JOB_URLS = 20           # fewer URLs = fewer crawl4ai fetches per run
     TOP_K_RANKED = 15           # kept after BM25 + embedding hybrid ranking
-    # Was 5. Bumped alongside search_module's widened crawl pool — this is
-    # still ONE batched LLM call regardless of count, so judging 8 instead
-    # of 5 costs nothing extra; it just means more of the wider crawl pool
-    # gets an actual fit score instead of falling to judge_module's
-    # unscored backfill.
-    TOP_N_JUDGED = 8            # judged in a SINGLE batched LLM call
-
-    # A source only counts as "enough" once it clears this many jobs that
-    # would actually survive hard_filter (db_cache_module and
-    # adzuna_search_module both check this — see route_after_db_cache /
-    # route_after_adzuna in graph.py). Below this, the cascade keeps
-    # falling through to the next, more expensive source instead of
-    # settling for a thin, mostly-filtered-out result. Matches
-    # TOP_N_JUDGED by default so the judge stage always has a real batch
-    # to work with, not a coincidence of whatever the cache happened to
-    # have cached from a completely different search.
-    MIN_JOBS_BEFORE_ACCEPTING = int(os.getenv("JOB_DISCOVERY_MIN_JOBS_BEFORE_ACCEPTING", "5"))
+    TOP_N_JUDGED = 5            # judged in a SINGLE batched LLM call
 
     # --- hybrid ranking weights ---
     BM25_WEIGHT = 0.4

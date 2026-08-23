@@ -9,6 +9,7 @@ import {
   type SearchPreferences,
 } from '@features/career-guidance';
 import { FeedbackWidget } from '@features/feedback';
+import { RapidSearchFlow } from '@features/job-discovery';
 import {
   useFileValidation,
   useResumeUpload,
@@ -34,6 +35,12 @@ export function App() {
   const [cvLoading, setCvLoading] = useState(false);
   const [cvError, setCvError] = useState<string | null>(null);
   const [showPreferences, setShowPreferences] = useState(false);
+  // Rapid Search — recommend directions, let the user pick, then run a
+  // conversational job hunt. Same discovery pipeline as the report; the
+  // difference is that the report auto-resumes through the pipeline's two
+  // interrupt gates silently, while Rapid Search exposes them. Kept in its
+  // own state so neither flow resets the other.
+  const [rapidSearch, setRapidSearch] = useState(false);
   // Held so a retry after failure (AnalysisStage's onRetry) repeats with the
   // same search preferences instead of silently re-asking or silently
   // dropping back to defaults.
@@ -111,6 +118,19 @@ export function App() {
 
   const closeCvReview = useCallback(() => setCvReview(null), []);
 
+  const openRapidSearch = useCallback(() => setRapidSearch(true), []);
+  const closeRapidSearch = useCallback(() => setRapidSearch(false), []);
+
+  if (rapidSearch && upload.record) {
+    return (
+      <main className={styles.app}>
+        <TopBar step={step} />
+        <RapidSearchFlow profileId={upload.record.id} onBack={closeRapidSearch} />
+        <FeedbackWidget profileId={upload.record.id} />
+      </main>
+    );
+  }
+
   if (guidance.report) {
     return <ReportPage report={guidance.report} />;
   }
@@ -130,6 +150,7 @@ export function App() {
           cvError={cvError}
           onRunCvReview={runCvReview}
           onRunReport={openPreferences}
+          onRapidSearch={openRapidSearch}
           onReset={upload.reset}
           onProfileSaved={upload.setRecord}
         />

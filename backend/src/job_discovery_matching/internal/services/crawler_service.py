@@ -21,6 +21,7 @@ is decided by the caller (extraction_module.py), not here.
 from __future__ import annotations
 
 import asyncio
+import html as html_lib
 import json
 import logging
 import re
@@ -143,8 +144,37 @@ _OG_SITE_NAME_RE = re.compile(
 )
 
 
-def _strip_html(text: str) -> str:
-    return re.sub(r"<[^<]+?>", " ", text or "").strip()
+_SCRIPT_STYLE_RE = re.compile(r"<(script|style)\b[^>]*>.*?</\1>", re.DOTALL | re.IGNORECASE)
+_TAG_RE = re.compile(r"<[^<]+?>")
+_BLANK_LINES_RE = re.compile(r"\n\s*\n+")
+_MULTI_SPACE_RE = re.compile(r"[ \t]+")
+
+
+def _clean_text(text: str) -> str:
+    """Shared cleaner for anything that ends up as `job_text` or
+    `job_json["description"]` — both the judge LLM prompt (judge_module.py)
+    and BM25 scoring (matching_module.py) read this field directly, so any
+    HTML/entity noise left in here is wasted tokens for the judge AND
+    diluted keyword signal for BM25. Handles three failure modes seen in
+    practice: script/style block bodies surviving Crawl4AI's pruning filter
+    (the old regex only removed tags, not their content), literal HTML
+    entities (&amp;, &nbsp;, ...) left un-decoded, and the run of blank
+    lines/repeated whitespace that both raw HTML-to-text and markdown
+    conversion tend to leave behind."""
+    if not text:
+        return ""
+    cleaned = _SCRIPT_STYLE_RE.sub(" ", text)
+    cleaned = _TAG_RE.sub(" ", cleaned)
+    cleaned = html_lib.unescape(cleaned)
+    cleaned = _BLANK_LINES_RE.sub("\n\n", cleaned)
+    cleaned = _MULTI_SPACE_RE.sub(" ", cleaned)
+    return cleaned.strip()
+
+
+# Old name kept as an alias — _extract_jsonld_job/_map_jsonld below only
+# ever needed tag-stripping for JSON-LD's already-plain-ish description
+# field, but route it through the same stronger cleaner now.
+_strip_html = _clean_text
 
 
 def _extract_jsonld_job(html: str) -> dict | None:
@@ -205,7 +235,7 @@ def _extract_page_metadata(html: str, fit_markdown: str) -> dict:
         "location": "",
         "is_remote": "remote" in text_lower[:2000],
         "employment_type": "",
-        "description": (fit_markdown or "")[:4000],
+        "description": _clean_text(fit_markdown)[:4000],
         "required_skills": [],
         "extraction_method": "metadata_fallback",
     }
@@ -261,4 +291,11 @@ async def crawl_and_extract(url: str) -> ExtractedJob | None:
         job_json = _extract_page_metadata(html, fit_markdown)
 
     job_json["source_url"] = url
-    return ExtractedJob(job_json=job_json, job_text=fit_markdown)
+    # `job_text` is what BM25 (matching_module.py) scores against AND what
+    # the judge LLM prompt (judge_module.py) reads verbatim — clean it here
+    # too, not just job_json["description"], since Crawl4AI's pruning
+    # filter doesn't guarantee tag-free markdown on every page (tables,
+    # embedded widgets, and script/style remnants have all been observed
+    # leaking through on real job board pages).
+    clean_job_text = _clean_text(fit_markdown)
+    return ExtractedJob(job_json=job_json, job_text=clean_job_text or fit_markdown)

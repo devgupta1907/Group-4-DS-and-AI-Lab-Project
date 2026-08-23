@@ -13,6 +13,10 @@ type ReviewStageProps = {
   cvError: string | null;
   onRunCvReview: () => void;
   onRunReport: () => void;
+  /** Opens the standalone conversational job search — same discovery
+   *  pipeline as the report, without career recommendation or the report
+   *  itself, so results arrive in seconds rather than a minute. */
+  onRapidSearch: () => void;
   onReset: () => void;
   /** Fired after a successful save, so the caller can update its copy of the record. */
   onProfileSaved: (record: ProfileRecord) => void;
@@ -25,6 +29,7 @@ export function ReviewStage({
   cvError,
   onRunCvReview,
   onRunReport,
+  onRapidSearch,
   onReset,
   onProfileSaved,
 }: ReviewStageProps) {
@@ -58,6 +63,9 @@ export function ReviewStage({
             >
               {cvLoading ? 'Checking…' : 'Get ATS Score'}
             </button>
+            <button className={styles.secondaryAction} type="button" onClick={onRapidSearch}>
+              Rapid Search
+            </button>
             <button className="primary-action" type="button" onClick={onRunReport}>
               Get Analysis <span aria-hidden="true">→</span>
             </button>
@@ -83,6 +91,9 @@ export function ReviewStage({
         <footer>
           <button className={styles.textButton} type="button" onClick={onReset}>
             Use another resume
+          </button>
+          <button className={styles.secondaryAction} type="button" onClick={onRapidSearch}>
+            Rapid Search
           </button>
           <button className="primary-action" type="button" onClick={onRunReport}>
             Get Analysis <span aria-hidden="true">→</span>

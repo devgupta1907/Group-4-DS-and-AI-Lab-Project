@@ -27,9 +27,9 @@ def _heuristic_query(candidate: dict, preferences: dict | None = None) -> str:
     prefs = preferences or {}
     if prefs.get("remote_only"):
         return f"{base} remote"
-    target_location = prefs.get("target_location")
-    if target_location:
-        return f"{base} in {target_location}"
+    target_locations = prefs.get("target_locations") or []
+    if target_locations:
+        return f"{base} in {target_locations[0]}"
     return base
 
 

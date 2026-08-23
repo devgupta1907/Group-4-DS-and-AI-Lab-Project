@@ -8,25 +8,20 @@ the candidate already has an identity, `profile_id`, before this
 pipeline runs, and `service.py` computes `candidate_embedding` once
 before invoking the graph).
 
-Search source order, cheapest/fastest first, each stage topping up the
-last rather than replacing it:
+Search source order, cheapest/fastest first:
 
-  1. db_cache_module  — Postgres only, no external call at all. Reuses
-     fresh (<= DB_CACHE_MAX_AGE_HOURS old), semantically similar postings
-     already sitting in job_discovery_postings from ANY previous run —
-     filtered to ones that would actually survive hard_filter's
-     location/salary checks too, not similarity alone.
-  2. adzuna_module     — one structured API call per query. Runs if step
-     1 didn't clear MIN_JOBS_BEFORE_ACCEPTING; merges with whatever step
-     1 found rather than discarding it.
+  1. db_cache_module  — Postgres only, no external call at all. Reuses a
+     fresh (<= DB_CACHE_MAX_AGE_HOURS old), semantically similar posting
+     already sitting in job_discovery_postings from ANY previous run.
+  2. adzuna_module     — one structured API call per query. Only runs if
+     step 1 found nothing.
   3. search_module +
      extraction_module — SearXNG (web search) + crawl4ai (actual page
-     fetch). Runs if steps 1+2 combined still haven't cleared that
-     threshold. Most expensive path, kept as the last resort; also merges
-     rather than replaces.
+     fetch). Only runs if step 2 ALSO found nothing. Most expensive path,
+     kept as the last resort.
 
-i.e.: keep accumulating from progressively more expensive sources until
-MIN_JOBS_BEFORE_ACCEPTING is reached or every source has been tried.
+i.e. exactly: DB match -> use it; elif Adzuna has results -> use those;
+else -> search + crawl.
 
 Two human checkpoints, both via `interrupt()` (langgraph.types), both
 requiring the Postgres checkpointer below to survive across separate
@@ -51,7 +46,6 @@ import time
 from langgraph.errors import GraphInterrupt
 from langgraph.graph import END, StateGraph
 
-from src.job_discovery_matching.config import JobDiscoveryModuleConfig as Cfg
 from src.job_discovery_matching.internal.pipeline.checkpointer import get_checkpointer
 from src.job_discovery_matching.internal.pipeline.nodes import (
     adzuna_search_module,
@@ -113,33 +107,25 @@ def _guarded(name: str, fn):
 
 
 def route_after_db_cache(state: PipelineState) -> str:
-    """DB cache produced MIN_JOBS_BEFORE_ACCEPTING or more jobs that would
-    actually survive hard_filter (db_cache_module already checks
-    location/salary preferences itself, not just embedding similarity —
-    see that module) -> skip straight to hard_filter. Fewer than that, or
-    the node errored -> try Adzuna next to top up. A thin cache result
-    isn't discarded — adzuna_search_module merges with it rather than
-    replacing it."""
-    raw_jobs = state.get("raw_jobs") or []
+    """DB cache produced jobs (or errored) -> skip straight to hard_filter.
+    Nothing in the DB cache cleared the similarity/freshness bar -> try
+    Adzuna next."""
     if state.get("error"):
         return "hard_filter"
-    if len(raw_jobs) >= Cfg.MIN_JOBS_BEFORE_ACCEPTING:
+    if state.get("raw_jobs"):
         return "hard_filter"
     return "adzuna_module"
 
 
 def route_after_adzuna(state: PipelineState) -> str:
-    """Same MIN_JOBS_BEFORE_ACCEPTING threshold, now against the combined
-    total (DB cache + Adzuna, adzuna_search_module merges rather than
-    replaces) -> skip straight to hard_filter. Still short -> fall back to
-    the SearXNG + crawl4ai path (search_module -> extraction_module),
-    which also merges rather than replaces."""
-    raw_jobs = state.get("raw_jobs") or []
+    """Adzuna produced jobs (or the node errored) -> skip straight to
+    hard_filter. Adzuna came back empty -> fall back to the SearXNG +
+    crawl4ai path (search_module -> extraction_module)."""
     if state.get("error"):
         # Let the already-set error short-circuit the fallback nodes too,
         # rather than re-entering a path that will also just no-op.
         return "hard_filter"
-    if len(raw_jobs) >= Cfg.MIN_JOBS_BEFORE_ACCEPTING:
+    if state.get("raw_jobs"):
         return "hard_filter"
     return "search_module"
 

@@ -1,0 +1,33 @@
+.loading {
+  max-width: 640px;
+  margin: var(--s-6) auto;
+  padding: var(--s-6) var(--s-4);
+  text-align: center;
+}
+
+.loading h2 {
+  margin: var(--s-2) 0 var(--s-2);
+  font-size: clamp(1.3rem, 2.4vw, 1.7rem);
+  letter-spacing: -.02em;
+}
+
+.loading p { margin: 0; color: var(--c-text-muted); }
+
+.failedActions {
+  display: flex;
+  gap: var(--s-3);
+  justify-content: center;
+  margin-top: var(--s-4);
+}
+
+.secondary {
+  padding: var(--s-2) var(--s-4);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-sm);
+  background: var(--c-surface);
+  color: var(--c-text);
+  font: inherit;
+  font-size: var(--t-sm);
+  font-weight: 700;
+  cursor: pointer;
+}

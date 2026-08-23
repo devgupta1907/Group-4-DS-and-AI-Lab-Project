@@ -1,14 +1,20 @@
+import { useState } from 'react';
+
 import styles from './CareerReportView.module.css';
 import { CandidateProfileSection } from './components/CandidateProfileSection';
 import { CareerDirectionsSection } from './components/CareerDirectionsSection';
 import { MarketEvidenceSection } from './components/MarketEvidenceSection';
+import { SummaryDashboard } from './components/SummaryDashboard';
 import { WeeklyPlanSection } from './components/WeeklyPlanSection';
 import type { CareerReport } from './types';
 
 type Props = { report: CareerReport };
 
+const TABS = ['Overview', 'Your profile', 'Career directions', 'Market evidence', 'Weekly plan'];
+
 export function CareerReportView({ report }: Props) {
   const { content } = report;
+  const [activeTab, setActiveTab] = useState(0);
 
   return (
     <article className={styles.report}>
@@ -28,16 +34,30 @@ export function CareerReportView({ report }: Props) {
         </div>
       </header>
 
-      <nav className={styles.contents} aria-label="Report contents">
-        {['Your profile', 'Career directions', 'Market evidence', 'Weekly plan'].map(
-          (label, index) => <a href={`#section-${index + 1}`} key={label}>{label}</a>,
-        )}
+      {/* Real tab state now, not anchor links — clicking a tab shows only
+          that section instead of scrolling the page to it. The dashboard
+          (index 0) is the landing view; the other four are the same
+          section components as before, unchanged, just rendered one at a
+          time instead of all four stacked on one continuous scroll. */}
+      <nav className={styles.contents} aria-label="Report sections">
+        {TABS.map((label, index) => (
+          <button
+            type="button"
+            key={label}
+            className={index === activeTab ? styles.tabActive : styles.tab}
+            aria-current={index === activeTab ? 'page' : undefined}
+            onClick={() => setActiveTab(index)}
+          >
+            {label}
+          </button>
+        ))}
       </nav>
 
-      <CandidateProfileSection report={report} />
-      <CareerDirectionsSection report={report} />
-      <MarketEvidenceSection report={report} />
-      <WeeklyPlanSection report={report} />
+      {activeTab === 0 && <SummaryDashboard report={report} onSelectSection={setActiveTab} />}
+      {activeTab === 1 && <CandidateProfileSection report={report} />}
+      {activeTab === 2 && <CareerDirectionsSection report={report} />}
+      {activeTab === 3 && <MarketEvidenceSection report={report} />}
+      {activeTab === 4 && <WeeklyPlanSection report={report} />}
     </article>
   );
 }
