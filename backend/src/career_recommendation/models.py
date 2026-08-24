@@ -5,7 +5,7 @@ This is the validated boundary between Resume Parsing and this module.
 This model makes the contract explicit and checkable, instead of a bad
 profile failing somewhere deep in the pipeline.
 
-"""
+""" 
 
 from __future__ import annotations
 from pydantic import BaseModel, Field, field_validator

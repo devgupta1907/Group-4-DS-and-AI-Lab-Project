@@ -1,15 +1,3 @@
-"""
-Career Recommendation — Deterministic re-ranking + LLM explanation.
-
-Pipeline:
-  1. Weighted ESCO skill-match score (essential match = 1.0, optional match = 0.5)
-  2. Blend with the retrieval similarity score
-  3. Cut to FINAL_TOP_K (5), send those to the explanation LLM
-
-Reads essential/optional skills from DOCUMENT METADATA (written by
-ingestion.py).
-"""
-
 import logging
 from uuid import UUID
 
@@ -46,13 +34,7 @@ def _get_occupation_skills(doc: Document) -> tuple[set[str], set[str]]:
 
 
 def deterministic_rerank(candidate_profile: dict, retrieved: list[tuple[Document, float]]) -> tuple[list[dict], dict]:
-    """
-    takes the 20 occupations from retrieval and re-scores them using exact skill overlap, blended with the semantic similarity score. Cuts down to FINAL_TOP_K (5)
 
-    Returns (ranked, meta). `meta` records HOW the ranking was produced
-    so the LLM prompt and user-facing message can adapt:
-        {"had_skills": bool, "used_relaxed_matching": bool}
-    """
     candidate_skills = {_normalize_skill(s) for s in candidate_profile.get("skills", [])}
     had_skills = len(candidate_skills) > 0
 
@@ -85,23 +67,10 @@ def deterministic_rerank(candidate_profile: dict, retrieved: list[tuple[Document
             }
         )
 
-    # --- Stage 1: hard-requirement exclusion ---
-    # Only applies if the candidate actually listed skills.
-    # --- Hard exclusion removed after evaluation on real resumes ---
-    # Exact skill-string matching does not transfer from ESCO vocabulary
-    # to resume vocabulary, so excluding zero-overlap occupations discarded
-    # good candidates far more often than it removed bad ones.
     filtered = scored
 
-    # Flag profiles where no skill evidence was found at all, so the LLM
-    # prompt and user message can say so honestly.
     used_relaxed_matching = had_skills and not any(r["weighted_skill_score"] > 0 for r in scored)
 
-    # --- Blended ranking ---
-    # Semantic similarity is the primary signal; exact skill overlap is a
-    # bounded bonus rather than an override. The previous lexicographic
-    # sort let a single spurious skill match outrank the entire embedding
-    # signal, which measurably degraded MRR on real resumes.
     max_score = max((r["weighted_skill_score"] for r in filtered), default=0.0)
     for r in filtered:
         norm_skill = (r["weighted_skill_score"] / max_score) if max_score > 0 else 0.0
@@ -237,11 +206,7 @@ def explain_recommendations(
     ranked: list[dict],
     meta: dict,
 ) -> CareerRecommendationResult:
-    """
-    Step 2: explains the occupations that survived deterministic
-    re-ranking. Never raises — on LLM failure it returns deterministic
-    explanations instead.
-    """
+
     if not ranked:
         return CareerRecommendationResult(
             status="no_candidates",
