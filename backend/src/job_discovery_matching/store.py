@@ -62,8 +62,16 @@ def _ranking_to_view(ranking: JobDiscoveryRanking) -> RankedJob:
 
 
 async def _result_from_run(run: JobDiscoveryRun, rankings: list[JobDiscoveryRanking]) -> JobDiscoveryResult:
-    judged_only = [r for r in rankings if r.judge_result is not None]
-    judged_only.sort(key=lambda r: r.judge_result.final_score, reverse=True)
+    """Includes EVERY ranking for the run, not just judged ones — a run
+    where the user declined the judge stage (see judge_confirmation_gate.py)
+    has rankings with no judge_result at all, and those still belong in
+    top_jobs. Sorted by judge final_score where a judge ran, hybrid_score
+    otherwise — the same ordering rule judge_module.py / hybrid_finalize_module.py
+    apply when a run is live, so a later re-read matches what the user saw."""
+    def _sort_key(r: JobDiscoveryRanking) -> float:
+        return r.judge_result.final_score if r.judge_result is not None else r.hybrid_score
+
+    ordered = sorted(rankings, key=_sort_key, reverse=True)
 
     return JobDiscoveryResult(
         run_id=run.id,
@@ -72,7 +80,7 @@ async def _result_from_run(run: JobDiscoveryRun, rankings: list[JobDiscoveryRank
         search_queries=run.search_queries or [],
         jobs_discovered=run.jobs_discovered,
         jobs_after_filter=run.jobs_after_filter,
-        top_jobs=[_ranking_to_view(r) for r in judged_only],
+        top_jobs=[_ranking_to_view(r) for r in ordered],
     )
 
 
@@ -88,7 +96,9 @@ def _result_from_state(
 ) -> JobDiscoveryResult:
     """Builds a JobDiscoveryResult straight from the just-finished
     pipeline state, without a round-trip back to the database. Used by
-    `service.discover_jobs_for_profile()` right after a live run; reads
+    `service.py` right after a live run finishes (either through
+    judge_module or hybrid_finalize_module — `entry["judge"]` is None for
+    the latter, hence `.get("judge")` rather than a required key); reads
     that come later (`get_run`, `get_latest_run`) go through
     `_result_from_run` instead, against what was actually persisted."""
     top_jobs = [
@@ -106,9 +116,9 @@ def _result_from_state(
             bm25_score=entry["bm25_score"],
             embedding_score=entry["embedding_score"],
             hybrid_score=entry["hybrid_score"],
-            rank_position=i + 1,
-            judge=JudgeResultView(**entry["judge"]),
-            final_score=entry["final_score"],
+            rank_position=entry.get("rank_position", i + 1),
+            judge=JudgeResultView(**entry["judge"]) if entry.get("judge") else None,
+            final_score=entry.get("final_score", entry["hybrid_score"]),
         )
         for i, entry in enumerate(final_jobs)
     ]

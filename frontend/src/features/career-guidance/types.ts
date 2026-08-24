@@ -1,8 +1,15 @@
 export type SearchPreferences = {
-  target_location: string | null;
+  /** User-typed locations, priority order, capped at MAX_TARGET_LOCATIONS.
+   *  Left empty when the user adds none — the backend resolves that down
+   *  to the candidate's own resume location as a single-item fallback. */
+  target_locations: string[];
   remote_only: boolean;
   min_salary_lpa: number | null;
 };
+
+/** Matches SearchPreferences.MAX_TARGET_LOCATIONS on the backend
+ *  (job_discovery_matching/models.py) — update both if this changes. */
+export const MAX_TARGET_LOCATIONS = 3;
 
 export type CareerRecommendation = {
   occupation_title: string;

@@ -52,8 +52,12 @@ class CvReview(BaseModel):
     strengths: list[str] = Field(default_factory=list)
     findings: list[CvFinding] = Field(default_factory=list)
     missing_sections: list[str] = Field(default_factory=list)
-    # Scored 0-100 so the UI can show a single headline number. It is a
-    # heuristic quality signal, not a prediction of hiring outcome.
-    score: int = Field(default=0, ge=0, le=100)
-    score_reason: str = Field(default="")
+    # Computed deterministically from the parsed profile and this review's own
+    # findings — never asked of the model, see cv_review/service.py:_compute_ats_score.
+    # Scope is content signals only (sections, keywords, quantification): the
+    # review has no access to the original file, so it cannot see formatting-
+    # driven ATS rejections (columns, tables, unusual fonts). Treat this as a
+    # floor on ATS risk, not a full prediction.
+    ats_score: int = Field(default=0, ge=0, le=100)
+    ats_score_reason: str = Field(default="")
     status: str = Field(default="ok", description="ok | degraded")

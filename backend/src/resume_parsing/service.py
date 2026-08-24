@@ -24,7 +24,7 @@ from typing import Protocol, runtime_checkable
 from uuid import UUID
 
 from src.core.security import CurrentUser
-from src.resume_parsing.schemas import ParseEvent, ProfileRecord, ProfileSummary
+from src.resume_parsing.schemas import CandidateProfile, ParseEvent, ProfileRecord, ProfileSummary
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,6 +74,24 @@ class ResumeParsingService(Protocol):
 
     async def delete_profile(self, profile_id: UUID, user: CurrentUser) -> None:
         """Erase a profile and its parse job (DPDP Act erasure right).
+
+        Raises `ProfileNotFound` if the user does not own it.
+        """
+        ...
+
+    async def update_profile(
+        self, profile_id: UUID, profile: CandidateProfile, user: CurrentUser
+    ) -> ProfileRecord:
+        """Replace a profile's content with a user-corrected version.
+
+        This is a full replacement, not a merge — the caller sends the whole
+        `CandidateProfile` back, edited. `needs_review` and `is_valid` are
+        recomputed against the same validator the parse pipeline uses, so a
+        user who fills in a field the model missed sees it drop off their own
+        review list. Every module downstream (career recommendation, job
+        discovery, the report) reads the profile fresh from this module on
+        every run — see `career_report/service.py:run_guidance_pipeline` — so
+        nothing else needs to change for an edit to reach them.
 
         Raises `ProfileNotFound` if the user does not own it.
         """

@@ -63,3 +63,20 @@ def create_app() -> FastAPI:
     register_cv_review(app)
     register_feedback(app)
     return app
+
+from contextlib import asynccontextmanager
+from src.job_discovery_matching.internal.pipeline.checkpointer import ensure_checkpointer_tables
+
+logger = logging.getLogger(__name__)
+
+@asynccontextmanager
+async def _lifespan(app: FastAPI):
+    try:
+        await ensure_checkpointer_tables()
+    except Exception:
+        logger.exception(
+            "Failed to set up LangGraph checkpoint tables — job discovery's "
+            "query/judge confirmation steps will fail until this is fixed."
+        )
+        raise
+    yield

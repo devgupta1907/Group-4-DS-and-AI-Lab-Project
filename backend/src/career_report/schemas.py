@@ -15,7 +15,12 @@ Effort = Literal["low", "medium", "high"]
 class GenerateReportRequest(BaseModel):
     profile_id: UUID
     career_run_id: UUID | None = None
-    target_location: str | None = None
+    # Capped at 3 — matches SearchPreferences.MAX_TARGET_LOCATIONS
+    # (job_discovery_matching/models.py) and the dialog's own limit. Kept
+    # as a literal 3 here rather than importing that constant, to avoid
+    # this schemas module taking on a job_discovery_matching import purely
+    # for one number; if the cap ever changes, update both.
+    target_locations: list[str] = Field(default_factory=list, max_length=3)
     remote_only: bool = False
     min_salary_lpa: float | None = None
 

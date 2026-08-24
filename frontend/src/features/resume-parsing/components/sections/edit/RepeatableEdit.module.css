@@ -1,0 +1,72 @@
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-3);
+}
+
+@media (max-width: 640px) {
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.note {
+  margin: 0 0 var(--s-4);
+  color: var(--c-text-subtle);
+  font-size: var(--t-xs);
+}
+
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin-bottom: var(--s-3);
+  color: var(--c-text-muted);
+  font-size: var(--t-sm);
+}
+
+.checkboxRow input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--c-teal);
+}
+
+.repeatable {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+.entryEdit {
+  padding: var(--s-4);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  background: var(--c-surface-sunken);
+}
+
+.removeBtn {
+  padding: var(--s-1) 0;
+  border: 0;
+  background: none;
+  color: var(--c-danger);
+  font: inherit;
+  font-size: var(--t-sm);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.addEntryBtn {
+  align-self: flex-start;
+  padding: var(--s-2) var(--s-4);
+  border: 1px dashed var(--c-border-strong);
+  border-radius: var(--r-md);
+  background: none;
+  color: var(--c-teal);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.addEntryBtn:hover {
+  background: var(--c-aqua-soft);
+}

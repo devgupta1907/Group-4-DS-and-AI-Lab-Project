@@ -92,6 +92,14 @@ class StubService:
             raise ProfileNotFound()
         self.deleted.append(profile_id)
 
+    async def update_profile(
+        self, profile_id: UUID, profile: CandidateProfile, user: CurrentUser
+    ) -> ProfileRecord:
+        if profile_id != PROFILE_ID:
+            raise ProfileNotFound()
+        record = _record()
+        return record.model_copy(update={"profile": profile})
+
 
 def build_client(service: StubService) -> AsyncClient:
     app = FastAPI()
@@ -203,6 +211,48 @@ async def test_deleting_a_profile_returns_204(stub: StubService) -> None:
         response = await client.delete(f"/api/resume-parsing/profiles/{PROFILE_ID}")
     assert response.status_code == 204
     assert stub.deleted == [PROFILE_ID]
+
+
+async def test_editing_a_profile_returns_the_corrected_profile(stub: StubService) -> None:
+    edited = CandidateProfile(
+        contact=Contact(name="Jane A. Doe"),
+        skills=["Python", "SQL"],  # the field the model missed
+    )
+    async with build_client(stub) as client:
+        response = await client.put(
+            f"/api/resume-parsing/profiles/{PROFILE_ID}",
+            json=edited.model_dump(mode="json"),
+        )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["profile"]["skills"] == ["Python", "SQL"]
+    assert body["profile"]["contact"]["name"] == "Jane A. Doe"
+
+
+async def test_editing_a_profile_the_caller_does_not_own_maps_to_404(
+    stub: StubService,
+) -> None:
+    edited = CandidateProfile(contact=Contact(name="Someone Else"))
+    async with build_client(stub) as client:
+        response = await client.put(
+            f"/api/resume-parsing/profiles/{uuid4()}",
+            json=edited.model_dump(mode="json"),
+        )
+    assert response.status_code == 404
+    assert response.json()["code"] == "profile_not_found"
+
+
+async def test_editing_a_profile_still_rejects_an_off_schema_field(
+    stub: StubService,
+) -> None:
+    """The edit path is still `CandidateProfile`: extra="forbid" applies here too."""
+    payload = CandidateProfile(contact=Contact(name="Jane Doe")).model_dump(mode="json")
+    payload["email"] = "jane@example.com"
+    async with build_client(stub) as client:
+        response = await client.put(
+            f"/api/resume-parsing/profiles/{PROFILE_ID}", json=payload
+        )
+    assert response.status_code == 422
 
 
 def test_the_stub_actually_satisfies_the_contract() -> None:

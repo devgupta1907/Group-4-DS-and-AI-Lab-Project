@@ -65,6 +65,11 @@ class CandidateProfileRecord(Base):
     needs_review: Mapped[list[str]] = mapped_column(JSONB, default=list)
     is_valid: Mapped[bool] = mapped_column(Boolean, default=True)
 
+    # NULL until a user edits the profile post-parse; set on every edit after.
+    # Downstream pipeline stages always read the current row, so this is a
+    # provenance marker, not a branch point — see resume_parsing/service.py.
+    edited_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     job: Mapped[ResumeParseJob] = relationship(back_populates="profile")

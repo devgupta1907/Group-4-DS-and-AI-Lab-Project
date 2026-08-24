@@ -7,6 +7,10 @@ import re
 from urllib.parse import urlparse
 
 from src.job_discovery_matching.config import JobDiscoveryModuleConfig as Cfg
+from src.job_discovery_matching.internal.pipeline.nodes.hard_filter import (
+    _passes_location,
+    _passes_salary,
+)
 from src.job_discovery_matching.internal.pipeline.state import PipelineState
 from src.job_discovery_matching.internal.services import searxng_client
 from src.core.db import get_session_factory
@@ -94,14 +98,37 @@ async def run(state: PipelineState) -> PipelineState:
             "the stored posting corpus.",
             len(queries), queries,
         )
+        candidate = state["candidate_json"]
+        preferences = state.get("preferences") or {}
+
         async with get_session_factory()() as session:
             repo = JobDiscoveryRepository(session)
-            cached = await repo.find_recent_postings(limit=Cfg.MAX_JOB_URLS)
+            # Pulls a WIDER pool than MAX_JOB_URLS because most of it is
+            # about to be discarded by the same location/salary checks
+            # hard_filter itself applies. find_recent_postings is "the N
+            # newest rows in the whole shared table" — any user, any
+            # previous search — so without filtering here, a search for a
+            # town with few indexed postings (where SearXNG legitimately
+            # returns nothing) silently returned whatever anyone else
+            # happened to crawl most recently, in completely unrelated
+            # cities. Recent-but-irrelevant is not a usable substitute for
+            # relevant.
+            cached = await repo.find_recent_postings(limit=Cfg.DB_CACHE_POOL_SIZE)
 
-        job_urls = [posting.source_url for posting in cached]
+        matched = [
+            posting for posting in cached
+            if _passes_location(candidate, posting.job_json, posting.job_text, preferences)
+            and _passes_salary(posting.job_json, posting.job_text, preferences)
+        ]
+
+        job_urls = [posting.source_url for posting in matched[: Cfg.MAX_JOB_URLS]]
         state["job_urls"] = job_urls
         state["used_cached_postings"] = bool(job_urls)
-        logger.info("Recovered %d postings from the stored corpus", len(job_urls))
+        logger.info(
+            "Recovered %d/%d stored postings matching location/salary preferences "
+            "(of %d checked) from the stored corpus",
+            len(job_urls), len(matched), len(cached),
+        )
 
     state.setdefault("progress", []).append("search_complete")
     return state

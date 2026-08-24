@@ -16,6 +16,11 @@ export type AnalysisStatus = 'idle' | 'reporting' | 'complete' | 'failed' | 'rec
  * actually asked for. The occupations still appear in the report, where they
  * carry their supporting evidence.
  *
+ * The user-facing version of that idea now lives in Rapid Search
+ * (features/job-discovery/RapidSearchFlow.tsx), which recommends directions,
+ * lets the user select among them, then runs job discovery conversationally.
+ * It is deliberately kept OUT of this hook so the report flow stays one click.
+ *
  * The backend still runs recommendation before job discovery internally, and
  * POST /api/career/recommend remains available for callers that want the
  * occupations alone.

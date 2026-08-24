@@ -1,0 +1,113 @@
+.step {
+  max-width: 780px;
+  margin: var(--s-5) auto;
+  padding: 0 var(--s-4);
+}
+
+.header { margin-bottom: var(--s-4); }
+
+.header h2 {
+  margin: var(--s-2) 0 var(--s-2);
+  font-size: clamp(1.4rem, 2.6vw, 1.9rem);
+  letter-spacing: -.03em;
+  line-height: 1.15;
+}
+
+.lede {
+  max-width: 60ch;
+  margin: 0;
+  color: var(--c-text-muted);
+  font-size: var(--t-sm);
+  line-height: 1.55;
+}
+
+.list {
+  display: grid;
+  gap: var(--s-3);
+  margin: 0 0 var(--s-4);
+  padding: 0;
+  list-style: none;
+}
+
+.card, .cardOn {
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  background: var(--c-surface);
+  transition: border-color .12s ease, background .12s ease;
+}
+
+.cardOn {
+  border-color: var(--c-aqua-500);
+  background: var(--c-accent-soft);
+}
+
+.cardLabel {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--s-3);
+  align-items: start;
+  padding: var(--s-4);
+  cursor: pointer;
+}
+
+.cardLabel input { margin-top: .25rem; }
+
+.cardBody { display: grid; gap: var(--s-2); }
+
+.cardTop {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-3);
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.cardTop b { font-size: var(--t-md); letter-spacing: -.01em; }
+
+.explanation {
+  color: var(--c-text);
+  font-size: var(--t-sm);
+  line-height: 1.5;
+}
+
+.evidence {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.evidence span {
+  padding: .2rem .6rem;
+  border-radius: var(--r-pill);
+  background: var(--c-surface-2, #eef1f2);
+  color: var(--c-text-muted);
+  font-size: var(--t-xs);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  align-items: center;
+  justify-content: space-between;
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--c-border);
+}
+
+.count { color: var(--c-text-muted); font-size: var(--t-sm); }
+
+.buttons { display: flex; gap: var(--s-3); align-items: center; }
+
+.secondary {
+  padding: var(--s-2) var(--s-4);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-sm);
+  background: var(--c-surface);
+  color: var(--c-text);
+  font: inherit;
+  font-size: var(--t-sm);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.secondary:hover { background: var(--c-accent-soft); }

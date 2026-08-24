@@ -26,10 +26,6 @@ export function CandidateProfileSection({ report }: Props) {
         <Signal label="Strongest market lane" value={assessment.lane} />
         <Signal label="Development focus" value={content.narrative.development_priority} />
       </div>
-      <div className={styles.analysisGrid}>
-        <EvidenceList title="What supports this assessment" items={assessment.evidence} />
-        <EvidenceList title="What differentiates the profile" items={assessment.differentiators} />
-      </div>
       <EvidenceList
         title="Signals to strengthen or verify"
         items={[...assessment.watchouts, ...assessment.limitations]}
@@ -47,8 +43,6 @@ function profileView(content: CareerReport['content']) {
     position: assessment.market_position,
     depth: assessment.evidence_depth,
     lane: assessment.strongest_lane,
-    evidence: assessment.evidence_summary,
-    differentiators: assessment.differentiators,
     watchouts: assessment.watchouts,
     limitations: snapshot?.data_limitations ?? [],
   };
@@ -60,8 +54,6 @@ function defaultAssessment(content: CareerReport['content']) {
     market_position: content.narrative.executive_summary[0] ?? '',
     evidence_depth: 'Limited',
     strongest_lane: content.narrative.strongest_direction,
-    evidence_summary: [] as string[],
-    differentiators: [] as string[],
     watchouts: [] as string[],
   };
 }

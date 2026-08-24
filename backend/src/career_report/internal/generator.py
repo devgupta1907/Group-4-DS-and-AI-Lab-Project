@@ -16,7 +16,7 @@ from src.career_report.schemas import (
     WeeklyPlan,
 )
 
-PROMPT_VERSION = "v3"
+PROMPT_VERSION = "v4"
 
 
 def _text(value: Any) -> str:
@@ -46,16 +46,14 @@ def _profile_assessment(profile: dict[str, Any], strongest: str) -> ProfileAsses
     )
     evidence = []
     if titles:
-        evidence.append(f"Role progression includes {', '.join(titles[:3])}.")
+        evidence.append(f"Roles: {', '.join(titles[:2])}.")
     if skills:
-        evidence.append(
-            f"The resume repeatedly presents a technical base spanning {', '.join(skills[:6])}."
-        )
+        evidence.append(f"Core stack: {', '.join(skills[:4])}.")
     if education:
         degree = _text(education[0].get("degree"))
         field = _text(education[0].get("field"))
         if degree or field:
-            evidence.append(f"Formal foundation: {' in '.join(x for x in (degree, field) if x)}.")
+            evidence.append(f"Education: {' in '.join(x for x in (degree, field) if x)}.")
     differentiators = []
     if senior:
         differentiators.append(
@@ -83,13 +81,13 @@ def _profile_assessment(profile: dict[str, Any], strongest: str) -> ProfileAsses
     return ProfileAssessment(
         seniority_signal=seniority,
         market_position=(
-            f"Your strongest evidenced market lane is {strongest}. This is a "
-            "profile-positioning signal, not a percentile ranking against other candidates."
+            f"Strongest evidenced market lane: {strongest} — a positioning signal, "
+            "not a percentile rank."
         ),
         evidence_depth=depth,
         strongest_lane=strongest,
-        differentiators=differentiators[:3],
-        evidence_summary=evidence[:4],
+        differentiators=differentiators[:2],
+        evidence_summary=evidence[:3],
         watchouts=watchouts,
     )
 
@@ -100,10 +98,10 @@ def _role_evidence(rec: dict[str, Any], profile: dict[str, Any]) -> list[str]:
     titles = [_text(item.get("job_title")) for item in experience if item.get("job_title")]
     skills = [str(skill) for skill in (profile.get("skills") or []) if skill]
     if titles:
-        evidence.append(f"Role history: {', '.join(titles[:3])}")
+        evidence.append(f"Role history: {', '.join(titles[:2])}")
     if skills:
-        evidence.append(f"Broader demonstrated stack: {', '.join(skills[:6])}")
-    return list(dict.fromkeys(evidence))[:6]
+        evidence.append(f"Demonstrated stack: {', '.join(skills[:4])}")
+    return list(dict.fromkeys(evidence))[:3]
 
 
 def repeated_gaps(jobs: list[dict[str, Any]]) -> list[tuple[str, int]]:
@@ -309,21 +307,38 @@ def generate_narrative(
             {"profile": profile, "recommendations": recommendations, "jobs": jobs}
         )
         prompt = (
-            "Create detailed, candidate-facing career guidance from the JSON evidence. "
+            "Create concise, candidate-facing career guidance from the JSON evidence. "
+            "Write for someone reading on a phone in under two minutes: short sentences, "
+            "no filler, no restating a fact that another section already states. "
             "Use only supplied roles, skills, gaps and jobs. Never invent facts, scores, "
             "URLs or qualifications. Suggestions must cite evidence. Use categorical "
-            "readiness and effort. Explore the candidate's current positioning before future "
-            "options. Include a profile_assessment that interprets seniority, evidence depth, "
-            "strongest market lane, differentiators and watchouts without repeating raw resume "
-            "sections or inventing a percentile rank. Provide 3-5 roles and give each role a "
-            "substantial rationale plus 3-6 independent evidence signals. One isolated skill is "
-            "never sufficient proof of role fit. Provide three pathways and a four-week "
-            "weekly_plan with at least three specific tasks per week. Every task must name "
-            "its evidence in based_on. "
+            "readiness and effort. "
+            "profile_assessment: market_position is one sentence. evidence_summary has at "
+            "most 3 bullets, each under 12 words — a fact, not a sentence. At most 2 "
+            "differentiators and 2 watchouts, same style. "
+            "Provide exactly 3 roles, ranked by fit. Each rationale is one sentence, under "
+            "25 words. Each role has at most 3 evidence bullets, each under 12 words. One "
+            "isolated skill is never sufficient proof of role fit. next_step is one "
+            "concrete action, under 15 words. "
+            "Provide three pathways; every pathway field is a short phrase, never a "
+            "paragraph. Provide a four-week weekly_plan with exactly 3 tasks per week; "
+            "each action is a single imperative sentence under 15 words, and based_on is "
+            "a short phrase, not a sentence. "
             f"Allowed role titles: {allowed_roles}. Allowed skills to learn: {allowed_gaps}. "
             f"Evidence: {evidence}"
         )
         result = llm.with_structured_output(ReportNarrative).invoke(prompt)
+
+        # Backstop, not a substitute for the prompt above: a model that ignores
+        # "exactly 3 roles" or over-writes evidence bullets still gets trimmed
+        # here, so crispness doesn't depend on the model's compliance alone.
+        result.roles = result.roles[:3]
+        for role in result.roles:
+            role.evidence = role.evidence[:3]
+        result.profile_assessment.evidence_summary = result.profile_assessment.evidence_summary[:3]
+        result.profile_assessment.differentiators = result.profile_assessment.differentiators[:2]
+        result.profile_assessment.watchouts = result.profile_assessment.watchouts[:2]
+
         if any(role.title not in allowed_roles for role in result.roles):
             return fallback, ""
         if any(

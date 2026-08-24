@@ -1,0 +1,103 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px 20px 64px;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.header h1 {
+  margin: 4px 0;
+}
+
+/* --- transcript --------------------------------------------------- */
+
+.transcript {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.assistantBubble,
+.userBubble {
+  max-width: 82%;
+  padding: 14px 18px;
+  border-radius: 16px;
+  font: 400 14px/1.55 var(--f-sans);
+}
+
+.assistantBubble {
+  align-self: flex-start;
+  background: var(--c-surface-sunken);
+  color: var(--c-text);
+  border-bottom-left-radius: 4px;
+}
+
+.userBubble {
+  align-self: flex-end;
+  background: var(--c-teal);
+  color: var(--c-surface);
+  border-bottom-right-radius: 4px;
+}
+
+/* The live/interactive step (preferences form, query checklist, judge
+   confirmation) renders as a wide assistant-aligned card rather than a
+   bubble — these carry real inputs and lists, not a line of text, so
+   forcing bubble width/padding would just make them cramped. */
+.liveBubble {
+  align-self: stretch;
+  max-width: 100%;
+}
+
+.statusNote {
+  font: 500 13px/1.4 var(--f-sans);
+  color: var(--c-warning);
+  background: var(--c-warning-soft);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin: 0 0 12px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
+/* --- typing indicator ------------------------------------------------ */
+
+.typing {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.typing i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--c-text-muted);
+  animation: bounce 1.2s infinite ease-in-out;
+}
+
+.typing i:nth-child(2) { animation-delay: .15s; }
+.typing i:nth-child(3) { animation-delay: .3s; }
+
+@keyframes bounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: .4; }
+  40% { transform: translateY(-4px); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .typing i { animation: none; }
+}
