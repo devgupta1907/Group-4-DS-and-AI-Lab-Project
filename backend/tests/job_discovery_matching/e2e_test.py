@@ -105,7 +105,7 @@ OUTPUT_FILE = "e2e_pipeline_test_results.xlsx"
 # Job search preferences sent at Stage 3a. Kept minimal / permissive so the
 # search isn't artificially narrowed for a test run.
 SEARCH_PREFERENCES = {
-    "target_location": None,
+    "target_locations": None,
     "remote_only": False,
     "min_salary_lpa": None,
 }

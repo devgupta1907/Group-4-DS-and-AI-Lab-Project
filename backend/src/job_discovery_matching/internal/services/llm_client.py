@@ -81,7 +81,7 @@ async def generate_search_queries(
     skills = candidate_json.get("skills") or []
     prefs = preferences or {}
     target_locations = prefs.get("target_locations") or []
-    target_location = ", ".join(target_locations) if target_locations else "(none given)"
+    target_locations = ", ".join(target_locations) if target_locations else "(none given)"
     remote_only = bool(prefs.get("remote_only"))
     min_salary_lpa = prefs.get("min_salary_lpa")
     min_salary_text = f"{min_salary_lpa} LPA" if min_salary_lpa else "(none given)"
@@ -91,7 +91,7 @@ async def generate_search_queries(
             num_queries=num_queries,
             candidate_target_roles=target_roles or ["(none listed — infer from candidate profile below)"],
             candidate_skills=skills[:15] or ["(none listed — infer from candidate profile below)"],
-            target_location=target_location,
+            target_locations=target_locations,
             remote_only=remote_only,
             min_salary_lpa=min_salary_text,
             candidate_json=candidate_json,

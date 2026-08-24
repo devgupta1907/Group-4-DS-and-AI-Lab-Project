@@ -42,7 +42,7 @@ To do that, every query must contain at least one hiring word:
 
 The candidate's target roles are: {candidate_target_roles}
 The candidate's top skills are: {candidate_skills}
-The candidate's target location(s) for this search are: {target_location}
+The candidate's target location(s) for this search are: {target_locations}
 Remote-only: {remote_only}
 Minimum acceptable salary: {min_salary_lpa}
 

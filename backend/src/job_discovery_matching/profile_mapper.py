@@ -71,14 +71,14 @@ def from_parsed_resume(
     # candidate_json "location" used for matching; hard_filter still
     # evaluates against the full list.
     _target_locations = prefs.get("target_locations") or []
-    target_location = (_target_locations[0] if _target_locations
+    target_locations = (_target_locations[0] if _target_locations
                        else (parsed.contact.location or ""))
     return {
         "current_role": _current_role(parsed),
         "target_roles": list(parsed.job_titles),
         "skills": list(parsed.skills),
         "domain": "",
-        "location": target_location,
+        "location": target_locations,
         "remote_ok": bool(prefs.get("remote_only", False)),
         "experience_years": None,
         "min_salary_lpa": float(prefs.get("min_salary_lpa") or 0.0),
