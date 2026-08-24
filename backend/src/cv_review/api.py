@@ -1,14 +1,3 @@
-"""
-CV review API.
-
-    POST /api/cv-review    critique the stored parsed profile
-
-Reads the profile through resume_parsing's public service, the same boundary
-career_recommendation and job_discovery_matching cross. Nothing is persisted,
-so repeat calls are recomputed rather than cached — the review is cheap
-(one model call) and a candidate editing their CV wants the new answer, not
-the old one.
-"""
 
 from __future__ import annotations
 

@@ -7,12 +7,9 @@ class CareerRecommendationModuleConfig:
     # Cleaned ESCO dataset — one row per occupation (3,039 rows)
     ESCO_DATA_PATH = str(GlobalConfig.DATA_DIR / "Career_Recommendation_Cleaned_Dataset.csv")
 
-    #----- RAG Parameters------
-
-    # Number of occupations to pull from vector store for re-ranking (Step 1)
     RETRIEVAL_TOP_K = 20
 
-    # Number of occupations sent to LLM for explanation and display to user (Step 2)
+
     FINAL_TOP_K = 7
 
     # Weights for skill type

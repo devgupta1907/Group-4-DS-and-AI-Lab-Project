@@ -1,14 +1,4 @@
-"""
-Career Recommendation — Retrieval step.
 
-Takes a validated Candidate Profile JSON (output of Resume Parsing) and
-pulls the top-K nearest ESCO occupations from the persisted vector store
-built by ingestion.py.
-
-Works against the enriched v2 index, whose documents contain:
-    Occupation title / Alternative titles / Description /
-    Essential skills / Optional or related skills
-"""
 
 from langchain_core.documents import Document
 from src.core.config import GlobalConfig

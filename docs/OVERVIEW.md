@@ -28,7 +28,7 @@ Resume (PDF / DOCX / image)
 ┌─────────────────────────┐
 │  RESUME PARSING         │  Gemini 3.5 Flash (vision, 150 DPI)
 │  vision routing →       │  → schema validation
-│  extraction → merge     │  → Gemini 2.5 Flash-Lite fallback retry
+│  extraction → merge     │  → Gemini 2.5 Flash fallback retry
 └─────────────────────────┘
         │
         ▼  Candidate Profile JSON  (encrypted at rest)
@@ -43,9 +43,9 @@ Resume (PDF / DOCX / image)
         ▼  Ranked ESCO occupations + grounded explanations
         │
 ┌─────────────────────────┐
-│  JOB DISCOVERY &        │  Gemini 2.5 Flash-Lite (query gen)
+│  JOB DISCOVERY &        │  Gemini 3.5 Flash-Lite (query gen)
 │  MATCHING               │  → job API / SearXNG + Crawl4AI
-│  7-node LangGraph       │  → zero-LLM extraction, hard filter
+│  multi-node LangGraph       │  → zero-LLM extraction, hard filter
 │  pipeline               │  → BM25 0.5 + embedding 0.5 hybrid rank
 └─────────────────────────┘  → batched judge over top 5
         │
@@ -67,14 +67,16 @@ Resume (PDF / DOCX / image)
 |---|---|---|
 | Resume Parsing | Uploaded resume (PDF / DOCX / image) | Validated Candidate Profile JSON |
 | Career Recommendation | Candidate Profile JSON | Top-N ranked ESCO occupations with grounded explanations |
-| Job Discovery and Matching | Candidate Profile JSON + recommended roles | Ranked shortlist of job postings with match score and rationale |
+| Job Discovery and Matching | Candidate Profile JSON + recommended roles + optional search preferences (up to three locations, remote-only, minimum salary) | Ranked shortlist of job postings with match score and rationale |
 | Career Report | Profile + recommendations + shortlist | HTML and PDF career report |
 | CV Review | Stored candidate profile | Recruiter-style critical findings (read-only) |
 | Feedback | Rating, reason, optional comment, optional profile identifier | Stored feedback record; aggregate summary counts |
 
 ### Request flow
 
-A resume is uploaded and parsed into a profile. The profile is embedded and matched against the ESCO index to produce ranked career recommendations with explanations. Those recommended roles seed job search and matching, which returns a ranked shortlist. Independently of that flow, a floating feedback control is available on every screen and writes directly to the feedback table.
+A resume is uploaded and parsed into a profile, which the user can review and edit. The profile is embedded and matched against the ESCO index to produce ranked career recommendations with explanations. Before job discovery runs, the user supplies optional search preferences — up to three target locations, a remote-only flag, and a minimum salary — which constrain query generation, the job-API location parameter, and the hard-filter stage. Those recommended roles then seed job search and matching, which returns a ranked shortlist.
+
+The final report opens on a summary view — strongest direction, live-opportunity count, and an at-a-glance narrative — with the four detailed sections (profile, career directions, market evidence, weekly plan) reachable as separate views rather than one continuous page. Independently of that flow, a floating feedback control is available on every screen and writes directly to the feedback table.
 
 The Feedback module is architecturally isolated, no other module imports it, so it can fail or be disabled without affecting the recommendation or job-search paths. This is enforced automatically by an import-linter contract.
 
@@ -88,7 +90,7 @@ The Feedback module is architecturally isolated, no other module imports it, so 
 | **Backend API** | Single FastAPI application exposing all module routers | AWS EC2, behind the frontend · locally on port 8000 |
 | **Database + vector store** | Supabase PostgreSQL with pgvector, HNSW cosine index. Holds candidate profiles, recommendation runs, the job store, feedback, and the 3,039-occupation ESCO index | Hosted (Supabase), not run locally |
 | **Embedding model** | `BAAI/bge-base-en-v1.5`, 768-dim, 110M params | Local CPU inside the backend process — no GPU anywhere |
-| **Generative models** | Gemini 3.5 Flash, Gemini 3.5 Flash-Lite, Gemini 2.5 Flash-Lite | Hosted API, called per request |
+| **Generative models** | Gemini 3.5 Flash, Gemini 3.5 Flash-Lite, Gemini 2.5 Flash | Hosted API, called per request |
 | **SearXNG** | Self-hosted metasearch, Job Discovery fallback | Docker container, port 8888 |
 | **Crawl4AI** | Headless-browser extraction for postings without structured metadata | In-process, self-hosted |
 

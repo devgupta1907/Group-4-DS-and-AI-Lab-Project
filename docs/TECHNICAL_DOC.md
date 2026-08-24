@@ -64,7 +64,7 @@ Resume file (PDF / DOCX / image)
 ┌──────────────────────┐
 │ JOB DISCOVERY &      │  query gen → search → zero-LLM extraction
 │ MATCHING             │  → hard filter → BM25+embedding hybrid rank
-│  (7-node LangGraph)  │  → batched judge
+│  (multi-node LangGraph)  │  → batched judge
 └──────────┬───────────┘
            │  Ranked shortlist of 5 postings + match scores + rationale
            ▼
@@ -96,13 +96,13 @@ Resume file (PDF / DOCX / image)
 | Module | Component | Technology |
 |---|---|---|
 | Resume Parsing | Primary parser | Gemini 3.5 Flash, vision-only, 150 DPI |
-| Resume Parsing | Backup and repair | Gemini 2.5 Flash-Lite |
+| Resume Parsing | Backup and repair | Gemini 2.5 Flash |
 | Career Recommendation | Embedding model | BAAI/bge-base-en-v1.5, 768 dim, local CPU |
 | Career Recommendation | Vector store | Supabase PostgreSQL, pgvector, HNSW cosine index |
 | Career Recommendation | Explanation model | Gemini 3.5 Flash-Lite |
 | Job Discovery and Matching | Query generation | Gemini 3.5 Flash-Lite |
 | Job Discovery and Matching | Judge | Batched judge call over the top 5 |
-| Job Discovery and Matching | Search and crawl | Azudhan job API (primary); SearXNG + Crawl4AI (fallback) |
+| Job Discovery and Matching | Search and crawl | Adzuna job API (primary); SearXNG + Crawl4AI (fallback) |
 | Job Discovery and Matching | Ranking | BM25 (rank_bm25) + bge-base-en-v1.5 cosine similarity |
 | Feedback | Storage | Supabase PostgreSQL via FeedbackRepository |
 | Frontend | Application | React 19, TypeScript, Vite, served via nginx |
@@ -117,7 +117,7 @@ Resume file (PDF / DOCX / image)
 | Backend API | Single FastAPI application exposing all six module routers | Same EC2 instance, port 8000 (proxied) |
 | Database + vector store | Supabase PostgreSQL with the pgvector extension, HNSW cosine index over 3,039 ESCO occupation vectors | Supabase managed hosting, `ap-northeast-2` |
 | Embedding model | `BAAI/bge-base-en-v1.5` (110M params, ~450 MB) | Runs **locally on CPU** inside the backend process; cached from Hugging Face on first start |
-| Generative models | Gemini 3.5 Flash, Gemini 3.5 Flash-Lite, Gemini 2.5 Flash-Lite | Hosted Google API — nothing is self-hosted |
+| Generative models | Gemini 3.5 Flash, Gemini 3.5 Flash-Lite, Gemini 2.5 Flash | Hosted Google API — nothing is self-hosted |
 | Search | SearXNG metasearch | Self-hosted Docker container, port 8888 |
 | Crawler | Crawl4AI (headless Chromium) | In-process, invoked by the Job Discovery fallback path |
 
@@ -311,7 +311,7 @@ profile → flatten to semantic query → BGE encode (768-d)
 
 The re-ranking step is intentionally rule-based rather than a second neural pass, so occupation order is reproducible, inspectable, and requires no additional model call.
 
-**Job Discovery and Matching — seven-node LangGraph StateGraph.**
+**Job Discovery and Matching — multi-node LangGraph StateGraph.**
 
 ```
 profile_ingest → query_generator → search → extraction
@@ -345,8 +345,8 @@ There are no hyperparameters in the training sense. The tunable surface is promp
 | Job Matching | Shortlist after hybrid ranking | 15 | Heuristic — not varied in the sweep |
 | Job Matching | Hybrid / judge weights | 0.8 / 0.2 | Heuristic — not varied in the sweep |
 | Job Matching | RAG chunks per job at judge time | 2 | Heuristic — judge prompt size |
-| Job Discovery | Source routing | Azudhan API primary; SearXNG + Crawl4AI fallback | **Empirical** — API path validated across domains and locations |
-| Job Discovery | Search and crawl parameters | max_results 5, crawl limit 3, concurrency 3, timeout 8,000 ms | **Empirical** — five parameter sets compared |
+| Job Discovery | Source routing | Adzuna API primary; SearXNG + Crawl4AI fallback | **Empirical** — API path validated across domains and locations |
+| Job Discovery | Search and crawl parameters | max_results 5, crawl limit 3, concurrency 3, timeout 15,000 ms | **Empirical** — five parameter sets compared |
 
 **Scoring formulas.**
 
@@ -378,7 +378,7 @@ The conventional Milestone 4 headings therefore map to configuration-tuning equi
 **What was optimised instead: cost and latency.**
 
 - Exactly **two model calls per Job Discovery run** regardless of how many jobs are discovered. A naive per-item design would issue one extraction call per discovered job and one judge call per shortlisted job — an estimated 45+ calls. Making extraction deterministic and batching the judge reduces this to two.
-- **Zero-LLM extraction** — structured fields read from JSON-LD or page metadata rather than a model call. Faster, more reliable, free per job.
+- **Zero-LLM extraction** — structured fields read from JSON-LD or page metadata rather than a model call. Faster, free per job, and not subject to model-call failure.
 - **Persistent occupation index** — embeddings generated once offline, so no taxonomy embedding call is made at request time regardless of index size.
 - **Global deduplicated job store** — a posting is crawled, parsed, and embedded once, then reused by every subsequent search from any candidate.
 - **Local embedding model** — BGE runs on CPU, so embeddings cost nothing per call and are unaffected by API rate limits.
@@ -397,11 +397,11 @@ Full evaluation was carried out at Milestone 5 against the corrected 86-resume g
 
 | Component | Result | Status |
 |---|---|---|
-| Resume Parsing | All six sections ≥ 0.75 F1 — Contact 0.98, Experience 0.98, Education 0.92, Projects 0.88, Skills 0.82, Certifications 0.75 | **Passing** |
+| Resume Parsing | Five of six sections ≥ 0.75 F1 — Contact 0.98, Experience 0.98, Education 0.92, Projects 0.88, Skills 0.82; Certifications 0.7472, marginally below | **Passing in five of six sections** |
 | Career Recommendation | MRR 0.6121, Hit@1 0.4884, Hit@5 0.8372, Hit@7 0.8488, Hit@20 0.9186, 0 failures in 86 | **Passing** |
-| Career Recommendation (held-out) | MRR 0.6359, Hit@5 0.8269 on 52 unseen resumes | **Generalises** |
+| Career Recommendation (held-out) | MRR 0.6359, Hit@5 0.8269 on 52 unseen resumes | **Measured on unseen data** |
 | Job Matching ranking | Precision@5 0.8486, NDCG@10 0.9795, Spearman 0.8767 at 226 ms | **Passing** — efficiency result |
-| Job Discovery | Coverage 1.0 in every configuration; crawl success 0.50 | Coverage passing |
+| Job Discovery | Coverage 1.0 in every configuration; crawl success 0.50 | Coverage passing; **crawl success below the 0.75 acceptance threshold**, and no end-to-end discovery reliability figure has been established |
 | Query generation prompt | Schema 1.0000, diversity 0.8010, 100% pass rate | **Passing** |
 | Integration | All modules over one application and one database | **Complete** |
 
@@ -455,7 +455,7 @@ Upload (PDF/DOCX/image)
   → text-layer probe (≥100 chars/page?) → text path : vision path
   → render page to image (150 DPI)
   → Gemini 3.5 Flash, one page per call, schema-constrained prompt
-  → JSON schema validation  ── fail ──→ Gemini 2.5 Flash-Lite retry (once)
+  → JSON schema validation  ── fail ──→ Gemini 2.5 Flash retry (once)
                                           ── fail ──→ partial profile + review flags
   → multi-page merge, normalisation, case-insensitive skill dedup
   → field-level encryption of sensitive fields
@@ -481,8 +481,8 @@ Candidate Profile
 ```
 Profile + recommended roles
   → profile_ingest    : embed candidate locally (no LLM call)
-  → query_generator   : Gemini 2.5 Flash-Lite → 5–6 diverse queries
-  → search            : Azudhan API primary; SearXNG fallback
+  → query_generator   : Gemini 3.5 Flash-Lite → 5–6 diverse queries
+  → search            : Adzuna API primary; SearXNG fallback
   → extraction        : job-store hit? skip crawl : Crawl4AI + JSON-LD parse (zero LLM)
   → hard_filter       : permissive regex on experience / location
   → matching          : 0.5×BM25 + 0.5×embedding → top 15
@@ -550,8 +550,13 @@ Confidence bands track the deterministic evidence rather than being asserted by 
 ```bash
 curl -X POST http://localhost:8000/api/jobs/search \
   -H "Content-Type: application/json" \
-  -d '{"profile_id": "8f3c1a92-..."}'
+  -d '{"profile_id": "8f3c1a92-...",
+       "target_locations": ["Bengaluru", "Chennai"],
+       "remote_only": false,
+       "min_salary_lpa": 10}'
 ```
+
+`target_locations` (up to three), `remote_only` and `min_salary_lpa` are optional search preferences supplied by the user before discovery runs. They constrain query generation, the Adzuna location parameter, and the hard-filter stage. Omitted entirely, the pipeline falls back to the candidate's own resume location.
 
 Returns a ranked shortlist of five jobs, each with `final_score`, `hybrid_score`, matched and missing criteria, and a rationale. On a niche domain where neither the primary API nor the SearXNG fallback returns results, the endpoint returns an **empty shortlist with a no-matches status**, not an error.
 
@@ -590,7 +595,7 @@ curl http://localhost:8000/health          # → {"status":"ok"}
 
 | Model | Hosting |
 |---|---|
-| Gemini 3.5 Flash / 3.5 Flash-Lite / 2.5 Flash-Lite | **Not hosted by us** — called over Google's hosted API with `GOOGLE_API_KEY` |
+| Gemini 3.5 Flash / 3.5 Flash-Lite / 2.5 Flash | **Not hosted by us** — called over Google's hosted API with `GOOGLE_API_KEY` |
 | `BAAI/bge-base-en-v1.5` | **Runs in-process on CPU** inside the backend container. Pulled from Hugging Face on first start, cached in `./huggingface_models/` on the host |
 | Occupation vectors | Stored in Supabase PostgreSQL (pgvector, HNSW cosine index) — pre-built, not rebuilt at deploy time |
 
@@ -620,7 +625,11 @@ Migrations run automatically inside the backend container on every start. SearXN
 | `/docs` | GET | Swagger UI |
 | `/api/resume-parsing/resumes` | POST | Upload and parse a resume (SSE progress) |
 | `/api/career/recommend` | POST | Ranked ESCO recommendations with explanations |
-| `/api/jobs/search` | POST | Seven-stage job discovery and matching |
+| `/api/jobs/search` | POST | Multi-stage job discovery and matching |
+| `/api/jobs/search/{run_id}/select-queries` | POST | Resume a paused run with the search queries the user selected |
+| `/api/jobs/search/{run_id}/confirm-judge` | POST | Resume a paused run, confirming whether to spend the LLM judge |
+| `/api/career-reports` | POST | Build the combined career report (recommendations + live shortlist) |
+| `/api/cv-review` | POST | Recruiter-style CV findings and ATS score |
 | `/api/feedback` | POST | Submit rating, reasons, optional comment |
 | `/api/feedback/mine` | GET | Current user's past submissions |
 | `/api/feedback/summary` | GET | Aggregate counts only (unauthenticated) |
@@ -703,7 +712,7 @@ The architectural lesson is now built into the ingestion path: **a rebuilt index
 | Retrieval over 3,039-class classification | Works without labelled training data; supports unseen profiles | Quality depends on embedding and taxonomy coverage |
 | Centralised hosted vector store over local index | One source of truth; no relational/vector drift; multi-client | Career Recommendation evaluation time rose from 11.7 s to 132–158 s for the same 86 profiles — **network round-trip, not computation**. A per-query cost, not a scaling problem |
 | Deterministic re-ranking before explanation | Reproducible, inspectable ordering; no extra model call | Rule-based rather than learned; measured gain is within noise |
-| Zero-LLM extraction | 45+ calls per run reduced to 2; faster, free, more reliable | Depends on job boards providing JSON-LD; postings without it yield weaker field data |
+| Zero-LLM extraction | 45+ calls per run reduced to 2; faster, free, not subject to model-call failure | Depends on job boards providing JSON-LD; postings without it yield weaker field data |
 | Batched judge across all 5 finalists | One call handles final judgment regardless of shortlist size | Cannot give each job individual attention beyond what fits one prompt — and this is exactly where the token-overflow failure originates |
 | Sequential recommendation → discovery | Eliminates the stale-read data race | Forgoes the latency saving of running them concurrently |
 | Feedback module fully isolated | Can fail or be disabled with zero blast radius | Cannot enrich other modules' behaviour without an explicit interface |
@@ -778,7 +787,7 @@ Stated rather than glossed:
 | Output format | Schema-constrained JSON on every generative call, validated before downstream use |
 | Model identifiers | Held in environment configuration, so a retired model is swapped without a code change |
 | Fingerprinting | Complete model and prompt fingerprints recorded per run |
-| Database schema | Built from versioned Alembic revisions `0001` → `0005` plus a checked-in setup script |
+| Database schema | Built from versioned Alembic revisions `0001` → `0007` plus a checked-in setup script |
 | Gold corrections | Stored as **versioned overlays** that preserve the original annotations, so corrections remain auditable |
 | Grading | Deterministic and rule-based, never model-graded, so the evaluation itself stays reproducible |
 | Score reuse guard | Gold and normalisation hashes prevent stale scores being reused |

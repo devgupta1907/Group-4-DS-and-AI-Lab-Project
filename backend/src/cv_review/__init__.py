@@ -1,9 +1,3 @@
-"""CV review add-on: critiques a stored parsed profile.
-
-Public surface is the router and the CvReview schema. Nothing else in the
-codebase should import from this package — it is a leaf, and deliberately so:
-it reads what resume_parsing already produced and writes nothing.
-"""
 
 from fastapi import FastAPI
 

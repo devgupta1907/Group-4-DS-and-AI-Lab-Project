@@ -1,18 +1,3 @@
-"""
-CV review — tells the candidate what is wrong with their resume.
-
-An add-on rather than a pipeline stage: it reads the already-parsed profile
-and returns criticism. It writes nothing, so there is no table and no
-migration, and a failure here cannot affect the recommendation or report
-paths.
-
-The critique runs against the PARSED PROFILE, not the original file. That is
-a deliberate limit and is stated to the user: anything the parser dropped is
-invisible here, and formatting problems in the source document cannot be seen
-at all. What it does see well is the substance — missing quantification, weak
-verbs, absent sections, vague skill lists — which is where most resume
-weakness actually lives.
-"""
 
 from __future__ import annotations
 
@@ -65,22 +50,7 @@ Parsed resume:
 
 
 def _compute_ats_score(profile: CandidateProfile, review: CvReview) -> tuple[int, str]:
-    """
-    Deterministic 0-100 ATS-readiness score.
 
-    Computed from the parsed profile and this review's own findings — never
-    asked of the model, so it can't drift between two runs of the same
-    resume the way an LLM-estimated number would, and it still works when
-    the model call itself fails (the `except` path below).
-
-    Scope: content signals only — section completeness, keyword surface area
-    (skills, titles), quantified evidence, and any structural/contact
-    findings the review raised. It cannot see file formatting (columns,
-    tables, fonts, headers/footers), because the review only has the parsed
-    profile, not the original document — see this module's docstring. Real
-    ATS parsers reject on formatting as often as content, so read this as a
-    floor on ATS risk, not a full prediction.
-    """
     deductions: list[tuple[int, str]] = []
 
     if not profile.skills:
@@ -135,10 +105,7 @@ def review_profile(profile, profile_id: UUID | None = None) -> CvReview:
     prompt = f"{_SYSTEM}\n\n{_INSTRUCTIONS.format(profile=profile.model_dump())}"
 
     try:
-        # Schema-constrained at the API, the same mechanism the report
-        # generator uses: the provider is given CvReview as a response schema,
-        # so the closed `area` and `severity` sets cannot be violated and the
-        # frontend can switch on them without validation of its own.
+
         result = llm.with_structured_output(CvReview).invoke(prompt)
         result.profile_id = profile_id
         result.status = "ok"
