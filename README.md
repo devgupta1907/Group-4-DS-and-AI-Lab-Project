@@ -48,7 +48,7 @@ Three modules communicate through a shared candidate profile and a shared databa
 
 - **Career Recommendation** — flattens the candidate profile into a query, embeds it (BAAI/bge-base-en-v1.5, 768 dimensions, local CPU), retrieves the 20 nearest ESCO occupations from a Supabase pgvector index (HNSW, cosine), re-ranks to the top 5 by blending semantic similarity with exact skill overlap, and calls an LLM (Gemini 2.5 Flash-Lite) to explain each recommendation, grounded strictly in the retrieved evidence — the model may only cite occupations and skills that were actually retrieved, and every returned occupation URI is validated before the response leaves the module.
 
-- **Job Discovery and Matching** — a seven-node LangGraph pipeline: generates search queries from the candidate profile (Gemini 2.5 Flash-Lite), searches via a self-hosted SearXNG instance, extracts postings with Crawl4AI, applies rule-based hard filters (experience, location), ranks by a hybrid of BM25 lexical score and semantic embedding similarity, and scores the shortlist with an LLM judge (Gemma 4 31B). Results are cached in Redis with a one-hour TTL. This module is evaluated independently and is not yet integrated into the shared profile flow.
+- **Job Discovery and Matching** — a seven-node LangGraph pipeline: generates search queries from the candidate profile (Gemini 2.5 Flash-Lite), searches via a self-hosted SearXNG instance, extracts postings with Crawl4AI, applies rule-based hard filters (experience, location), ranks by a hybrid of BM25 lexical score and semantic embedding similarity, and scores the shortlist with an LLM judge (Gemma 4 31B). Results are cached in Redis with a one-hour TTL.
 
 ![Project Architecture](./docs/architecture/architecture_diagram.png)
 
@@ -60,7 +60,7 @@ Three modules communicate through a shared candidate profile and a shared databa
 | **Frontend** | React + TypeScript (Vite) |
 | **AI / LLM** | LangChain (Career Recommendation), LangGraph (Job Discovery, 7-node `StateGraph`), Gemini API, Gemma (open-weight, multimodal) |
 | **Embeddings & retrieval** | BAAI/bge-base-en-v1.5 (local, CPU), Supabase Postgres with pgvector (HNSW, cosine index) |
-| **Job discovery** | SearXNG (self-hosted search), Crawl4AI (extraction), BM25 (`rank_bm25`, lexical ranking), Redis (result cache) |
+| **Job discovery** | SearXNG (self-hosted search), ADZUNA, Crawl4AI (extraction), BM25 (`rank_bm25`, lexical ranking), Redis (result cache) |
 | **Deployment** | Docker Compose |
 
 ## Repository structure
@@ -81,7 +81,7 @@ Three modules communicate through a shared candidate profile and a shared databa
 
 ### Online deployment
 
-The application has been deployed on AWS EC2 at **http://13.235.73.185:8080/** for the duration of the viva.
+The application has been deployed on AWS EC2 at **http://13.233.32.61:8080/** for the duration of the viva.
 
 ### Local deployment
 
